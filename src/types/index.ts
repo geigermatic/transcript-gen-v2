@@ -135,7 +135,24 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
-  sources?: RetrievalResult[];
+  sources?: SearchResult[];
+}
+
+export interface ChatContext {
+  messages: ChatMessage[];
+  maxContextLength: number;
+}
+
+export interface ChatResponse {
+  message: ChatMessage;
+  sources: SearchResult[];
+  hasGrounding: boolean;
+  responseMetrics: {
+    retrievalCount: number;
+    topSimilarity: number;
+    responseLength: number;
+    processingTime: number;
+  };
 }
 
 // Log types for developer console

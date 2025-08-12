@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { ollama } from '../lib/ollama';
 import { SemanticSearchTest } from '../components/SemanticSearchTest';
+import { ChatTester } from '../components/ChatTester';
 
 export function DevConsolePage() {
   const { documents, logs, clearLogs, getAllEmbeddings } = useAppStore();
@@ -147,8 +148,11 @@ export function DevConsolePage() {
         </div>
       </div>
 
-      {/* Semantic Search Test */}
-      <SemanticSearchTest />
+      {/* AI Features Testing */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <SemanticSearchTest />
+        <ChatTester />
+      </div>
     </div>
   );
 }

@@ -1,0 +1,346 @@
+/**
+ * Chat engine for conversational Q&A with grounded responses
+ */
+
+import { ollama } from './ollama';
+import { EmbeddingEngine } from './embeddingEngine';
+import { useAppStore } from '../store';
+import type { ChatMessage, ChatContext, ChatResponse, EmbeddedChunk, SearchResult, StyleGuide } from '../types';
+
+export interface RetrievalContext {
+  query: string;
+  retrievedChunks: SearchResult[];
+  topScores: number[];
+  hasRelevantContent: boolean;
+}
+
+export class ChatEngine {
+  private static readonly MAX_RETRIEVAL_RESULTS = 5;
+  private static readonly MIN_SIMILARITY_THRESHOLD = 0.3;
+  private static readonly MAX_CONTEXT_MESSAGES = 10;
+  private static readonly MAX_CONTEXT_LENGTH = 4000; // characters
+
+  /**
+   * Process a user question and generate a grounded response
+   */
+  static async processQuery(
+    query: string,
+    context: ChatContext,
+    styleGuide: StyleGuide
+  ): Promise<ChatResponse> {
+    const { addLog, getAllEmbeddings } = useAppStore.getState();
+    const startTime = Date.now();
+    
+    addLog({
+      level: 'info',
+      category: 'chat',
+      message: `Processing user query: "${query.substring(0, 100)}${query.length > 100 ? '...' : ''}"`,
+      details: { 
+        queryLength: query.length,
+        contextMessages: context.messages.length
+      }
+    });
+
+    try {
+      // Get all available embeddings
+      const allEmbeddings = getAllEmbeddings();
+      
+      if (allEmbeddings.length === 0) {
+        const noDataResponse = this.createNoDataResponse(query, startTime);
+        addLog({
+          level: 'warn',
+          category: 'chat',
+          message: 'No embeddings available for grounding',
+          details: { query }
+        });
+        return noDataResponse;
+      }
+
+      // Retrieve relevant chunks
+      const retrievalContext = await this.retrieveRelevantChunks(query, allEmbeddings);
+      
+      // Log retrieval results
+      addLog({
+        level: 'info',
+        category: 'chat',
+        message: 'Retrieved relevant chunks for grounding',
+        details: {
+          query,
+          retrievalCount: retrievalContext.retrievedChunks.length,
+          topScores: retrievalContext.topScores,
+          hasRelevantContent: retrievalContext.hasRelevantContent
+        }
+      });
+
+      // Generate response based on retrieval results
+      const response = retrievalContext.hasRelevantContent
+        ? await this.generateGroundedResponse(query, context, retrievalContext, styleGuide)
+        : this.createNoGroundingResponse(query, startTime);
+
+      const processingTime = Date.now() - startTime;
+      
+      // Update response metrics
+      response.responseMetrics.processingTime = processingTime;
+      response.responseMetrics.retrievalCount = retrievalContext.retrievedChunks.length;
+      response.responseMetrics.topSimilarity = retrievalContext.topScores[0] || 0;
+      response.responseMetrics.responseLength = response.message.content.length;
+
+      addLog({
+        level: 'info',
+        category: 'chat',
+        message: 'Chat response generated',
+        details: {
+          query,
+          hasGrounding: response.hasGrounding,
+          responseLength: response.responseMetrics.responseLength,
+          processingTime: response.responseMetrics.processingTime,
+          topSimilarity: response.responseMetrics.topSimilarity
+        }
+      });
+
+      return response;
+
+    } catch (error) {
+      addLog({
+        level: 'error',
+        category: 'chat',
+        message: 'Chat processing failed',
+        details: { query, error: error instanceof Error ? error.message : error }
+      });
+      
+      return this.createErrorResponse(query, error, startTime);
+    }
+  }
+
+  /**
+   * Retrieve relevant chunks for the query
+   */
+  private static async retrieveRelevantChunks(
+    query: string,
+    embeddedChunks: EmbeddedChunk[]
+  ): Promise<RetrievalContext> {
+    try {
+      // Perform hybrid search for best results
+      const searchResults = await EmbeddingEngine.performHybridSearch(
+        query,
+        embeddedChunks,
+        this.MAX_RETRIEVAL_RESULTS
+      );
+
+      // Filter by similarity threshold
+      const relevantResults = searchResults.filter(
+        result => result.similarity >= this.MIN_SIMILARITY_THRESHOLD
+      );
+
+      const topScores = searchResults.slice(0, 5).map(r => r.similarity);
+      const hasRelevantContent = relevantResults.length > 0;
+
+      return {
+        query,
+        retrievedChunks: relevantResults,
+        topScores,
+        hasRelevantContent,
+      };
+    } catch (error) {
+      throw new Error(`Retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Generate a grounded response using retrieved chunks
+   */
+  private static async generateGroundedResponse(
+    query: string,
+    context: ChatContext,
+    retrievalContext: RetrievalContext,
+    styleGuide: StyleGuide
+  ): Promise<ChatResponse> {
+    const prompt = this.buildGroundedPrompt(query, context, retrievalContext, styleGuide);
+    
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: prompt
+      }]);
+
+      const message: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: response.trim(),
+        timestamp: new Date().toISOString(),
+        sources: retrievalContext.retrievedChunks,
+      };
+
+      return {
+        message,
+        sources: retrievalContext.retrievedChunks,
+        hasGrounding: true,
+        responseMetrics: {
+          retrievalCount: retrievalContext.retrievedChunks.length,
+          topSimilarity: retrievalContext.topScores[0] || 0,
+          responseLength: response.length,
+          processingTime: 0, // Will be set by caller
+        }
+      };
+    } catch (error) {
+      throw new Error(`Response generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Build the grounded prompt with context and sources
+   */
+  private static buildGroundedPrompt(
+    query: string,
+    context: ChatContext,
+    retrievalContext: RetrievalContext,
+    styleGuide: StyleGuide
+  ): string {
+    const styleInstructions = styleGuide.instructions_md || 'Use a helpful, professional tone.';
+    
+    // Format conversation context
+    const contextMessages = context.messages
+      .slice(-this.MAX_CONTEXT_MESSAGES)
+      .map(msg => `${msg.role === 'user' ? 'Human' : 'Assistant'}: ${msg.content}`)
+      .join('\n');
+
+    // Format retrieved chunks
+    const sourceChunks = retrievalContext.retrievedChunks
+      .map((result, index) => 
+        `[Source ${index + 1}] (Similarity: ${(result.similarity * 100).toFixed(1)}%)\n${result.chunk.text}`
+      )
+      .join('\n\n');
+
+    return `You are a helpful AI assistant answering questions about teaching transcripts. You must ONLY answer based on the provided source excerpts.
+
+STYLE GUIDE:
+${styleInstructions}
+
+Tone Settings:
+- Formality: ${styleGuide.tone_settings.formality}/100
+- Enthusiasm: ${styleGuide.tone_settings.enthusiasm}/100
+- Technical Level: ${styleGuide.tone_settings.technicality}/100
+
+Keywords to emphasize: ${styleGuide.keywords.join(', ') || 'None specified'}
+
+CONVERSATION CONTEXT:
+${contextMessages}
+
+SOURCE EXCERPTS:
+${sourceChunks}
+
+STRICT RULES:
+1. Answer ONLY based on the provided source excerpts
+2. If the sources don't contain relevant information, say "I don't have enough information in the provided sources to answer that question."
+3. Reference specific sources when possible (e.g., "According to Source 1...")
+4. Apply the style guide to your response
+5. Be helpful and direct
+6. Do not make up information or use external knowledge
+
+HUMAN QUESTION: ${query}
+
+ASSISTANT RESPONSE:`;
+  }
+
+  /**
+   * Create response when no grounding is available
+   */
+  private static createNoGroundingResponse(_query: string, startTime: number): ChatResponse {
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: "I don't have enough information in the provided sources to answer that question. Could you try rephrasing your question or make sure you have uploaded and indexed relevant documents?",
+      timestamp: new Date().toISOString(),
+    };
+
+    return {
+      message,
+      sources: [],
+      hasGrounding: false,
+      responseMetrics: {
+        retrievalCount: 0,
+        topSimilarity: 0,
+        responseLength: message.content.length,
+        processingTime: Date.now() - startTime,
+      }
+    };
+  }
+
+  /**
+   * Create response when no data is available
+   */
+  private static createNoDataResponse(_query: string, startTime: number): ChatResponse {
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: "I don't have any documents to search through yet. Please upload some documents and generate embeddings first, then I'll be able to help answer questions about their content.",
+      timestamp: new Date().toISOString(),
+    };
+
+    return {
+      message,
+      sources: [],
+      hasGrounding: false,
+      responseMetrics: {
+        retrievalCount: 0,
+        topSimilarity: 0,
+        responseLength: message.content.length,
+        processingTime: Date.now() - startTime,
+      }
+    };
+  }
+
+  /**
+   * Create error response
+   */
+  private static createErrorResponse(_query: string, error: unknown, startTime: number): ChatResponse {
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: `I encountered an error while trying to answer your question: ${errorMessage}. Please try again or check that Ollama is running properly.`,
+      timestamp: new Date().toISOString(),
+    };
+
+    return {
+      message,
+      sources: [],
+      hasGrounding: false,
+      responseMetrics: {
+        retrievalCount: 0,
+        topSimilarity: 0,
+        responseLength: message.content.length,
+        processingTime: Date.now() - startTime,
+      }
+    };
+  }
+
+  /**
+   * Format context messages for display
+   */
+  static formatContextLength(context: ChatContext): number {
+    return context.messages
+      .map(msg => msg.content.length)
+      .reduce((total, length) => total + length, 0);
+  }
+
+  /**
+   * Trim context to fit within limits
+   */
+  static trimContext(context: ChatContext): ChatContext {
+    let messages = [...context.messages];
+    let totalLength = this.formatContextLength({ messages, maxContextLength: context.maxContextLength });
+    
+    // Remove oldest messages until we're under the limit
+    while (totalLength > this.MAX_CONTEXT_LENGTH && messages.length > 1) {
+      messages.shift();
+      totalLength = this.formatContextLength({ messages, maxContextLength: context.maxContextLength });
+    }
+    
+    return {
+      messages: messages.slice(-this.MAX_CONTEXT_MESSAGES),
+      maxContextLength: context.maxContextLength,
+    };
+  }
+}
