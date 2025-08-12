@@ -47,6 +47,34 @@ export interface RetrievalResult {
   similarity: number;
 }
 
+// Text chunking and embedding types
+export interface TextChunk {
+  id: string;
+  documentId: string;
+  text: string;
+  startIndex: number;
+  endIndex: number;
+  chunkIndex: number;
+}
+
+export interface EmbeddedChunk extends TextChunk {
+  embedding: number[];
+  embeddingTimestamp: string;
+}
+
+export interface EmbeddingProgress {
+  current: number;
+  total: number;
+  chunkId: string;
+  percentage: number;
+}
+
+export interface SearchResult {
+  chunk: EmbeddedChunk;
+  similarity: number;
+  rank: number;
+}
+
 // Style guide and preferences
 export interface StyleGuide {
   instructions_md: string;

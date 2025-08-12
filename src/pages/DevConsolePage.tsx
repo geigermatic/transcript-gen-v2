@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../store';
 import { ollama } from '../lib/ollama';
+import { SemanticSearchTest } from '../components/SemanticSearchTest';
 
 export function DevConsolePage() {
-  const { documents, logs, clearLogs } = useAppStore();
+  const { documents, logs, clearLogs, getAllEmbeddings } = useAppStore();
   const [ollamaStatus, setOllamaStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
 
   useEffect(() => {
@@ -50,6 +51,9 @@ export function DevConsolePage() {
 
   const totalWords = documents.reduce((total, doc) => total + (doc.metadata.wordCount || 0), 0);
   const totalSize = documents.reduce((total, doc) => total + doc.metadata.fileSize, 0);
+  const allEmbeddings = getAllEmbeddings();
+  const totalEmbeddings = allEmbeddings.length;
+  const documentsWithEmbeddings = new Set(allEmbeddings.map(e => e.documentId)).size;
 
   return (
     <div className="space-y-6">
@@ -71,13 +75,13 @@ export function DevConsolePage() {
             🔄 Refresh
           </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="glass-panel p-4">
-            <h3 className="text-white font-medium">Ollama Connection</h3>
+            <h3 className="text-white font-medium">Ollama Status</h3>
             <p className={getStatusColor(ollamaStatus)}>{getStatusText(ollamaStatus)}</p>
           </div>
           <div className="glass-panel p-4">
-            <h3 className="text-white font-medium">Documents Uploaded</h3>
+            <h3 className="text-white font-medium">Documents</h3>
             <p className="text-gray-400">{documents.length}</p>
           </div>
           <div className="glass-panel p-4">
@@ -89,6 +93,14 @@ export function DevConsolePage() {
             <p className="text-gray-400">
               {totalSize > 0 ? (totalSize / 1024 / 1024).toFixed(2) + ' MB' : '0 MB'}
             </p>
+          </div>
+          <div className="glass-panel p-4">
+            <h3 className="text-white font-medium">Embeddings</h3>
+            <p className="text-gray-400">{totalEmbeddings} chunks</p>
+          </div>
+          <div className="glass-panel p-4">
+            <h3 className="text-white font-medium">Indexed Docs</h3>
+            <p className="text-gray-400">{documentsWithEmbeddings}/{documents.length}</p>
           </div>
         </div>
       </div>
@@ -134,6 +146,9 @@ export function DevConsolePage() {
           )}
         </div>
       </div>
+
+      {/* Semantic Search Test */}
+      <SemanticSearchTest />
     </div>
   );
 }

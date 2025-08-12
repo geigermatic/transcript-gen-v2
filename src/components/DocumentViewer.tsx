@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { Document } from '../types';
 import { DocumentProcessor } from '../lib/documentProcessor';
+import { EmbeddingManager } from './EmbeddingManager';
 
 interface DocumentViewerProps {
   document: Document | null;
@@ -140,6 +141,11 @@ export function DocumentViewer({ document: doc, isOpen, onClose }: DocumentViewe
               📋 Copy Text
             </button>
           </div>
+        </div>
+
+        {/* Embedding Management */}
+        <div className="px-6 py-4 border-b border-white/20">
+          <EmbeddingManager document={doc} />
         </div>
 
         {/* Document Content */}
