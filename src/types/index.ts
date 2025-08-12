@@ -75,6 +75,29 @@ export interface SearchResult {
   rank: number;
 }
 
+// Summarization types
+export interface ChunkFacts {
+  chunkId: string;
+  chunkIndex: number;
+  facts: Partial<ExtractedFacts>;
+  parseSuccess: boolean;
+  rawResponse: string;
+  error?: string;
+}
+
+export interface SummarizationResult {
+  document: Document;
+  chunkFacts: ChunkFacts[];
+  mergedFacts: ExtractedFacts;
+  markdownSummary: string;
+  processingStats: {
+    totalChunks: number;
+    successfulChunks: number;
+    failedChunks: number;
+    processingTime: number;
+  };
+}
+
 // Style guide and preferences
 export interface StyleGuide {
   instructions_md: string;

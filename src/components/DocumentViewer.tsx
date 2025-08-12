@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { Document } from '../types';
 import { DocumentProcessor } from '../lib/documentProcessor';
 import { EmbeddingManager } from './EmbeddingManager';
+import { SummarizationManager } from './SummarizationManager';
 
 interface DocumentViewerProps {
   document: Document | null;
@@ -143,9 +144,12 @@ export function DocumentViewer({ document: doc, isOpen, onClose }: DocumentViewe
           </div>
         </div>
 
-        {/* Embedding Management */}
+        {/* AI Tools */}
         <div className="px-6 py-4 border-b border-white/20">
-          <EmbeddingManager document={doc} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <EmbeddingManager document={doc} />
+            <SummarizationManager document={doc} />
+          </div>
         </div>
 
         {/* Document Content */}
