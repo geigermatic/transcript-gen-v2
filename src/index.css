@@ -5,17 +5,21 @@
 /* Glassmorphic design components */
 @layer components {
   .glass-panel {
-    @apply backdrop-blur-glass border border-glass-light dark:border-glass-dark rounded-xl shadow-glass-light dark:shadow-glass-dark;
+    @apply border border-white/20 rounded-xl shadow-lg;
     background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
   
   .glass-panel-dark {
-    @apply backdrop-blur-glass border border-glass-dark rounded-xl shadow-glass-dark;
+    @apply border border-white/20 rounded-xl shadow-lg;
     background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   .glass-button {
-    @apply glass-panel px-4 py-2 hover:bg-opacity-40 transition-all duration-200 cursor-pointer;
+    @apply glass-panel px-4 py-2 hover:bg-white/10 transition-all duration-200 cursor-pointer;
   }
 
   .glass-input {
