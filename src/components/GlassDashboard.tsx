@@ -3,7 +3,7 @@
  * Matches the provided mockup exactly
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import { AppShell } from './AppShell';
@@ -17,15 +17,32 @@ import { logInfo } from '../lib/logger';
 
 export const GlassDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { documents, abSummaryPairs } = useAppStore();
+  const { documents, abSummaryPairs, logs } = useAppStore();
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [chunksProcessed, setChunksProcessed] = useState(0);
+  const [totalChunks, setTotalChunks] = useState(0);
+  const [processingStartTime, setProcessingStartTime] = useState<Date | null>(null);
 
 
 
   const handleUploadComplete = (success: boolean, message: string, document?: any) => {
     if (success && document) {
       setSelectedDocument(document);
-      logInfo('UI', 'Document uploaded and selected', { documentId: document.id });
+      setIsSummarizing(true);
+      setChunksProcessed(0);
+      setProcessingStartTime(new Date());
+      
+      // Estimate total chunks based on word count (updated chunk size ~500 words)
+      const wordCount = document.metadata.wordCount || 1000;
+      const estimatedChunks = Math.ceil(wordCount / 500);
+      setTotalChunks(estimatedChunks);
+      
+      logInfo('UI', 'Document uploaded and selected', { 
+        documentId: document.id, 
+        estimatedChunks,
+        wordCount 
+      });
     }
   };
 
@@ -33,6 +50,55 @@ export const GlassDashboard: React.FC = () => {
     setSelectedDocument(doc);
     logInfo('UI', 'Document selected from recent list', { docId: doc.id });
   };
+
+  // Monitor when summarization completes
+  useEffect(() => {
+    if (selectedDocument && isSummarizing) {
+      const hasSummary = abSummaryPairs.some(pair => pair.documentId === selectedDocument.id);
+      if (hasSummary) {
+        setIsSummarizing(false);
+        setChunksProcessed(0);
+        setTotalChunks(0);
+        setProcessingStartTime(null);
+        logInfo('UI', 'Summarization completed and summary is available');
+      }
+    }
+  }, [selectedDocument, abSummaryPairs, isSummarizing]);
+
+  // Monitor logs for chunk progress updates
+  useEffect(() => {
+    if (isSummarizing && selectedDocument && logs.length > 0) {
+
+      
+      // Look for either progress format from the actual logs we're seeing
+      const progressLogs = logs.filter(log => {
+        const categoryMatch = log.category.toUpperCase() === 'SUMMARIZATION';
+        const messageMatch = log.message.includes('Extracted facts from chunk') || log.message.includes('Progress:');
+        const timeMatch = log.timestamp > (processingStartTime?.toISOString() || '');
+        
+        return categoryMatch && messageMatch && timeMatch;
+      });
+      
+      if (progressLogs.length > 0) {
+        const latestProgress = progressLogs[progressLogs.length - 1];
+        
+        // Try both patterns: "Progress: X/Y chunks processed" and "Extracted facts from chunk X/Y"
+        let match = latestProgress.message.match(/Progress: (\d+)\/(\d+) chunks processed/);
+        if (!match) {
+          match = latestProgress.message.match(/Extracted facts from chunk (\d+)\/(\d+)/);
+        }
+        
+        if (match) {
+          const current = parseInt(match[1], 10);
+          const total = parseInt(match[2], 10);
+          setChunksProcessed(current);
+          setTotalChunks(total);
+          
+
+        }
+      }
+    }
+  }, [logs, isSummarizing, selectedDocument, processingStartTime]);
 
   // Get the most recent summary for the selected document
   const getSelectedDocumentSummary = () => {
@@ -62,26 +128,28 @@ export const GlassDashboard: React.FC = () => {
         </div>
 
         {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {/* Upload Card */}
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Upload & Recent Documents */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Upload Card */}
             <UploadCard onUploadComplete={handleUploadComplete} />
-          </div>
-
-          {/* Summary Preview Card */}
-          <div className="lg:col-span-1">
-            <SummaryPreviewCard 
-              summary={getSelectedDocumentSummary()} 
-              isLoading={false}
-            />
-          </div>
-
-          {/* Recent Documents Card */}
-          <div className="lg:col-span-2 xl:col-span-1">
+            
+            {/* Recent Documents Card - moved below Upload */}
             <RecentDocsCard onDocumentSelect={handleDocumentSelect} />
           </div>
 
-          {/* Chat Card */}
+          {/* Center & Right Columns - Summary spans both */}
+          <div className="lg:col-span-2">
+            <SummaryPreviewCard 
+              summary={getSelectedDocumentSummary()} 
+              isLoading={isSummarizing}
+              chunksProcessed={chunksProcessed}
+              totalChunks={totalChunks}
+              processingStartTime={processingStartTime}
+            />
+          </div>
+
+          {/* Chat Card - spans full width on second row */}
           <div className="lg:col-span-2">
             <div className="h-96">
               <ChatCard 
@@ -93,49 +161,13 @@ export const GlassDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Status Card */}
+          {/* Status Card - right column on second row */}
           <div className="lg:col-span-1">
             <StatusCard />
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="glass-card p-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center">
-                <Sparkles size={20} className="text-accent" />
-              </div>
-              <div>
-                <h3 className="text-heading text-lg">Ready to get started?</h3>
-                <p className="text-caption">
-                  Upload your first document or explore existing summaries
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={() => navigate('/glossary')}
-                className="ghost-button focus-visible"
-              >
-                Manage Glossary
-              </button>
-              <button
-                onClick={() => navigate('/settings')}
-                className="ghost-button focus-visible"
-              >
-                Settings
-              </button>
-              <button
-                onClick={() => navigate('/workspace')}
-                className="accent-button focus-visible"
-              >
-                View Summaries
-              </button>
-            </div>
-          </div>
-        </div>
+
 
         {/* Status Footer */}
         <div className="glass-header px-6 py-4">

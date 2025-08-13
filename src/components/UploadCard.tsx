@@ -5,8 +5,10 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, FileText } from 'lucide-react';
 import { DocumentProcessor } from '../lib/documentProcessor';
+import { SummarizationEngine } from '../lib/summarizationEngine';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
+import type { ABSummaryPair } from '../types';
 
 interface UploadCardProps {
   onUploadComplete?: (success: boolean, message: string, document?: any) => void;
@@ -16,7 +18,41 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { addDocument } = useAppStore();
+  const { addDocument, addABSummaryPair, styleGuide } = useAppStore();
+
+  const triggerSummarization = async (document: any) => {
+    try {
+      logInfo('SUMMARIZATION', `Starting background summarization for: ${document.filename}`);
+      
+      const result = await SummarizationEngine.summarizeDocument(
+        document,
+        styleGuide,
+        (current, total) => {
+          logInfo('SUMMARIZATION', `Progress: ${current}/${total} chunks processed`);
+        }
+      );
+
+      // Create AB summary pair
+      const summaryPair: ABSummaryPair = {
+        id: crypto.randomUUID(),
+        documentId: document.id,
+        createdAt: new Date().toISOString(),
+        summaryA: result,
+        summaryB: null, // Only A summary for now
+        selectedSummary: 'A',
+        feedback: null
+      };
+
+      addABSummaryPair(summaryPair);
+      
+      logInfo('SUMMARIZATION', `Summary completed for: ${document.filename}`, {
+        summaryLength: result.markdownSummary.length,
+        factsExtracted: Object.keys(result.mergedFacts).length
+      });
+    } catch (error) {
+      logInfo('SUMMARIZATION', `Summarization failed for: ${document.filename}`, { error });
+    }
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -78,6 +114,9 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
         });
 
         onUploadComplete?.(true, `Successfully uploaded: ${file.name}`, document);
+
+        // Trigger summarization in background
+        triggerSummarization(document);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

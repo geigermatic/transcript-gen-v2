@@ -13,8 +13,8 @@ export interface TextChunk {
 }
 
 export class TextSplitter {
-  private static readonly DEFAULT_CHUNK_SIZE = 500; // characters
-  private static readonly OVERLAP_SIZE = 50; // characters overlap between chunks
+  private static readonly DEFAULT_CHUNK_SIZE = 2500; // characters (~500 words)
+  private static readonly OVERLAP_SIZE = 200; // characters overlap between chunks
 
   /**
    * Split text into chunks using double newlines first, then fixed-size fallback
@@ -45,8 +45,8 @@ export class TextSplitter {
    * Check if paragraphs are reasonable sizes (not too short or too long)
    */
   private static areGoodParagraphs(paragraphs: string[]): boolean {
-    const minParagraphLength = 50;
-    const maxParagraphLength = 2000;
+    const minParagraphLength = 200;
+    const maxParagraphLength = 4000;
     
     // At least 70% of paragraphs should be within reasonable size range
     const goodParagraphs = paragraphs.filter(para => 
