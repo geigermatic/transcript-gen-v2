@@ -61,6 +61,14 @@ interface AppState {
   // UI State
   isDarkMode: boolean;
   toggleDarkMode: () => void;
+
+  // User Testing Mode
+  isUserTestingMode: boolean;
+  toggleUserTestingMode: () => void;
+
+  // Onboarding
+  hasCompletedOnboarding: boolean;
+  setOnboardingComplete: (completed: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -210,6 +218,16 @@ export const useAppStore = create<AppState>()(
       isDarkMode: true,
       toggleDarkMode: () =>
         set((state) => ({ isDarkMode: !state.isDarkMode })),
+
+      // User Testing Mode
+      isUserTestingMode: false,
+      toggleUserTestingMode: () =>
+        set((state) => ({ isUserTestingMode: !state.isUserTestingMode })),
+
+      // Onboarding
+      hasCompletedOnboarding: false,
+      setOnboardingComplete: (completed) =>
+        set({ hasCompletedOnboarding: completed }),
     }),
     {
       name: 'transcript-summarizer-storage',
@@ -220,6 +238,8 @@ export const useAppStore = create<AppState>()(
         preferences: state.preferences,
         abSummaryPairs: state.abSummaryPairs,
         isDarkMode: state.isDarkMode,
+        isUserTestingMode: state.isUserTestingMode,
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
         // Convert Maps to objects for storage
         embeddings: Object.fromEntries(state.embeddings),
       }),

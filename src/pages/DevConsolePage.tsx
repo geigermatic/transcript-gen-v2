@@ -4,6 +4,7 @@ import { ollama } from '../lib/ollama';
 import { SemanticSearchTest } from '../components/SemanticSearchTest';
 import { ChatTester } from '../components/ChatTester';
 import { ABTestingDashboard } from '../components/ABTestingDashboard';
+import { QATestRunner } from '../components/QATestRunner';
 
 export function DevConsolePage() {
   const { documents, logs, clearLogs, getAllEmbeddings } = useAppStore();
@@ -156,6 +157,7 @@ export function DevConsolePage() {
           <ChatTester />
         </div>
         <ABTestingDashboard />
+        <QATestRunner />
       </div>
     </div>
   );

@@ -11,6 +11,7 @@
     "check-ollama": "curl -f http://127.0.0.1:11434/api/tags || echo 'Ollama not running on http://127.0.0.1:11434'"
   },
   "dependencies": {
+    "localforage": "^1.10.0",
     "mammoth": "^1.10.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

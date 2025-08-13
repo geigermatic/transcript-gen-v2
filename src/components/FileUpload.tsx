@@ -1,6 +1,7 @@
 import { useState, useRef, type DragEvent, type ChangeEvent } from 'react';
 import { DocumentProcessor } from '../lib/documentProcessor';
 import { useAppStore } from '../store';
+import { HelpTooltip } from './Tooltip';
 
 interface FileUploadProps {
   onUploadComplete?: (success: boolean, message: string) => void;
@@ -155,9 +156,15 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
                   : 'Drag and drop files here, or click to browse'
                 }
               </p>
-              <p className="text-sm text-gray-400">
-                Supported formats: .docx, .txt, .md, .srt, .vtt
-              </p>
+              <div className="flex items-center justify-center">
+                <p className="text-sm text-gray-400">
+                  Supported formats: .docx, .txt, .md, .srt, .vtt
+                </p>
+                <HelpTooltip 
+                  content="Upload teaching transcripts, documents, or subtitle files. Files should be between 100KB and 50MB. All processing happens locally on your machine - your documents never leave your computer."
+                  position="bottom"
+                />
+              </div>
             </div>
           )}
         </div>

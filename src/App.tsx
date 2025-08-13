@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
 import { DevConsole } from './components/DevConsole';
+import { OnboardingModal } from './components/OnboardingModal';
 import { HomePage } from './pages/HomePage';
 import { LibraryPage } from './pages/LibraryPage';
 import { ChatPage } from './pages/ChatPage';
@@ -36,6 +37,9 @@ function App() {
             onPositionChange={devConsole.changePosition}
           />
         )}
+
+        {/* First-time User Onboarding */}
+        <OnboardingModal />
       </div>
     </Router>
   );
