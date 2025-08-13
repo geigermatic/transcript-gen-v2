@@ -2,28 +2,155 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Glassmorphic design components */
+/* Glassmorphic design system */
 @layer components {
+  /* Core glass panel */
   .glass-panel {
-    @apply border border-white/20 rounded-xl shadow-lg;
-    background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    @apply rounded-lg border border-white/20;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
   }
   
-  .glass-panel-dark {
-    @apply border border-white/20 rounded-xl shadow-lg;
-    background: rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+  .dark .glass-panel {
+    background: rgba(255, 255, 255, 0.05);
   }
 
+  /* Glass panel with header gradient */
+  .glass-panel-header {
+    @apply rounded-lg border border-white/20 bg-gradient-to-b from-white/20 to-white/5;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+  }
+
+  .dark .glass-panel-header {
+    @apply bg-gradient-to-b from-white/10 to-transparent;
+  }
+
+  /* Primary glass button */
   .glass-button {
-    @apply glass-panel px-4 py-2 hover:bg-white/10 transition-all duration-200 cursor-pointer;
+    @apply rounded-lg border border-white/20 px-6 py-3 font-medium text-white transition-all duration-300 cursor-pointer;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
   }
 
+  .glass-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
+  }
+
+  .dark .glass-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Primary accent button */
+  .glass-button-primary {
+    @apply rounded-lg border border-white/20 px-6 py-3 font-medium text-white transition-all duration-300 cursor-pointer;
+    background: #3b82f6;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+  }
+
+  .glass-button-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Secondary glass button */
+  .glass-button-secondary {
+    @apply rounded-lg border border-white/20 px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-all duration-200;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* Glass input */
   .glass-input {
-    @apply glass-panel px-3 py-2 bg-transparent placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400;
+    @apply rounded-lg border border-white/20 px-4 py-3 bg-transparent text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+  }
+
+  .glass-input:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #3b82f6;
+  }
+
+  .dark .glass-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Glass card with hover effect */
+  .glass-card {
+    @apply rounded-lg border border-white/20 p-6 transition-all duration-300 cursor-pointer;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+  }
+
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.35);
+  }
+
+  .dark .glass-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Glass navigation */
+  .glass-nav {
+    @apply rounded-lg border border-white/20 px-6 py-4 bg-gradient-to-b from-white/20 to-white/5;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .dark .glass-nav {
+    @apply bg-gradient-to-b from-white/10 to-transparent;
+  }
+
+  /* Glass modal */
+  .glass-modal {
+    @apply rounded-lg border border-white/20 p-8 max-w-4xl mx-auto my-8;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Typography classes */
+  .text-hierarchy-h1 {
+    @apply text-4xl font-bold text-white leading-tight;
+  }
+
+  .text-hierarchy-h2 {
+    @apply text-3xl font-semibold text-white leading-snug;
+  }
+
+  .text-hierarchy-h3 {
+    @apply text-2xl font-semibold text-white leading-normal;
+  }
+
+  .text-hierarchy-h4 {
+    @apply text-xl font-medium text-white leading-relaxed;
+  }
+
+  .text-body {
+    @apply text-gray-300 leading-relaxed;
+  }
+
+  .text-body-large {
+    @apply text-lg text-gray-300 leading-loose;
   }
 }
 
