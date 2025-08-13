@@ -10,6 +10,8 @@ import { SummarizationEngine } from '../lib/summarizationEngine';
 import { ABSummaryEngine } from '../lib/abSummaryEngine';
 import { ExportOptions } from './ExportOptions';
 import { EmbeddingManager } from './EmbeddingManager';
+import { ChunkingSettings } from './ChunkingSettings';
+import { ChunkingConfigManager } from '../lib/chunkingConfig';
 import { logInfo, logTime } from '../lib/logger';
 import type { Document, SummarizationResult } from '../types';
 
@@ -29,6 +31,7 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
   const [summaryResult, setSummaryResult] = useState<SummarizationResult | null>(null);
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'summary' | 'facts' | 'details'>('summary');
+  const [showChunkingSettings, setShowChunkingSettings] = useState(false);
 
   const summarizationEngine = new SummarizationEngine();
   const abSummaryEngine = new ABSummaryEngine();
@@ -132,6 +135,14 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
           </div>
           <div className="flex items-center space-x-3">
             <EmbeddingManager document={selectedDocument} compact />
+            <button
+              onClick={() => setShowChunkingSettings(true)}
+              className="glass-button text-gray-400 hover:text-white flex items-center space-x-2"
+              title="Processing Speed Settings"
+            >
+              <span>⚙️</span>
+              <span>Speed</span>
+            </button>
             <button
               onClick={handleGenerateSummary}
               disabled={isGenerating}
@@ -370,6 +381,13 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
           onClose={() => setShowExportOptions(false)}
         />
       )}
+
+      {/* Chunking Settings Modal */}
+      <ChunkingSettings
+        isOpen={showChunkingSettings}
+        onClose={() => setShowChunkingSettings(false)}
+        documentWordCount={selectedDocument?.metadata.wordCount || 1000}
+      />
     </div>
   );
 };

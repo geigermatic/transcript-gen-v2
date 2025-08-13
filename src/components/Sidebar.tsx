@@ -8,8 +8,7 @@ import {
   Home, 
   Upload, 
   BookOpen, 
-  FileText, 
-  MessageCircle, 
+  FileText,
   Settings,
   ChevronLeft,
   ChevronRight
@@ -32,8 +31,7 @@ const navigationItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <Home size={20} />, href: '/' },
   { id: 'upload', label: 'Upload', icon: <Upload size={20} />, href: '/upload' },
   { id: 'glossary', label: 'Glossary', icon: <BookOpen size={20} />, href: '/glossary' },
-  { id: 'summaries', label: 'Summaries', icon: <FileText size={20} />, href: '/workspace' },
-  { id: 'chat', label: 'Chat', icon: <MessageCircle size={20} />, href: '/chat' },
+  { id: 'library', label: 'Library', icon: <FileText size={20} />, href: '/library' },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} />, href: '/settings' },
 ];
 

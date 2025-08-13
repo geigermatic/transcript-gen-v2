@@ -9,7 +9,6 @@ export function Navigation() {
   const navItems = [
     { path: '/', label: 'Home', icon: '🏠' },
     { path: '/library', label: 'Library', icon: '📚' },
-    { path: '/chat', label: 'Chat', icon: '💬' },
     { path: '/settings', label: 'Settings', icon: '⚙️' },
     { path: '/dev-console', label: 'Dev Console', icon: '🔧' },
   ];

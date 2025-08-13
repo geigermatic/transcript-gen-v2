@@ -4,6 +4,7 @@
 
 import { ollama } from './ollama';
 import { TextSplitter } from './textSplitter';
+import { ChunkingConfigManager } from './chunkingConfig';
 import { useAppStore } from '../store';
 import type { Document, ExtractedFacts, StyleGuide } from '../types';
 
@@ -61,58 +62,15 @@ export class SummarizationEngine {
         details: { documentId: document.id, chunkCount: chunks.length }
       });
 
-      // Extract facts from each chunk
-      const chunkFacts: ChunkFacts[] = [];
-      
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-        onProgress?.(i + 1, chunks.length);
-        
-        try {
-          const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);
-          chunkFacts.push({
-            chunkId: chunk.id,
-            chunkIndex: chunk.chunkIndex,
-            facts: facts.facts,
-            parseSuccess: facts.parseSuccess,
-            rawResponse: facts.rawResponse,
-            error: facts.error,
-          });
-          
-          addLog({
-            level: 'info',
-            category: 'summarization',
-            message: `Extracted facts from chunk ${i + 1}/${chunks.length}`,
-            details: { 
-              documentId: document.id, 
-              chunkId: chunk.id, 
-              parseSuccess: facts.parseSuccess,
-              factKeys: Object.keys(facts.facts)
-            }
-          });
-          
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          chunkFacts.push({
-            chunkId: chunk.id,
-            chunkIndex: chunk.chunkIndex,
-            facts: {},
-            parseSuccess: false,
-            rawResponse: '',
-            error: errorMessage,
-          });
-          
-          addLog({
-            level: 'error',
-            category: 'summarization',
-            message: `Failed to extract facts from chunk ${i + 1}/${chunks.length}`,
-            details: { documentId: document.id, chunkId: chunk.id, error: errorMessage }
-          });
-        }
-        
-        // Small delay to avoid overwhelming Ollama
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
+      // Extract facts from each chunk (with configurable parallel processing)
+      const config = ChunkingConfigManager.getCurrentConfig();
+      const chunkFacts: ChunkFacts[] = await this.processChunks(
+        chunks, 
+        styleGuide, 
+        document.id, 
+        config,
+        onProgress
+      );
 
       // Merge facts from all chunks
       const mergedFacts = this.mergeFacts(chunkFacts);
@@ -294,6 +252,127 @@ CHUNK TEXT:
 ${chunkText}
 
 JSON RESPONSE:`;
+  }
+
+  /**
+   * Process chunks with configurable parallel processing
+   */
+  private static async processChunks(
+    chunks: any[], 
+    styleGuide: StyleGuide, 
+    documentId: string, 
+    config: any,
+    onProgress?: (current: number, total: number) => void
+  ): Promise<ChunkFacts[]> {
+    const chunkFacts: ChunkFacts[] = [];
+    
+    if (config.enableParallelFactExtraction && config.chunking.parallelProcessing) {
+      // Parallel processing in batches
+      const batchSize = config.chunking.batchSize;
+      
+      for (let i = 0; i < chunks.length; i += batchSize) {
+        const batch = chunks.slice(i, i + batchSize);
+        const batchPromises = batch.map(async (chunk) => {
+          try {
+            const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);
+            return {
+              chunkId: chunk.id,
+              chunkIndex: chunk.chunkIndex,
+              facts: facts.facts,
+              parseSuccess: facts.parseSuccess,
+              rawResponse: facts.rawResponse,
+              error: facts.error,
+            };
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            return {
+              chunkId: chunk.id,
+              chunkIndex: chunk.chunkIndex,
+              facts: {},
+              parseSuccess: false,
+              rawResponse: '',
+              error: errorMessage,
+            };
+          }
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+        chunkFacts.push(...batchResults);
+        
+        // Update progress
+        onProgress?.(Math.min(i + batchSize, chunks.length), chunks.length);
+        
+        // Log batch completion
+        addLog({
+          level: 'info',
+          category: 'summarization',
+          message: `Completed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(chunks.length / batchSize)} (${batchResults.length} chunks)`,
+          details: { 
+            documentId,
+            batchSize: batchResults.length,
+            successful: batchResults.filter(r => r.parseSuccess).length
+          }
+        });
+        
+        // Small delay between batches to avoid overwhelming Ollama
+        if (i + batchSize < chunks.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    } else {
+      // Sequential processing (original behavior)
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        onProgress?.(i + 1, chunks.length);
+        
+        try {
+          const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);
+          chunkFacts.push({
+            chunkId: chunk.id,
+            chunkIndex: chunk.chunkIndex,
+            facts: facts.facts,
+            parseSuccess: facts.parseSuccess,
+            rawResponse: facts.rawResponse,
+            error: facts.error,
+          });
+          
+          addLog({
+            level: 'info',
+            category: 'summarization',
+            message: `Extracted facts from chunk ${i + 1}/${chunks.length}`,
+            details: { 
+              documentId, 
+              chunkId: chunk.id, 
+              parseSuccess: facts.parseSuccess,
+              factKeys: Object.keys(facts.facts)
+            }
+          });
+          
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          chunkFacts.push({
+            chunkId: chunk.id,
+            chunkIndex: chunk.chunkIndex,
+            facts: {},
+            parseSuccess: false,
+            rawResponse: '',
+            error: errorMessage,
+          });
+          
+          addLog({
+            level: 'error',
+            category: 'summarization',
+            message: `Failed to extract facts from chunk ${i + 1}/${chunks.length}`,
+            details: { documentId, chunkId: chunk.id, error: errorMessage }
+          });
+        }
+        
+        // Small delay to avoid overwhelming Ollama
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    return chunkFacts;
   }
 
   /**

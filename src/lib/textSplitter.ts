@@ -3,6 +3,8 @@
  * Implements smart paragraph splitting with fallback to fixed-size chunks
  */
 
+import { ChunkingConfigManager, type ChunkingConfig } from './chunkingConfig';
+
 export interface TextChunk {
   id: string;
   documentId: string;
@@ -12,23 +14,59 @@ export interface TextChunk {
   chunkIndex: number;
 }
 
+export interface ChunkingOptions {
+  chunkSize?: number;
+  overlap?: number;
+  maxChunks?: number;
+}
+
 export class TextSplitter {
   private static readonly DEFAULT_CHUNK_SIZE = 2500; // characters (~500 words)
   private static readonly OVERLAP_SIZE = 200; // characters overlap between chunks
 
   /**
-   * Split text into chunks using double newlines first, then fixed-size fallback
+   * Split text into chunks using current configuration
    */
-  static splitText(text: string, documentId: string): TextChunk[] {
+  static splitText(text: string, documentId: string, options?: ChunkingOptions): TextChunk[] {
+    const config = ChunkingConfigManager.getCurrentConfig().chunking;
+    const chunkSize = options?.chunkSize ?? config.chunkSize;
+    const overlap = options?.overlap ?? config.overlap;
+    const maxChunks = options?.maxChunks ?? config.maxChunks;
+
+    return this.splitTextWithConfig(text, documentId, { chunkSize, overlap, maxChunks });
+  }
+
+  /**
+   * Split text into chunks with specific configuration
+   */
+  static splitTextWithConfig(text: string, documentId: string, options: {
+    chunkSize: number;
+    overlap: number;
+    maxChunks?: number;
+  }): TextChunk[] {
     // First try paragraph splitting on double newlines
     const paragraphs = this.splitByParagraphs(text);
     
-    if (paragraphs.length > 1 && this.areGoodParagraphs(paragraphs)) {
-      return this.createChunksFromParagraphs(paragraphs, documentId);
+    if (paragraphs.length > 1 && this.areGoodParagraphs(paragraphs, options.chunkSize)) {
+      let chunks = this.createChunksFromParagraphs(paragraphs, documentId);
+      
+      // Apply max chunks limit if specified
+      if (options.maxChunks && chunks.length > options.maxChunks) {
+        chunks = this.limitChunks(chunks, options.maxChunks);
+      }
+      
+      return chunks;
     }
     
     // Fallback to fixed-size chunking
-    return this.createFixedSizeChunks(text, documentId);
+    let chunks = this.createFixedSizeChunks(text, documentId, options.chunkSize, options.overlap);
+    
+    // Apply max chunks limit if specified
+    if (options.maxChunks && chunks.length > options.maxChunks) {
+      chunks = this.limitChunks(chunks, options.maxChunks);
+    }
+    
+    return chunks;
   }
 
   /**
@@ -44,9 +82,9 @@ export class TextSplitter {
   /**
    * Check if paragraphs are reasonable sizes (not too short or too long)
    */
-  private static areGoodParagraphs(paragraphs: string[]): boolean {
-    const minParagraphLength = 200;
-    const maxParagraphLength = 4000;
+  private static areGoodParagraphs(paragraphs: string[], targetChunkSize: number): boolean {
+    const minParagraphLength = Math.max(200, targetChunkSize * 0.1);
+    const maxParagraphLength = targetChunkSize * 2;
     
     // At least 70% of paragraphs should be within reasonable size range
     const goodParagraphs = paragraphs.filter(para => 
@@ -87,19 +125,19 @@ export class TextSplitter {
   /**
    * Create fixed-size chunks with overlap
    */
-  private static createFixedSizeChunks(text: string, documentId: string): TextChunk[] {
+  private static createFixedSizeChunks(text: string, documentId: string, chunkSize: number, overlap: number): TextChunk[] {
     const chunks: TextChunk[] = [];
     let startIndex = 0;
     let chunkIndex = 0;
     
     while (startIndex < text.length) {
-      const endIndex = Math.min(startIndex + this.DEFAULT_CHUNK_SIZE, text.length);
+      const endIndex = Math.min(startIndex + chunkSize, text.length);
       
       // Try to break at word boundary if not at end of text
       let actualEndIndex = endIndex;
       if (endIndex < text.length) {
         const lastSpaceIndex = text.lastIndexOf(' ', endIndex);
-        if (lastSpaceIndex > startIndex + this.DEFAULT_CHUNK_SIZE * 0.8) {
+        if (lastSpaceIndex > startIndex + chunkSize * 0.8) {
           actualEndIndex = lastSpaceIndex;
         }
       }
@@ -119,13 +157,33 @@ export class TextSplitter {
       }
       
       // Move start position with overlap
-      startIndex = Math.max(actualEndIndex - this.OVERLAP_SIZE, actualEndIndex);
+      startIndex = Math.max(actualEndIndex - overlap, actualEndIndex);
       if (startIndex >= actualEndIndex) {
         startIndex = actualEndIndex;
       }
     }
     
     return chunks;
+  }
+
+  /**
+   * Limit chunks to maximum number by combining/selecting most important ones
+   */
+  private static limitChunks(chunks: TextChunk[], maxChunks: number): TextChunk[] {
+    if (chunks.length <= maxChunks) {
+      return chunks;
+    }
+
+    // For ultra-fast mode, we'll take evenly distributed chunks
+    const step = Math.floor(chunks.length / maxChunks);
+    const selectedChunks: TextChunk[] = [];
+
+    for (let i = 0; i < maxChunks; i++) {
+      const index = Math.min(i * step, chunks.length - 1);
+      selectedChunks.push(chunks[index]);
+    }
+
+    return selectedChunks;
   }
 
   /**
