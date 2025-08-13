@@ -3,150 +3,227 @@ import { useAppStore } from './store';
 import { FileUpload } from './components/FileUpload';
 
 function App() {
-  const { isDarkMode, documents } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'upload' | 'summarize' | 'chat' | 'library'>('upload');
-
-  const tabs = [
-    { id: 'upload', label: 'Upload', icon: '📄', description: 'Add documents to analyze' },
-    { id: 'summarize', label: 'Summarize', icon: '✨', description: 'Generate AI summaries' },
-    { id: 'chat', label: 'Chat', icon: '💬', description: 'Ask questions about content' },
-    { id: 'library', label: 'Library', icon: '📚', description: 'Browse your documents' }
-  ];
+  const { isDarkMode, documents, toggleDarkMode } = useAppStore();
+  const [selectedDocument, setSelectedDocument] = useState<any>(null);
+  const [chatInput, setChatInput] = useState('');
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
-      {/* Header */}
-      <div className="glass-panel-header sticky top-0 z-30">
+      {/* Single Pane Header */}
+      <div className="glass-panel-header sticky top-0 z-30 border-b border-teal-500/20">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
-            <h1 className="text-hierarchy-h3">Transcript Summarizer</h1>
-            <div className="hidden md:flex items-center space-x-1 text-sm text-gray-400">
-              <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-              <span>Local AI • Privacy First</span>
+            <h1 className="text-hierarchy-h2">Transcript Summarizer</h1>
+            <div className="flex items-center space-x-2 text-sm text-gray-400">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>Local AI Ready</span>
             </div>
           </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="tab-container px-6">
-          <div className="flex overflow-x-auto">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`tab-button flex items-center space-x-2 ${
-                  activeTab === tab.id ? 'active' : ''
-                }`}
-                title={tab.description}
-              >
-                <span className="text-lg">{tab.icon}</span>
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="hidden lg:inline text-xs text-gray-400">
-                  • {tab.description}
-                </span>
-              </button>
-            ))}
+          <div className="flex items-center space-x-3">
+            <span className="text-sm text-gray-400">{documents.length} documents</span>
+            <button
+              onClick={toggleDarkMode}
+              className="glass-button-secondary text-sm"
+            >
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="tab-content">
-        {activeTab === 'upload' && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h1 className="text-hierarchy-h1 mb-2">Upload Documents</h1>
-              <p className="text-body text-lg">
-                Start by uploading a document to analyze with AI
-              </p>
+      {/* Single Pane Grid Layout */}
+      <div className="p-4 h-[calc(100vh-100px)]">
+        <div className="grid grid-cols-3 gap-4 h-full">
+        
+          {/* Column 1: Upload & Documents */}
+          <div className="glass-pane p-4 flex flex-col">
+            {/* Compact Upload Section */}
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-teal-300 mb-3 flex items-center">
+                <span className="mr-2">📄</span>
+                Upload
+              </h3>
+              <FileUpload onUploadComplete={(success, message) => {
+                if (success) {
+                  console.log('File uploaded successfully:', message);
+                }
+              }} />
             </div>
-            <FileUpload onUploadComplete={(success, message) => {
-              if (success) {
-                console.log('File uploaded successfully:', message);
-              }
-            }} />
-            
-            {documents.length > 0 && (
-              <div className="glass-panel p-6">
-                <h2 className="text-hierarchy-h3 mb-4">Recent Documents</h2>
-                <div className="grid gap-3">
-                  {documents.slice(0, 3).map(doc => (
+
+            {/* Compact Document Library */}
+            <div className="flex-1 flex flex-col min-h-0">
+              <h3 className="text-lg font-semibold text-teal-300 mb-3 flex items-center">
+                <span className="mr-2">📚</span>
+                Documents ({documents.length})
+              </h3>
+              
+              {documents.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-500 text-sm">
+                  <div className="text-3xl mb-2 opacity-50">📁</div>
+                  <p>No documents</p>
+                </div>
+              ) : (
+                <div className="flex-1 space-y-1 overflow-y-auto">
+                  {documents.map(doc => (
                     <div
                       key={doc.id}
-                      className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer"
+                      className={`p-2 rounded border cursor-pointer transition-all text-sm ${
+                        selectedDocument?.id === doc.id
+                          ? 'bg-teal-500/20 border-teal-500/50 shadow-sm'
+                          : 'bg-gray-800/30 border-gray-700/30 hover:bg-gray-700/40'
+                      }`}
+                      onClick={() => setSelectedDocument(doc)}
                     >
-                      <div className="flex items-center space-x-3">
-                        <span className="text-2xl">📄</span>
-                        <div>
-                          <p className="text-white font-medium">Document {doc.id.slice(0, 8)}</p>
-                          <p className="text-gray-400 text-sm">
-                            {doc.metadata?.wordCount?.toLocaleString() || 0} words
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm">📄</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium truncate text-xs">
+                            Doc {doc.id.slice(0, 6)}
+                          </p>
+                          <p className="text-gray-400 text-xs">
+                            {(doc.metadata?.wordCount || 0).toLocaleString()} words
                           </p>
                         </div>
+                        {selectedDocument?.id === doc.id && (
+                          <div className="w-1.5 h-1.5 bg-teal-400 rounded-full"></div>
+                        )}
                       </div>
-                      <button className="glass-button-primary text-sm">
-                        Analyze →
-                      </button>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Column 2: Summary & Analysis */}
+          <div className="glass-pane p-4 flex flex-col">
+            <h3 className="text-lg font-semibold text-teal-300 mb-3 flex items-center">
+              <span className="mr-2">✨</span>
+              AI Summary
+            </h3>
+            
+            {!selectedDocument ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                <div className="text-4xl mb-3 opacity-50">🎯</div>
+                <p className="text-sm">Select a document to analyze</p>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col space-y-3 min-h-0">
+                {/* Document Header */}
+                <div className="bg-gray-800/40 p-3 rounded-lg border border-teal-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white font-medium text-sm">Doc {selectedDocument.id.slice(0, 6)}</span>
+                    <button className="glass-button-primary text-xs px-3 py-1">
+                      Generate
+                    </button>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {(selectedDocument.metadata?.wordCount || 0).toLocaleString()} words
+                  </div>
+                </div>
+                
+                {/* Summary Content Area */}
+                <div className="flex-1 bg-gray-800/20 p-3 rounded-lg border border-gray-700/30 overflow-y-auto min-h-0">
+                  <div className="space-y-3">
+                    <div className="border-l-2 border-teal-500 pl-3">
+                      <h4 className="text-white font-medium mb-1 text-sm text-teal-300">Key Takeaways</h4>
+                      <div className="text-gray-400 text-xs space-y-1">
+                        <p>• Generate summary for insights</p>
+                        <p>• Techniques will appear here</p>
+                        <p>• Action items extracted</p>
+                      </div>
+                    </div>
+
+                    <div className="border-l-2 border-purple-400 pl-3">
+                      <h4 className="text-white font-medium mb-1 text-sm text-purple-300">Techniques</h4>
+                      <div className="text-gray-400 text-xs">
+                        <p>Methods and strategies identified</p>
+                      </div>
+                    </div>
+
+                    <div className="border-l-2 border-orange-400 pl-3">
+                      <h4 className="text-white font-medium mb-1 text-sm text-orange-300">Action Items</h4>
+                      <div className="text-gray-400 text-xs">
+                        <p>Actionable tasks extracted</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-1">
+                  <button className="glass-button-secondary text-xs flex-1 py-1">Export</button>
+                  <button className="glass-button-secondary text-xs flex-1 py-1">Copy</button>
+                  <button className="glass-button-secondary text-xs flex-1 py-1">A/B</button>
                 </div>
               </div>
             )}
           </div>
-        )}
 
-        {activeTab === 'summarize' && (
-          <div className="glass-panel p-8 text-center">
-            <h2 className="text-hierarchy-h2 mb-4">AI Summary</h2>
-            <p className="text-body mb-6">
-              Select a document from the library to generate AI summaries and insights.
-            </p>
-            <button className="glass-button-primary">
-              ✨ Generate Summary
-            </button>
-          </div>
-        )}
+          {/* Column 3: Chat Interface */}
+          <div className="glass-pane p-4 flex flex-col">
+            <h3 className="text-lg font-semibold text-teal-300 mb-3 flex items-center">
+              <span className="mr-2">💬</span>
+              AI Chat
+            </h3>
+            
+            {!selectedDocument ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+                <div className="text-4xl mb-3 opacity-50">🤖</div>
+                <p className="text-sm">Select a document to chat</p>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col min-h-0">
+                {/* Chat Messages */}
+                <div className="flex-1 bg-gray-800/20 rounded-lg p-3 mb-3 overflow-y-auto border border-gray-700/30 min-h-0">
+                  <div className="space-y-2">
+                    <div className="bg-teal-500/20 p-2 rounded border border-teal-500/30">
+                      <div className="text-xs text-teal-400 mb-1">AI Assistant</div>
+                      <div className="text-white text-xs">
+                        Ready to answer questions about Doc {selectedDocument.id.slice(0, 6)}. What would you like to know?
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-        {activeTab === 'chat' && (
-          <div className="glass-panel p-8 text-center">
-            <h2 className="text-hierarchy-h2 mb-4">AI Chat</h2>
-            <p className="text-body mb-6">
-              Ask questions about your document content with our AI assistant.
-            </p>
-            <div className="glass-input max-w-2xl mx-auto mb-4">
-              <input 
-                type="text" 
-                placeholder="Ask a question about your documents..."
-                className="w-full bg-transparent text-white placeholder-gray-400 border-0 outline-none"
-              />
-            </div>
-            <button className="glass-button-primary">
-              💬 Send Message
-            </button>
-          </div>
-        )}
-
-        {activeTab === 'library' && (
-          <div className="glass-panel p-8 text-center">
-            <h2 className="text-hierarchy-h2 mb-4">Document Library</h2>
-            <p className="text-body mb-6">
-              Manage and organize your uploaded documents.
-            </p>
-            <div className="text-2xl text-teal-400 font-bold mb-2">{documents.length}</div>
-            <div className="text-sm text-gray-400">documents uploaded</div>
-          </div>
-        )}
-      </div>
-
-      {/* Status Bar */}
-      <div className="fixed bottom-0 left-0 right-0 glass-panel-header px-6 py-2 z-20">
-        <div className="flex items-center justify-between text-xs text-gray-400">
-          <div className="flex items-center space-x-4">
-            <span>{documents.length} documents</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span>Local AI Ready</span>
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                {/* Chat Input */}
+                <div className="space-y-2">
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Ask about this document..."
+                      className="flex-1 glass-input text-xs py-2"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && chatInput.trim()) {
+                          setChatInput('');
+                        }
+                      }}
+                    />
+                    <button 
+                      className="glass-button-primary text-xs px-3"
+                      disabled={!chatInput.trim()}
+                    >
+                      Send
+                    </button>
+                  </div>
+                  
+                  {/* Quick Questions */}
+                  <div className="flex flex-wrap gap-1">
+                    {['Key points?', 'Techniques?', 'Actions?'].map((q, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setChatInput(q)}
+                        className="glass-button-secondary text-xs py-1 px-2 hover:bg-teal-500/20"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

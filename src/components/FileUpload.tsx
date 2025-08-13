@@ -113,7 +113,7 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
       {/* Drag and Drop Area */}
       <div
         className={`
-          upload-zone p-8 text-center cursor-pointer
+          upload-zone p-4 text-center cursor-pointer text-sm
           ${isDragOver ? 'dragover' : ''}
           ${isProcessing ? 'opacity-50 pointer-events-none' : ''}
         `}
@@ -131,37 +131,29 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
           className="hidden"
         />
         
-        <div className="space-y-4">
-          <div className="text-4xl">
+                <div className="space-y-2">
+          <div className="text-2xl">
             {isProcessing ? '⏳' : isDragOver ? '📂' : '📁'}
           </div>
           
           {isProcessing ? (
-            <div className="space-y-2">
-              <p className="text-gray-300 font-medium">
-                Processing: {processingFile}
-              </p>
-              <div className="w-full bg-gray-600 rounded-full h-2">
-                <div className="bg-blue-400 h-2 rounded-full animate-pulse w-1/2"></div>
+            <div className="space-y-1">
+              <p className="text-gray-300 text-xs">Processing...</p>
+              <div className="w-full bg-gray-600 rounded-full h-1">
+                <div className="bg-teal-400 h-1 rounded-full animate-pulse w-1/2"></div>
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
-              <p className="text-gray-300 mb-4">
+            <div className="space-y-1">
+              <p className="text-gray-300 text-xs">
                 {isDragOver 
-                  ? 'Drop files here to upload' 
-                  : 'Drag and drop files here, or click to browse'
+                  ? 'Drop files here' 
+                  : 'Drop files or click'
                 }
               </p>
-              <div className="flex items-center justify-center">
-                <p className="text-sm text-gray-400">
-                  Supported formats: .docx, .txt, .md, .srt, .vtt
-                </p>
-                <HelpTooltip 
-                  content="Upload teaching transcripts, documents, or subtitle files. Files should be between 100KB and 50MB. All processing happens locally on your machine - your documents never leave your computer."
-                  position="bottom"
-                />
-              </div>
+              <p className="text-gray-500 text-xs">
+                .docx, .txt, .md, .srt, .vtt
+              </p>
             </div>
           )}
         </div>
