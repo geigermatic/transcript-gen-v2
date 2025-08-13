@@ -84,6 +84,7 @@ export class DocumentProcessor {
     const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
     
     return {
+      filename: file.name,
       dateAdded: new Date().toISOString(),
       fileSize: file.size,
       fileType: file.type || 'unknown',
@@ -99,6 +100,7 @@ export class DocumentProcessor {
       tags: [], // Placeholder for future tagging functionality
       text: processedData.text,
       metadata: processedData.metadata,
+      uploadedAt: new Date().toISOString(),
     };
 
     this.addLog('info', `Created document record`, {

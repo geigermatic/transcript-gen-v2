@@ -168,10 +168,10 @@ export const DevConsole: React.FC<DevConsoleProps> = ({
 
   return (
     <div
-      className={`fixed bg-black/90 backdrop-blur-xl border-l border-white/20 z-40 flex flex-col ${
+      className={`fixed glass-card z-40 flex flex-col ${
         position === 'right' 
-          ? 'top-0 right-0 h-full' 
-          : 'bottom-0 left-0 w-full'
+          ? 'top-6 right-6 bottom-6 border-l-0' 
+          : 'bottom-6 left-6 right-6 border-t-0'
       }`}
       style={consoleStyle}
     >

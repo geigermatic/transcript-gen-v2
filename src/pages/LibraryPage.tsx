@@ -30,10 +30,10 @@ export function LibraryPage() {
     
     const query = searchQuery.toLowerCase();
     return documents.filter(doc => 
-      doc.title.toLowerCase().includes(query) ||
+      (doc.title?.toLowerCase() || doc.filename.toLowerCase()).includes(query) ||
       doc.filename.toLowerCase().includes(query) ||
       doc.text.toLowerCase().includes(query) ||
-      doc.tags.some(tag => tag.toLowerCase().includes(query))
+      (doc.tags || []).some(tag => tag.toLowerCase().includes(query))
     );
   }, [documents, searchQuery]);
 

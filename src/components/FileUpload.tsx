@@ -113,9 +113,10 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
       {/* Drag and Drop Area */}
       <div
         className={`
-          upload-zone p-4 text-center cursor-pointer text-sm
-          ${isDragOver ? 'dragover' : ''}
+          glass-card p-6 text-center cursor-pointer border-dashed border-white/30
+          ${isDragOver ? 'border-accent bg-accent/10' : ''}
           ${isProcessing ? 'opacity-50 pointer-events-none' : ''}
+          transition-all duration-200
         `}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}

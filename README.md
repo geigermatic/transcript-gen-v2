@@ -68,12 +68,14 @@ A privacy-focused, browser-based application for summarizing teaching transcript
 ## Tech Stack
 
 - **Frontend:** Vite + React + TypeScript
-- **Styling:** TailwindCSS with glassmorphic design
+- **Styling:** TailwindCSS with world-class glassmorphic design
 - **Routing:** React Router
 - **State:** Zustand with persistence
 - **LLM:** Ollama (local)
 - **Document parsing:** Mammoth.js
 - **Storage:** localStorage (Phase 1) → SQLite/OPFS (Phase 2)
+- **Icons:** Lucide React
+- **Fonts:** Inter (with system fallbacks)
 
 ## Privacy & Security
 
@@ -88,69 +90,134 @@ A privacy-focused, browser-based application for summarizing teaching transcript
 - `npm run lint` - Run ESLint
 - `npm run check-ollama` - Verify Ollama connection
 
-## UI Design System (Glassmorphic)
+## Design System
 
-### Core Glass Components
+### World-Class Glassmorphic Design
 
-The application uses a comprehensive glassmorphic design system with the following components:
+The application features a premium glassmorphic design system inspired by Linear.app, Framer, and Vercel, with carefully crafted components that prioritize both aesthetics and accessibility.
 
-#### Base Components
+#### Core Design Tokens
+
+**Typography**
+- **Font:** Inter (with system fallbacks)
+- **Scale:** Display (4xl), Title (2xl), Heading (xl), Body (base), Caption (sm), Label (sm medium)
+- **Line Height:** 1.65 for prose content
+
+**Colors**
+- **Accent:** `#7C8CFF` (primary), `#8B99FF` (hover), `#6977E6` (active)
+- **Background:** Radial gradient from `#0F172A` to teal-violet (`#6EE7F9` → `#7C8CFF`)
+- **Text:** White with opacity variants (100%, 80%, 70%, 60%, 40%)
+
+**Border Radius**
+- `md: 8px` - Small elements
+- `lg: 12px` - Medium elements  
+- `xl: 16px` - Large elements
+- `2xl: 20px` - Cards and major surfaces (default)
+
+**Shadows**
+- `soft: 0 8px 40px rgba(0,0,0,0.20)` - Elevation
+- `inner: inset 0 1px 0 rgba(255,255,255,0.18)` - Inset highlights
+- `glass: 0 8px 40px rgba(0,0,0,0.25)` - Glass surfaces
+
+#### Glass Component System
+
+**Core Components**
 ```css
-.glass-panel           /* Core glass panel with backdrop blur */
-.glass-panel-header    /* Header panel with gradient */
-.glass-modal          /* Modal dialog panels */
-.glass-nav            /* Navigation components */
+.glass-card      /* Main content containers with backdrop blur */
+.glass-header    /* Navigation and header surfaces */
+.glass-input     /* Form inputs with focus states */
+.glass-button    /* Primary action buttons */
+.ghost-button    /* Secondary/tertiary actions */
+.accent-button   /* Primary CTAs with accent gradient */
 ```
 
-#### Interactive Components
+**Specialized Components**
 ```css
-.glass-button         /* Primary glass button */
-.glass-button-primary /* Accent color button */
-.glass-button-secondary /* Secondary button style */
-.glass-card           /* Hoverable card with animation */
-.glass-input          /* Glass-styled input fields */
+.nav-item        /* Navigation items with active states */
+.chat-bubble     /* Chat message containers */
+.tag-badge       /* Metadata tags and labels */
+.status-indicator/* Status and connection indicators */
+.drop-zone       /* File upload dropzones */
+.progress-bar    /* Progress indicators */
 ```
 
-#### Typography Hierarchy
-```css
-.text-hierarchy-h1    /* 4xl font-bold text-white leading-tight */
-.text-hierarchy-h2    /* 3xl font-semibold text-white leading-snug */
-.text-hierarchy-h3    /* 2xl font-semibold text-white leading-normal */
-.text-hierarchy-h4    /* xl font-medium text-white leading-relaxed */
-.text-body            /* text-gray-300 leading-relaxed */
-.text-body-large      /* lg text-gray-300 leading-loose */
+#### Interaction Guidelines
+
+**Hover Effects**
+- Subtle elevation with `-translate-y-px`
+- Enhanced shadow and background opacity
+- Smooth transitions (200ms cubic-bezier)
+
+**Active States**
+- Gentle press with `translate-y-px`
+- Reduced shadow for pressed feeling
+- Immediate visual feedback
+
+**Focus States**
+- Clear focus rings with `ring-2 ring-white/40`
+- High contrast for accessibility (AA compliant)
+- Visible indicators for keyboard navigation
+
+#### Accessibility Standards
+
+**Color Contrast**
+- Text meets WCAG AA standards (4.5:1 minimum)
+- Interactive elements have clear visual hierarchy
+- Status indicators use multiple cues (color + icon + text)
+
+**Motion Respect**
+- Respects `prefers-reduced-motion`
+- Subtle animations that enhance without overwhelming
+- Consistent timing and easing functions
+
+**Keyboard Navigation**
+- All interactive elements are keyboard accessible
+- Logical tab order throughout the interface
+- Clear focus indicators for all controls
+
+#### Do's and Don'ts
+
+✅ **Do's**
+- Use the defined component classes for consistency
+- Maintain the established visual hierarchy
+- Test all interactions in reduced motion mode
+- Ensure proper contrast ratios for all text
+- Use Inter font for all text content
+
+❌ **Don'ts**
+- Don't use inline styles (Tailwind classes only)
+- Don't create custom glass effects outside the system
+- Don't compromise accessibility for visual appeal
+- Don't use animations longer than 300ms
+- Don't mix other design systems with this one
+
+#### Component Usage Examples
+
+**Basic Card**
+```tsx
+<div className="glass-card p-6">
+  <h2 className="text-heading mb-4">Card Title</h2>
+  <p className="text-body">Card content</p>
+</div>
 ```
 
-#### Design Tokens
-```javascript
-// Tailwind config extensions
-colors: {
-  glass: {
-    light: 'rgba(255, 255, 255, 0.1)',
-    lighter: 'rgba(255, 255, 255, 0.2)',
-    dark: 'rgba(255, 255, 255, 0.05)',
-    accent: '#3b82f6',
-    'accent-hover': '#2563eb',
-  }
-}
-
-boxShadow: {
-  'glass': '0 8px 40px rgba(0, 0, 0, 0.25)',
-  'glass-hover': '0 12px 48px rgba(0, 0, 0, 0.35)',
-}
-
-backdropBlur: {
-  'glass': '16px',
-}
+**Interactive Button**
+```tsx
+<button className="accent-button focus-visible">
+  <Icon size={16} className="mr-2" />
+  Primary Action
+</button>
 ```
 
-### Usage Guidelines
+**Form Input**
+```tsx
+<input 
+  className="glass-input w-full focus-visible" 
+  placeholder="Enter text..."
+/>
+```
 
-1. **Consistency**: Use glass components for all UI elements
-2. **Hierarchy**: Follow typography scale for content structure
-3. **Accessibility**: Maintain contrast ratios in light/dark modes
-4. **Responsiveness**: All components work from mobile to desktop
-5. **Performance**: Backdrop blur optimized for modern browsers
+This design system ensures a consistent, accessible, and premium user experience across the entire application.
 
 ## Developer Observability
 

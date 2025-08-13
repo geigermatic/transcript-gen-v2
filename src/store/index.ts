@@ -243,24 +243,40 @@ export const useAppStore = create<AppState>()(
         // Convert Maps to objects for storage
         embeddings: Object.fromEntries(state.embeddings),
       }),
-      // Custom serialization for Maps
-      serialize: (state) => {
-        const serializedState = {
-          ...state,
-          state: {
-            ...state.state,
-            embeddings: Object.fromEntries(state.state.embeddings || new Map()),
+      // Modern storage configuration with custom serialization for Maps
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name);
+          if (!str) return null;
+          
+          try {
+            const parsed = JSON.parse(str);
+            if (parsed.state?.embeddings) {
+              parsed.state.embeddings = new Map(Object.entries(parsed.state.embeddings));
+            }
+            return parsed;
+          } catch (error) {
+            console.warn('Failed to parse stored state:', error);
+            return null;
           }
-        };
-        return JSON.stringify(serializedState);
-      },
-      // Custom deserialization for Maps
-      deserialize: (str) => {
-        const parsed = JSON.parse(str);
-        if (parsed.state?.embeddings) {
-          parsed.state.embeddings = new Map(Object.entries(parsed.state.embeddings));
-        }
-        return parsed;
+        },
+        setItem: (name, value) => {
+          try {
+            const serializedState = {
+              ...value,
+              state: {
+                ...value.state,
+                embeddings: value.state.embeddings instanceof Map 
+                  ? Object.fromEntries(value.state.embeddings) 
+                  : {},
+              }
+            };
+            localStorage.setItem(name, JSON.stringify(serializedState));
+          } catch (error) {
+            console.warn('Failed to store state:', error);
+          }
+        },
+        removeItem: (name) => localStorage.removeItem(name),
       },
     }
   )

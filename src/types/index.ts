@@ -10,9 +10,11 @@ export interface Document {
   tags: string[];
   text: string;
   metadata: DocumentMetadata;
+  uploadedAt: string; // ISO date string
 }
 
 export interface DocumentMetadata {
+  filename: string;
   dateAdded: string;
   fileSize: number;
   fileType: string;
