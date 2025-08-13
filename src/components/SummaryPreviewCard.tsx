@@ -3,6 +3,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Copy, Check, FileText, Clock, Database } from 'lucide-react';
 import { logInfo } from '../lib/logger';
 
@@ -134,9 +136,61 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
         ) : summary ? (
           <div className="content-area">
             <div className="prose prose-gray max-w-none">
-              <div className="text-gray-800 leading-relaxed whitespace-pre-line">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h1: ({ children }) => (
+                    <h1 className="text-xl font-bold text-gray-900 mb-3 mt-0">{children}</h1>
+                  ),
+                  h2: ({ children }) => (
+                    <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-4 first:mt-0">{children}</h2>
+                  ),
+                  h3: ({ children }) => (
+                    <h3 className="text-base font-medium text-gray-800 mb-2 mt-3">{children}</h3>
+                  ),
+                  h4: ({ children }) => (
+                    <h4 className="text-sm font-medium text-gray-800 mb-1 mt-2">{children}</h4>
+                  ),
+                  p: ({ children }) => (
+                    <p className="text-gray-700 mb-3 leading-relaxed">{children}</p>
+                  ),
+                  ul: ({ children }) => (
+                    <ul className="text-gray-700 mb-3 space-y-1">{children}</ul>
+                  ),
+                  ol: ({ children }) => (
+                    <ol className="text-gray-700 mb-3 space-y-1 list-decimal list-inside">{children}</ol>
+                  ),
+                  li: ({ children }) => (
+                    <li className="text-gray-700 flex items-start">
+                      <span className="text-blue-500 mr-2">•</span>
+                      <span>{children}</span>
+                    </li>
+                  ),
+                  blockquote: ({ children }) => (
+                    <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-600 my-3 bg-blue-50 py-2">
+                      {children}
+                    </blockquote>
+                  ),
+                  strong: ({ children }) => (
+                    <strong className="text-gray-900 font-semibold">{children}</strong>
+                  ),
+                  em: ({ children }) => (
+                    <em className="text-gray-700 italic">{children}</em>
+                  ),
+                  code: ({ children }) => (
+                    <code className="bg-gray-100 text-blue-700 px-2 py-1 rounded text-sm font-mono">
+                      {children}
+                    </code>
+                  ),
+                  pre: ({ children }) => (
+                    <pre className="bg-gray-100 text-gray-800 p-3 rounded-lg overflow-x-auto mb-3 font-mono text-sm">
+                      {children}
+                    </pre>
+                  ),
+                }}
+              >
                 {summary}
-              </div>
+              </ReactMarkdown>
             </div>
           </div>
         ) : (

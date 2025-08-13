@@ -3,6 +3,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import { ABSummaryEngine } from '../lib/abSummaryEngine';
@@ -75,18 +77,7 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
     }
   };
 
-  const renderMarkdown = (text: string) => {
-    // Simple markdown rendering
-    return text
-      .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold text-white mb-4">$1</h1>')
-      .replace(/^## (.*$)/gm, '<h2 class="text-xl font-semibold text-white mb-3">$1</h2>')
-      .replace(/^### (.*$)/gm, '<h3 class="text-lg font-medium text-white mb-2">$1</h3>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em class="text-gray-300">$1</em>')
-      .replace(/\n\n/g, '</p><p class="text-body mb-4">')
-      .replace(/^/, '<p class="text-body mb-4">')
-      .replace(/$/, '</p>');
-  };
+
 
   if (!selectedDocument) {
     return (
@@ -219,10 +210,63 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
           {/* Content */}
           <div className="p-6">
             {selectedTab === 'summary' && (
-              <div 
-                className="prose prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(summaryResult.summary) }}
-              />
+              <div className="prose prose-invert max-w-none">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ children }) => (
+                      <h1 className="text-2xl font-bold text-white mb-4 mt-0">{children}</h1>
+                    ),
+                    h2: ({ children }) => (
+                      <h2 className="text-xl font-semibold text-white mb-3 mt-6 first:mt-0">{children}</h2>
+                    ),
+                    h3: ({ children }) => (
+                      <h3 className="text-lg font-medium text-white mb-2 mt-4">{children}</h3>
+                    ),
+                    h4: ({ children }) => (
+                      <h4 className="text-base font-medium text-white mb-2 mt-3">{children}</h4>
+                    ),
+                    p: ({ children }) => (
+                      <p className="text-gray-300 mb-4 leading-relaxed">{children}</p>
+                    ),
+                    ul: ({ children }) => (
+                      <ul className="text-gray-300 mb-4 space-y-1">{children}</ul>
+                    ),
+                    ol: ({ children }) => (
+                      <ol className="text-gray-300 mb-4 space-y-1 list-decimal list-inside">{children}</ol>
+                    ),
+                    li: ({ children }) => (
+                      <li className="text-gray-300 flex items-start">
+                        <span className="text-blue-400 mr-2">•</span>
+                        <span>{children}</span>
+                      </li>
+                    ),
+                    blockquote: ({ children }) => (
+                      <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-300 my-4 bg-blue-500 bg-opacity-10 py-2">
+                        {children}
+                      </blockquote>
+                    ),
+                    strong: ({ children }) => (
+                      <strong className="text-white font-semibold">{children}</strong>
+                    ),
+                    em: ({ children }) => (
+                      <em className="text-gray-200 italic">{children}</em>
+                    ),
+                    code: ({ children }) => (
+                      <code className="bg-gray-800 text-blue-300 px-2 py-1 rounded text-sm font-mono">
+                        {children}
+                      </code>
+                    ),
+                    pre: ({ children }) => (
+                      <pre className="bg-gray-900 text-gray-200 p-4 rounded-lg overflow-x-auto mb-4 font-mono text-sm">
+                        {children}
+                      </pre>
+                    ),
+                  }}
+                >
+                  {summaryResult.markdownSummary}
+                </ReactMarkdown>
+              </div>
             )}
 
             {selectedTab === 'facts' && (

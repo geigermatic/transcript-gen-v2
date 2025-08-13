@@ -31,13 +31,21 @@ export class ChatEngine {
     const { addLog, getAllEmbeddings } = useAppStore.getState();
     const startTime = Date.now();
     
+    // Check for format requirements
+    const formatRequirements = this.detectFormatRequirements(query);
+    const hasFormatRequirements = formatRequirements.length > 0;
+
     addLog({
       level: 'info',
       category: 'chat',
       message: `Processing user query: "${query.substring(0, 100)}${query.length > 100 ? '...' : ''}"`,
       details: { 
         queryLength: query.length,
-        contextMessages: context.messages.length
+        contextMessages: context.messages.length,
+        hasSummaryContext: !!context.selectedDocumentSummary,
+        summaryLength: context.selectedDocumentSummary?.length || 0,
+        hasFormatRequirements,
+        formatRequirements: hasFormatRequirements ? formatRequirements.trim() : null
       }
     });
 
@@ -218,6 +226,50 @@ export class ChatEngine {
   /**
    * Build the grounded prompt with context and sources
    */
+  /**
+   * Detect specific format requirements in user query
+   */
+  private static detectFormatRequirements(query: string): string {
+    const requirements = [];
+    
+    // Detect sentence count requirements
+    const sentenceMatch = query.match(/(\d+)\s+sentences?/i);
+    if (sentenceMatch) {
+      const count = sentenceMatch[1];
+      requirements.push(`- You MUST write exactly ${count} sentences. Count each sentence carefully.`);
+      requirements.push(`- End each sentence with a period. Do not exceed ${count} sentences.`);
+    }
+    
+    // Detect bullet point requirements
+    if (/bullet\s+points?|bulleted?\s+list/i.test(query)) {
+      requirements.push(`- Format as bullet points using "•" symbols`);
+      requirements.push(`- One main idea per bullet point`);
+    }
+    
+    // Detect paragraph requirements
+    const paragraphMatch = query.match(/(\d+)\s+paragraphs?/i);
+    if (paragraphMatch) {
+      const count = paragraphMatch[1];
+      requirements.push(`- Write exactly ${count} paragraphs separated by blank lines`);
+    }
+    
+    // Detect word count requirements
+    const wordMatch = query.match(/(\d+)\s+words?/i);
+    if (wordMatch) {
+      const count = wordMatch[1];
+      requirements.push(`- Write approximately ${count} words. Be concise and precise.`);
+    }
+    
+    // Detect synopsis/summary length requirements
+    if (/synopsis|brief|concise|short/i.test(query)) {
+      requirements.push(`- Be concise and direct. Avoid unnecessary elaboration.`);
+    }
+    
+    return requirements.length > 0 
+      ? `CRITICAL FORMAT REQUIREMENTS:\n${requirements.join('\n')}\n\n`
+      : '';
+  }
+
   private static buildGroundedPrompt(
     query: string,
     context: ChatContext,
@@ -242,9 +294,22 @@ export class ChatEngine {
       )
       .join('\n\n');
 
-    return `You are a helpful AI assistant answering questions about teaching transcripts. You must ONLY answer based on the provided source excerpts.
+    // Add summary context if available
+    const summarySection = context.selectedDocumentSummary 
+      ? `GENERATED SUMMARY:
+${context.selectedDocumentSummary}
 
-STYLE GUIDE:
+NOTE: When the user refers to "the summary", "the generated summary", or "this summary", they mean the above GENERATED SUMMARY section.
+
+`
+      : '';
+
+    // Detect format requirements in the user's query
+    const formatRequirements = this.detectFormatRequirements(query);
+
+    return `You are a helpful AI assistant answering questions about teaching transcripts. You must answer based on the provided source excerpts and any generated summary.
+
+${summarySection}${formatRequirements}STYLE GUIDE:
 ${styleInstructions}
 
 Tone Settings:
@@ -262,15 +327,20 @@ ${contextMessages}
 SOURCE EXCERPTS:
 ${sourceChunks}
 
-STRICT RULES:
-1. Answer ONLY based on the provided source excerpts
-2. If the sources don't contain relevant information, say "I don't have enough information in the provided sources to answer that question."
-3. Reference specific sources when possible (e.g., "According to Source 1...")
-4. Apply the style guide to your response
-5. Be helpful and direct
-6. Do not make up information or use external knowledge
+RULES:
+1. Answer based on the provided source excerpts${context.selectedDocumentSummary ? ' and generated summary' : ''}
+2. When users reference "the summary" or "the generated summary", use the GENERATED SUMMARY section above
+3. You can work with the summary (rewrite it, extract from it, compare it to sources, etc.)
+4. If the sources and summary don't contain relevant information, say "I don't have enough information to answer that question."
+5. Reference specific sources when possible (e.g., "According to Source 1...")
+6. Apply the style guide to your response
+7. Be helpful and direct
+8. NEVER include individual names from the transcript - use generic terms like "the instructor", "the teacher", "the speaker", "a student", "a participant"
+${formatRequirements ? '9. STRICTLY follow the CRITICAL FORMAT REQUIREMENTS above - count sentences, use exact formatting, respect word limits' : ''}
 
 HUMAN QUESTION: ${query}
+
+${formatRequirements ? 'REMINDER: Follow the format requirements exactly. Count your output before responding.' : ''}
 
 ASSISTANT RESPONSE:`;
   }

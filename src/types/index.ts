@@ -172,7 +172,12 @@ export interface ChatMessage {
 
 export interface ChatContext {
   messages: ChatMessage[];
-  maxContextLength: number;
+  documentIds?: string[];
+  activeDocument?: Document | null;
+  maxContextLength?: number;
+  // Summary context for referencing generated summaries
+  selectedDocumentSummary?: string;
+  availableSummaries?: ABSummaryPair[];
 }
 
 export interface ChatResponse {

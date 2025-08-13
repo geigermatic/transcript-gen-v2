@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { ABSummaryEngine } from '../lib/abSummaryEngine';
 import { ExportOptions } from './ExportOptions';
 import type { ABSummaryPair, SummarizationResult } from '../types';
@@ -80,19 +82,50 @@ export const ABSummaryComparison: React.FC<ABSummaryComparisonProps> = ({
 
         {/* Summary Content */}
         <div className="prose prose-invert prose-sm max-w-none">
-          <div 
-            className="text-gray-300 leading-relaxed"
-            dangerouslySetInnerHTML={{ 
-              __html: summary.markdownSummary
-                .replace(/^### /gm, '<h3 class="text-white font-semibold mt-4 mb-2">')
-                .replace(/^## /gm, '<h2 class="text-white font-semibold text-lg mt-4 mb-2">')
-                .replace(/^# /gm, '<h1 class="text-white font-bold text-xl mt-4 mb-2">')
-                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/^- /gm, '• ')
-                .split('\n').map(line => line.trim()).filter(Boolean).join('<br/>')
+          <div className="text-gray-300 leading-relaxed">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+            components={{
+              h1: ({ children }) => (
+                <h1 className="text-white font-bold text-xl mt-4 mb-2 first:mt-0">{children}</h1>
+              ),
+              h2: ({ children }) => (
+                <h2 className="text-white font-semibold text-lg mt-4 mb-2 first:mt-0">{children}</h2>
+              ),
+              h3: ({ children }) => (
+                <h3 className="text-white font-semibold mt-4 mb-2">{children}</h3>
+              ),
+              p: ({ children }) => (
+                <p className="text-gray-300 mb-3 leading-relaxed">{children}</p>
+              ),
+              ul: ({ children }) => (
+                <ul className="text-gray-300 mb-3 space-y-1">{children}</ul>
+              ),
+              ol: ({ children }) => (
+                <ol className="text-gray-300 mb-3 space-y-1 list-decimal list-inside">{children}</ol>
+              ),
+              li: ({ children }) => (
+                <li className="text-gray-300 flex items-start">
+                  <span className="text-blue-400 mr-2">•</span>
+                  <span>{children}</span>
+                </li>
+              ),
+              strong: ({ children }) => (
+                <strong className="text-white font-semibold">{children}</strong>
+              ),
+              em: ({ children }) => (
+                <em className="text-gray-200 italic">{children}</em>
+              ),
+              code: ({ children }) => (
+                <code className="bg-gray-800 text-blue-300 px-1 py-0.5 rounded text-sm font-mono">
+                  {children}
+                </code>
+              ),
             }}
-          />
+                      >
+              {summary.markdownSummary}
+            </ReactMarkdown>
+          </div>
         </div>
 
         {/* Stats */}

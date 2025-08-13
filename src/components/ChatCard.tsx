@@ -22,7 +22,7 @@ interface ChatCardProps {
 }
 
 export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMessage }) => {
-  const { embeddings, styleGuide, documents } = useAppStore();
+  const { embeddings, styleGuide, documents, abSummaryPairs } = useAppStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -35,12 +35,30 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
       const welcomeMessage: ChatMessage = {
         id: 'welcome',
         role: 'assistant',
-        content: '👋 Hi! I\'m your AI assistant. Upload some documents and I\'ll help you ask questions about their content, find specific information, and discuss the topics covered.',
+        content: '👋 Hi! I\'m your AI assistant. Upload some documents and I\'ll help you ask questions about their content, find specific information, and discuss the topics covered. If you have a generated summary, you can reference it by saying "the summary" or "the generated summary".',
         timestamp: new Date().toISOString()
       };
       setMessages([welcomeMessage]);
     }
   }, [messages.length]);
+
+  // Helper function to get the current summary
+  const getSelectedDocumentSummary = () => {
+    if (!selectedDocument) return null;
+    
+    const recentSummary = abSummaryPairs
+      .filter(pair => pair.documentId === selectedDocument.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+      
+    return recentSummary?.summaryA?.markdownSummary || null;
+  };
+
+  // Helper function to get available summaries for context
+  const getAvailableSummaries = () => {
+    return selectedDocument 
+      ? abSummaryPairs.filter(pair => pair.documentId === selectedDocument.id)
+      : abSummaryPairs;
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -95,7 +113,10 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
           content: msg.content
         })),
         documentIds: selectedDocument ? [selectedDocument.id] : documents.map(d => d.id),
-        activeDocument: selectedDocument || null
+        activeDocument: selectedDocument || null,
+        selectedDocumentSummary: getSelectedDocumentSummary(),
+        availableSummaries: getAvailableSummaries(),
+        maxContextLength: 4000
       };
 
       // Process query with ChatEngine

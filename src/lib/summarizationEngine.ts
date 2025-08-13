@@ -288,6 +288,7 @@ INSTRUCTIONS:
 3. Include key_takeaways, topics, and techniques (required fields)
 4. Use empty arrays for fields with no relevant content
 5. Apply the style guide to your extracted content
+6. NEVER include individual names - use generic terms like "the instructor", "the teacher", "the speaker", "a student", "a participant"
 
 CHUNK TEXT:
 ${chunkText}
@@ -431,6 +432,8 @@ INSTRUCTIONS:
 4. Include relevant headings and formatting
 5. Emphasize techniques and key takeaways
 6. Make it engaging and useful for the target audience
+7. NEVER include individual names - use generic terms like "the instructor", "the teacher", "the speaker", "a student", "a participant"
+8. START with a "## Synopsis" section containing 4-6 sentences that provide a concise overview of the key content and outcomes
 
 MARKDOWN SUMMARY:`;
   }
@@ -451,6 +454,20 @@ MARKDOWN SUMMARY:`;
     if (mergedFacts.audience) {
       summary += `**Audience:** ${mergedFacts.audience}\n\n`;
     }
+
+    // Add synopsis section
+    summary += `## Synopsis\n\n`;
+    if (mergedFacts.key_takeaways.length > 0) {
+      const firstFewTakeaways = mergedFacts.key_takeaways.slice(0, 3);
+      summary += `This session covers ${firstFewTakeaways.join(', ')}. `;
+    }
+    if (mergedFacts.techniques.length > 0) {
+      summary += `Key techniques discussed include ${mergedFacts.techniques.slice(0, 2).join(' and ')}. `;
+    }
+    if (mergedFacts.topics.length > 0) {
+      summary += `The main topics explored are ${mergedFacts.topics.slice(0, 2).join(' and ')}. `;
+    }
+    summary += `This content is designed for ${mergedFacts.audience || 'learners'} seeking to understand these concepts.\n\n`;
 
     if (mergedFacts.key_takeaways.length > 0) {
       summary += `## Key Takeaways\n\n`;

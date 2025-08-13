@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { ExportOptions } from './ExportOptions';
 import type { SummarizationResult, ExtractedFacts } from '../types';
 
@@ -156,21 +158,95 @@ export function SummaryViewer({ result, onClose }: SummaryViewerProps) {
               </div>
               
               <div className="glass-panel p-6">
-                <div 
-                  className="text-gray-200 prose prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: result.markdownSummary
-                      .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold text-white mb-4">$1</h1>')
-                      .replace(/^## (.+)$/gm, '<h2 class="text-xl font-semibold text-white mb-3 mt-6">$1</h2>')
-                      .replace(/^### (.+)$/gm, '<h3 class="text-lg font-medium text-white mb-2 mt-4">$1</h3>')
-                      .replace(/^\- (.+)$/gm, '<li class="text-gray-300 ml-4">$1</li>')
-                      .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-blue-400 pl-4 italic text-gray-300 my-4">$1</blockquote>')
-                      .replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
-                      .replace(/\*(.+?)\*/g, '<em class="text-gray-300 italic">$1</em>')
-                      .replace(/\n\n/g, '</p><p class="mb-4">')
-                      .replace(/^(.+)$/gm, '<p class="mb-4">$1</p>')
+                <div className="text-gray-200 prose prose-invert max-w-none markdown-content">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ children }) => (
+                      <h1 className="text-2xl font-bold text-white mb-4 mt-0">{children}</h1>
+                    ),
+                    h2: ({ children }) => (
+                      <h2 className="text-xl font-semibold text-white mb-3 mt-6 first:mt-0">{children}</h2>
+                    ),
+                    h3: ({ children }) => (
+                      <h3 className="text-lg font-medium text-white mb-2 mt-4">{children}</h3>
+                    ),
+                    h4: ({ children }) => (
+                      <h4 className="text-base font-medium text-white mb-2 mt-3">{children}</h4>
+                    ),
+                    p: ({ children }) => (
+                      <p className="text-gray-300 mb-4 leading-relaxed">{children}</p>
+                    ),
+                    ul: ({ children }) => (
+                      <ul className="text-gray-300 mb-4 space-y-1">{children}</ul>
+                    ),
+                    ol: ({ children }) => (
+                      <ol className="text-gray-300 mb-4 space-y-1 list-decimal list-inside">{children}</ol>
+                    ),
+                    li: ({ children }) => (
+                      <li className="text-gray-300 flex items-start">
+                        <span className="text-blue-400 mr-2">•</span>
+                        <span>{children}</span>
+                      </li>
+                    ),
+                    blockquote: ({ children }) => (
+                      <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-300 my-4 bg-blue-500 bg-opacity-10 py-2">
+                        {children}
+                      </blockquote>
+                    ),
+                    strong: ({ children }) => (
+                      <strong className="text-white font-semibold">{children}</strong>
+                    ),
+                    em: ({ children }) => (
+                      <em className="text-gray-200 italic">{children}</em>
+                    ),
+                    code: ({ children }) => (
+                      <code className="bg-gray-800 text-blue-300 px-2 py-1 rounded text-sm font-mono">
+                        {children}
+                      </code>
+                    ),
+                    pre: ({ children }) => (
+                      <pre className="bg-gray-900 text-gray-200 p-4 rounded-lg overflow-x-auto mb-4 font-mono text-sm">
+                        {children}
+                      </pre>
+                    ),
+                    table: ({ children }) => (
+                      <div className="overflow-x-auto mb-4">
+                        <table className="w-full border border-gray-600 rounded-lg overflow-hidden">
+                          {children}
+                        </table>
+                      </div>
+                    ),
+                    thead: ({ children }) => (
+                      <thead className="bg-gray-800">{children}</thead>
+                    ),
+                    tbody: ({ children }) => (
+                      <tbody className="bg-gray-900">{children}</tbody>
+                    ),
+                    tr: ({ children }) => (
+                      <tr className="border-b border-gray-600">{children}</tr>
+                    ),
+                    th: ({ children }) => (
+                      <th className="text-white font-semibold p-3 text-left">{children}</th>
+                    ),
+                    td: ({ children }) => (
+                      <td className="text-gray-300 p-3">{children}</td>
+                    ),
+                    a: ({ href, children }) => (
+                      <a 
+                        href={href} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 underline"
+                      >
+                        {children}
+                      </a>
+                    ),
                   }}
-                />
+                  >
+                    {result.markdownSummary}
+                  </ReactMarkdown>
+                </div>
               </div>
             </div>
           )}
