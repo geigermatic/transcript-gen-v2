@@ -4,7 +4,7 @@ import { useAppStore } from '../store';
 import { HelpTooltip } from './Tooltip';
 
 interface FileUploadProps {
-  onUploadComplete?: (success: boolean, message: string) => void;
+  onUploadComplete?: (success: boolean, message: string, document?: Document) => void;
 }
 
 export function FileUpload({ onUploadComplete }: FileUploadProps) {
@@ -87,7 +87,7 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
         }
       });
       
-      onUploadComplete?.(true, successMessage);
+      onUploadComplete?.(true, successMessage, document);
 
     } catch (error) {
       const errorMessage = `Failed to upload ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -113,11 +113,8 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
       {/* Drag and Drop Area */}
       <div
         className={`
-          border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer
-          ${isDragOver 
-            ? 'border-blue-400 bg-blue-400 bg-opacity-10' 
-            : 'border-gray-400 hover:border-gray-300'
-          }
+          upload-zone p-8 text-center cursor-pointer
+          ${isDragOver ? 'dragover' : ''}
           ${isProcessing ? 'opacity-50 pointer-events-none' : ''}
         `}
         onDragOver={handleDragOver}
