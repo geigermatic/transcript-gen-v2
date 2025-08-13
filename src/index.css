@@ -42,3 +42,30 @@ body {
 .dark body {
   background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
 }
+
+/* Custom slider styles for style guide editor */
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid #1f2937;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #2563eb;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.7);
+}
+
+.slider::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid #1f2937;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
+}

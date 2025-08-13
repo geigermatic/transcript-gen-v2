@@ -3,6 +3,7 @@ import { useAppStore } from '../store';
 import { ollama } from '../lib/ollama';
 import { SemanticSearchTest } from '../components/SemanticSearchTest';
 import { ChatTester } from '../components/ChatTester';
+import { ABTestingDashboard } from '../components/ABTestingDashboard';
 
 export function DevConsolePage() {
   const { documents, logs, clearLogs, getAllEmbeddings } = useAppStore();
@@ -149,9 +150,12 @@ export function DevConsolePage() {
       </div>
 
       {/* AI Features Testing */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <SemanticSearchTest />
-        <ChatTester />
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <SemanticSearchTest />
+          <ChatTester />
+        </div>
+        <ABTestingDashboard />
       </div>
     </div>
   );

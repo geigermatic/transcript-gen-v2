@@ -8,7 +8,8 @@ import type {
   LogEntry,
   UserPreference,
   EmbeddedChunk,
-  EmbeddingProgress
+  EmbeddingProgress,
+  ABSummaryPair
 } from '../types';
 
 interface AppState {
@@ -45,6 +46,12 @@ interface AppState {
   // User Preferences (A/B testing)
   preferences: UserPreference[];
   addPreference: (preference: UserPreference) => void;
+  
+  // A/B Testing
+  abSummaryPairs: ABSummaryPair[];
+  addABSummaryPair: (pair: ABSummaryPair) => void;
+  updateABSummaryFeedback: (pairId: string, feedback: UserPreference) => void;
+  getABSummaryPair: (pairId: string) => ABSummaryPair | undefined;
   
   // Developer Console
   logs: LogEntry[];
@@ -129,6 +136,12 @@ export const useAppStore = create<AppState>()(
           technicality: 50,
         },
         keywords: [],
+        example_phrases: {
+          preferred_openings: [],
+          preferred_transitions: [],
+          preferred_conclusions: [],
+          avoid_phrases: [],
+        },
       },
       updateStyleGuide: (updates) =>
         set((state) => ({
@@ -162,6 +175,23 @@ export const useAppStore = create<AppState>()(
           preferences: [...state.preferences, preference],
         })),
 
+      // A/B Testing
+      abSummaryPairs: [],
+      addABSummaryPair: (pair) =>
+        set((state) => ({
+          abSummaryPairs: [...state.abSummaryPairs, pair],
+        })),
+      updateABSummaryFeedback: (pairId, feedback) =>
+        set((state) => ({
+          abSummaryPairs: state.abSummaryPairs.map((pair) =>
+            pair.id === pairId ? { ...pair, userFeedback: feedback } : pair
+          ),
+        })),
+      getABSummaryPair: (pairId) => {
+        const state = get();
+        return state.abSummaryPairs.find((pair) => pair.id === pairId);
+      },
+
       // Developer Console
       logs: [],
       addLog: (log) => {
@@ -188,6 +218,7 @@ export const useAppStore = create<AppState>()(
         styleGuide: state.styleGuide,
         settings: state.settings,
         preferences: state.preferences,
+        abSummaryPairs: state.abSummaryPairs,
         isDarkMode: state.isDarkMode,
         // Convert Maps to objects for storage
         embeddings: Object.fromEntries(state.embeddings),

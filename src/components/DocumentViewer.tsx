@@ -3,6 +3,7 @@ import type { Document } from '../types';
 import { DocumentProcessor } from '../lib/documentProcessor';
 import { EmbeddingManager } from './EmbeddingManager';
 import { SummarizationManager } from './SummarizationManager';
+import { ABSummaryManager } from './ABSummaryManager';
 
 interface DocumentViewerProps {
   document: Document | null;
@@ -146,9 +147,12 @@ export function DocumentViewer({ document: doc, isOpen, onClose }: DocumentViewe
 
         {/* AI Tools */}
         <div className="px-6 py-4 border-b border-white/20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <EmbeddingManager document={doc} />
-            <SummarizationManager document={doc} />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <EmbeddingManager document={doc} />
+              <SummarizationManager document={doc} />
+            </div>
+            <ABSummaryManager document={doc} />
           </div>
         </div>
 

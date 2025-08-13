@@ -188,6 +188,34 @@ export class ChatEngine {
   }
 
   /**
+   * Build example phrases section for prompts
+   */
+  private static buildExamplePhrasesSection(styleGuide: StyleGuide): string {
+    const phrases = styleGuide.example_phrases;
+    if (!phrases) return '';
+    
+    let section = '';
+    
+    if (phrases.preferred_openings?.length > 0) {
+      section += `Preferred Opening Phrases:\n- ${phrases.preferred_openings.join('\n- ')}\n\n`;
+    }
+    
+    if (phrases.preferred_transitions?.length > 0) {
+      section += `Preferred Transition Phrases:\n- ${phrases.preferred_transitions.join('\n- ')}\n\n`;
+    }
+    
+    if (phrases.preferred_conclusions?.length > 0) {
+      section += `Preferred Conclusion Phrases:\n- ${phrases.preferred_conclusions.join('\n- ')}\n\n`;
+    }
+    
+    if (phrases.avoid_phrases?.length > 0) {
+      section += `Phrases to Avoid:\n- ${phrases.avoid_phrases.join('\n- ')}\n\n`;
+    }
+    
+    return section.trim() ? `EXAMPLE PHRASES:\n${section}` : '';
+  }
+
+  /**
    * Build the grounded prompt with context and sources
    */
   private static buildGroundedPrompt(
@@ -197,6 +225,9 @@ export class ChatEngine {
     styleGuide: StyleGuide
   ): string {
     const styleInstructions = styleGuide.instructions_md || 'Use a helpful, professional tone.';
+    
+    // Build example phrases section
+    const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
     
     // Format conversation context
     const contextMessages = context.messages
@@ -217,11 +248,13 @@ STYLE GUIDE:
 ${styleInstructions}
 
 Tone Settings:
-- Formality: ${styleGuide.tone_settings.formality}/100
-- Enthusiasm: ${styleGuide.tone_settings.enthusiasm}/100
-- Technical Level: ${styleGuide.tone_settings.technicality}/100
+- Formality: ${styleGuide.tone_settings.formality}/100 (0=casual, 100=formal)
+- Enthusiasm: ${styleGuide.tone_settings.enthusiasm}/100 (0=calm, 100=energetic)
+- Technical Level: ${styleGuide.tone_settings.technicality}/100 (0=simple, 100=technical)
 
 Keywords to emphasize: ${styleGuide.keywords.join(', ') || 'None specified'}
+
+${examplePhrasesSection}
 
 CONVERSATION CONTEXT:
 ${contextMessages}

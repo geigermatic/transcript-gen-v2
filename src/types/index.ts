@@ -103,6 +103,14 @@ export interface StyleGuide {
   instructions_md: string;
   tone_settings: ToneSettings;
   keywords: string[];
+  example_phrases: ExamplePhrases;
+}
+
+export interface ExamplePhrases {
+  preferred_openings: string[];
+  preferred_transitions: string[];
+  preferred_conclusions: string[];
+  avoid_phrases: string[];
 }
 
 export interface ToneSettings {
@@ -119,6 +127,28 @@ export interface UserPreference {
   winner: 'A' | 'B';
   reason?: string;
   created_at: string;
+}
+
+// A/B Testing types
+export interface ABSummaryPair {
+  id: string;
+  documentId: string;
+  documentTitle: string;
+  summaryA: SummarizationResult;
+  summaryB: SummarizationResult;
+  variantDetails: {
+    variantA: SummaryVariant;
+    variantB: SummaryVariant;
+  };
+  createdAt: string;
+  userFeedback?: UserPreference;
+}
+
+export interface SummaryVariant {
+  name: string;
+  description: string;
+  styleModifications: Partial<StyleGuide>;
+  promptStrategy: string;
 }
 
 // Application settings

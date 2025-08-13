@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ExportOptions } from './ExportOptions';
 import type { SummarizationResult, ExtractedFacts } from '../types';
 
 interface SummaryViewerProps {
@@ -9,6 +10,7 @@ interface SummaryViewerProps {
 export function SummaryViewer({ result, onClose }: SummaryViewerProps) {
   const [activeTab, setActiveTab] = useState<'summary' | 'facts' | 'details'>('summary');
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [showExportOptions, setShowExportOptions] = useState(false);
 
   const copyToClipboard = async (content: string, type: string) => {
     try {
@@ -102,12 +104,20 @@ export function SummaryViewer({ result, onClose }: SummaryViewerProps) {
               <span>⏱️ {formatProcessingTime(result.processingStats.processingTime)}</span>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="glass-button text-white hover:bg-red-500 hover:bg-opacity-20"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowExportOptions(true)}
+              className="glass-button text-white hover:bg-blue-500 hover:bg-opacity-20"
+            >
+              📤 Export
+            </button>
+            <button
+              onClick={onClose}
+              className="glass-button text-white hover:bg-red-500 hover:bg-opacity-20"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -247,6 +257,13 @@ export function SummaryViewer({ result, onClose }: SummaryViewerProps) {
           )}
         </div>
       </div>
+
+      {/* Export Options Modal */}
+      <ExportOptions
+        summarizationResult={result}
+        isOpen={showExportOptions}
+        onClose={() => setShowExportOptions(false)}
+      />
     </div>
   );
 }

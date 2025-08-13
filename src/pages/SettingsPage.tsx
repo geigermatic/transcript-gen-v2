@@ -1,4 +1,9 @@
+import { StyleGuideManager } from '../components/StyleGuideManager';
+import { useAppStore } from '../store';
+
 export function SettingsPage() {
+  const { isDarkMode, toggleDarkMode, settings, updateSettings } = useAppStore();
+
   return (
     <div className="space-y-6">
       <div className="glass-panel p-6">
@@ -19,15 +24,22 @@ export function SettingsPage() {
               className="glass-input w-full"
               disabled
             />
+            <p className="text-gray-400 text-sm mt-1">
+              Local Ollama instance endpoint (read-only)
+            </p>
           </div>
           <div>
             <label className="block text-gray-300 mb-2">Chat Model</label>
             <input
               type="text"
-              value="llama3.1:8b-instruct-q4_K_M"
+              value={settings.chat_default}
+              onChange={(e) => updateSettings({ chat_default: e.target.value })}
               className="glass-input w-full"
-              disabled
+              placeholder="llama3.1:8b-instruct-q4_K_M"
             />
+            <p className="text-gray-400 text-sm mt-1">
+              Model used for chat and summarization
+            </p>
           </div>
           <div>
             <label className="block text-gray-300 mb-2">Embedding Model</label>
@@ -37,21 +49,49 @@ export function SettingsPage() {
               className="glass-input w-full"
               disabled
             />
+            <p className="text-gray-400 text-sm mt-1">
+              Model used for generating embeddings (read-only)
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="developer-mode"
+              checked={settings.developer_mode}
+              onChange={(e) => updateSettings({ developer_mode: e.target.checked })}
+              className="rounded"
+            />
+            <label htmlFor="developer-mode" className="text-gray-300">
+              Enable Developer Mode
+            </label>
           </div>
         </div>
       </div>
 
-      <div className="glass-panel p-6">
-        <h2 className="text-xl font-semibold text-white mb-4">Style Guide</h2>
-        <p className="text-gray-400 italic">Style guide editor will be implemented here.</p>
-      </div>
+      {/* Style Guide Manager */}
+      <StyleGuideManager />
 
       <div className="glass-panel p-6">
         <h2 className="text-xl font-semibold text-white mb-4">Theme</h2>
         <div className="flex items-center space-x-4">
-          <button className="glass-button text-white">Light Mode</button>
-          <button className="glass-button text-white bg-white bg-opacity-20">Dark Mode</button>
+          <button 
+            onClick={toggleDarkMode}
+            className={`glass-button text-white ${!isDarkMode ? 'bg-white bg-opacity-20' : ''}`}
+            disabled={!isDarkMode}
+          >
+            Light Mode
+          </button>
+          <button 
+            onClick={toggleDarkMode}
+            className={`glass-button text-white ${isDarkMode ? 'bg-white bg-opacity-20' : ''}`}
+            disabled={isDarkMode}
+          >
+            Dark Mode
+          </button>
         </div>
+        <p className="text-gray-400 text-sm mt-2">
+          Current theme: {isDarkMode ? 'Dark' : 'Light'}
+        </p>
       </div>
     </div>
   );
