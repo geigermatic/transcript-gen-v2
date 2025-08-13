@@ -3,17 +3,34 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Search, Settings, Sun, Moon, Archive } from 'lucide-react';
+import { Search, Settings, Sun, Moon, Archive, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
+import { logInfo } from '../lib/logger';
 
 interface TopbarProps {
   sidebarCollapsed?: boolean;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({ sidebarCollapsed = false }) => {
-  const { isDarkMode, toggleDarkMode } = useAppStore();
+  const { isDarkMode, toggleDarkMode, clearAllData, documents } = useAppStore();
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+
+  const handleClearAllData = () => {
+    const confirmClear = window.confirm(
+      `⚠️ Clear All Data?\n\nThis will permanently delete:\n• ${documents.length} uploaded documents\n• All summaries\n• Chat history\n• Embeddings\n• Processing logs\n\nThis action cannot be undone. Continue?`
+    );
+    
+    if (confirmClear) {
+      clearAllData();
+      logInfo('UI', 'All data cleared by user');
+      
+      // Show success message
+      setTimeout(() => {
+        alert('✅ All data cleared successfully! You can now start fresh.');
+      }, 100);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -78,6 +95,17 @@ export const Topbar: React.FC<TopbarProps> = ({ sidebarCollapsed = false }) => {
 
           {/* Right side - Actions */}
           <div className="flex items-center gap-2">
+            {/* Clear All Data button - only show if there are documents */}
+            {documents.length > 0 && (
+              <button
+                onClick={handleClearAllData}
+                className="ghost-button p-3 hover:bg-red-500 hover:bg-opacity-20"
+                title="Clear all data"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+            
             <button
               onClick={toggleDarkMode}
               className="ghost-button p-3"

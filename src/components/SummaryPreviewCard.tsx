@@ -141,9 +141,9 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
           </div>
         ) : (
           <div className="text-center py-8">
-            <FileText size={32} className="mx-auto text-gray-400 mb-3" />
-            <p className="text-gray-700 mb-2">No summary yet</p>
-            <p className="text-gray-500">
+            <FileText size={32} className="mx-auto text-white text-opacity-40 mb-3" />
+            <p className="text-white text-opacity-90 mb-2 font-medium">No summary yet</p>
+            <p className="text-white text-opacity-70">
               Upload and process a document to generate a summary
             </p>
           </div>

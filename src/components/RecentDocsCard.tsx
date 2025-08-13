@@ -2,8 +2,8 @@
  * RecentDocsCard - Recent documents list with metadata
  */
 
-import React from 'react';
-import { Calendar, FileText, Tag } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, FileText, Tag, ChevronDown, ChevronUp, FolderOpen, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
 
@@ -24,10 +24,32 @@ interface RecentDocsCardProps {
 }
 
 export const RecentDocsCard: React.FC<RecentDocsCardProps> = ({ onDocumentSelect }) => {
-  const { documents } = useAppStore();
+  const { documents, clearAllData } = useAppStore();
+  const [showAll, setShowAll] = useState(false);
 
-  // Use real documents only
-  const displayDocs = documents.slice(0, 3).map(doc => ({
+  const handleClearAllData = () => {
+    const confirmClear = window.confirm(
+      `⚠️ Clear All Documents & Data?\n\nThis will permanently delete:\n• ${documents.length} uploaded documents\n• All summaries\n• Chat history\n• Embeddings\n• Processing logs\n\nThis action cannot be undone. Continue?`
+    );
+    
+    if (confirmClear) {
+      clearAllData();
+      logInfo('UI', 'All data cleared from Recent Documents panel');
+    }
+  };
+
+
+
+  // Use real documents only - sort by upload date (most recent first)
+  const sortedDocuments = documents.sort((a, b) => 
+    new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+  );
+  
+  // Show 10 initially, or all if showAll is true
+  const documentsToShow = showAll ? sortedDocuments : sortedDocuments.slice(0, 10);
+  const hasMoreDocuments = documents.length > 10;
+  
+  const displayDocs = documentsToShow.map(doc => ({
     id: doc.id,
     filename: doc.metadata.filename || doc.filename, // Fallback to doc.filename
     tags: doc.tags || ['transcript'],
@@ -48,7 +70,20 @@ export const RecentDocsCard: React.FC<RecentDocsCardProps> = ({ onDocumentSelect
     <div className="glass-card p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-heading">Recent Documents</h2>
-        <span className="text-caption">{displayDocs.length} files</span>
+        <div className="flex items-center gap-3">
+          <span className="text-caption">
+            {showAll ? `${documents.length} files` : `${Math.min(documents.length, 10)} of ${documents.length} files`}
+          </span>
+          {documents.length > 0 && (
+            <button
+              onClick={handleClearAllData}
+              className="ghost-button p-2 hover:bg-red-500 hover:bg-opacity-20"
+              title="Clear all documents and data"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -109,6 +144,29 @@ export const RecentDocsCard: React.FC<RecentDocsCardProps> = ({ onDocumentSelect
           </div>
         )}
       </div>
+
+      {/* View All / Show Less button */}
+      {hasMoreDocuments && (
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="w-full glass-button flex items-center justify-center gap-2 py-3"
+          >
+            {showAll ? (
+              <>
+                <ChevronUp size={16} />
+                <span>Show Less</span>
+              </>
+            ) : (
+              <>
+                <FolderOpen size={16} />
+                <span>View All ({documents.length} files)</span>
+                <ChevronDown size={16} />
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -6,6 +6,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Upload, FileText } from 'lucide-react';
 import { DocumentProcessor } from '../lib/documentProcessor';
 import { SummarizationEngine } from '../lib/summarizationEngine';
+import { EmbeddingEngine } from '../lib/embeddingEngine';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
 import type { ABSummaryPair } from '../types';
@@ -18,12 +19,30 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { addDocument, addABSummaryPair, styleGuide } = useAppStore();
+  const { addDocument, addABSummaryPair, addEmbeddings, styleGuide } = useAppStore();
 
   const triggerSummarization = async (document: any) => {
     try {
-      logInfo('SUMMARIZATION', `Starting background summarization for: ${document.filename}`);
+      logInfo('PROCESSING', `Starting background processing for: ${document.filename}`);
       
+      // Generate embeddings first (needed for chat)
+      logInfo('EMBEDDINGS', `Generating embeddings for: ${document.filename}`);
+      const embeddedChunks = await EmbeddingEngine.generateDocumentEmbeddings(
+        document.id,
+        document.text,
+        (progress) => {
+          logInfo('EMBEDDINGS', `Embedding progress: ${progress.current}/${progress.total} chunks (${progress.percentage}%)`);
+        }
+      );
+      
+      // Store embeddings in the store
+      addEmbeddings(document.id, embeddedChunks);
+      logInfo('EMBEDDINGS', `Embeddings stored for: ${document.filename}`, {
+        chunkCount: embeddedChunks.length
+      });
+      
+      // Then generate summary
+      logInfo('SUMMARIZATION', `Starting summarization for: ${document.filename}`);
       const result = await SummarizationEngine.summarizeDocument(
         document,
         styleGuide,
@@ -45,12 +64,12 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
 
       addABSummaryPair(summaryPair);
       
-      logInfo('SUMMARIZATION', `Summary completed for: ${document.filename}`, {
+      logInfo('PROCESSING', `Processing completed for: ${document.filename}`, {
         summaryLength: result.markdownSummary.length,
         factsExtracted: Object.keys(result.mergedFacts).length
       });
     } catch (error) {
-      logInfo('SUMMARIZATION', `Summarization failed for: ${document.filename}`, { error });
+      logInfo('PROCESSING', `Processing failed for: ${document.filename}`, { error });
     }
   };
 

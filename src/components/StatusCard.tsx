@@ -20,20 +20,42 @@ interface StatusItem {
 }
 
 export const StatusCard: React.FC<StatusCardProps> = ({ className = '' }) => {
-  const { documents } = useAppStore();
+  try {
+    const { documents, embeddings, abSummaryPairs } = useAppStore();
 
-  // Calculate real status based on documents
-  const totalDocs = documents.length;
-  const indexedDocs = documents.filter(doc => doc.metadata.wordCount && doc.metadata.wordCount > 0).length;
+  // Add null checks to prevent errors
+  const safeDocuments = documents || [];
+  const safeEmbeddings = embeddings || new Map();
+  const safeAbSummaryPairs = abSummaryPairs || [];
+
+  // Calculate real status based on actual store data
+  const totalDocs = safeDocuments.length;
+  const indexedDocs = safeDocuments.filter(doc => 
+    doc?.metadata?.wordCount && doc.metadata.wordCount > 0
+  ).length;
   
-  // Calculate chunks based on actual document sizes (approximate 500 words per chunk)
+  // Check actual embeddings from store (real data, not estimated)
+  const documentsWithEmbeddings = safeDocuments.filter(doc => safeEmbeddings.has(doc.id));
+  const embeddedDocsCount = documentsWithEmbeddings.length;
+  
+  // Count actual embedded chunks from store
+  const totalEmbeddedChunks = Array.from(safeEmbeddings.values()).reduce((total, chunks) => {
+    return total + (chunks?.length || 0);
+  }, 0);
+  
+  // Estimate total chunks needed (for progress calculation)
   const estimateChunks = (wordCount: number) => Math.ceil(wordCount / 500);
-  const embeddedChunks = documents.reduce((total, doc) => {
-    return total + (doc.metadata.wordCount ? estimateChunks(doc.metadata.wordCount) : 0);
+  const totalEstimatedChunks = safeDocuments.reduce((total, doc) => {
+    return total + (doc?.metadata?.wordCount ? estimateChunks(doc.metadata.wordCount) : estimateChunks(1000));
   }, 0);
-  const totalChunks = documents.reduce((total, doc) => {
-    return total + (doc.metadata.wordCount ? estimateChunks(doc.metadata.wordCount) : estimateChunks(1000));
-  }, 0);
+  
+  // Check actual summaries from store (real data, not estimated)
+  const documentsWithSummaries = safeDocuments.filter(doc => 
+    safeAbSummaryPairs.some(pair => pair?.documentId === doc.id)
+  );
+  const summarizedDocsCount = documentsWithSummaries.length;
+
+
 
   const statusItems: StatusItem[] = [
     {
@@ -42,23 +64,27 @@ export const StatusCard: React.FC<StatusCardProps> = ({ className = '' }) => {
       icon: <Database size={16} />,
       current: indexedDocs,
       total: totalDocs,
-      status: indexedDocs === totalDocs ? 'completed' : indexedDocs > 0 ? 'processing' : 'idle'
+      status: totalDocs === 0 ? 'idle' : indexedDocs === totalDocs ? 'completed' : indexedDocs > 0 ? 'processing' : 'idle'
     },
     {
       id: 'embed',
       label: 'Embed',
       icon: <Zap size={16} />,
-      current: embeddedChunks,
-      total: totalChunks,
-      status: embeddedChunks === totalChunks ? 'completed' : embeddedChunks > 0 ? 'processing' : 'idle'
+      current: totalEmbeddedChunks,
+      total: totalEstimatedChunks,
+      status: totalDocs === 0 ? 'idle' : 
+              embeddedDocsCount === totalDocs ? 'completed' : 
+              embeddedDocsCount > 0 ? 'processing' : 'idle'
     },
     {
       id: 'summarize',
       label: 'Summarize',
       icon: <FileText size={16} />,
-      current: Math.min(indexedDocs, Math.floor(indexedDocs * 0.6)),
+      current: summarizedDocsCount,
       total: totalDocs,
-      status: indexedDocs > 0 ? 'processing' : 'idle'
+      status: totalDocs === 0 ? 'idle' : 
+              summarizedDocsCount === totalDocs ? 'completed' : 
+              summarizedDocsCount > 0 ? 'processing' : 'idle'
     }
   ];
 
@@ -140,16 +166,16 @@ export const StatusCard: React.FC<StatusCardProps> = ({ className = '' }) => {
       <div className="mt-6 pt-4 border-t border-white border-opacity-10">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-lg font-semibold text-white">{documents.length}</div>
+            <div className="text-lg font-semibold text-white">{totalDocs}</div>
             <div className="text-caption">Documents</div>
           </div>
           <div>
-            <div className="text-lg font-semibold text-accent">{embeddedChunks}</div>
+            <div className="text-lg font-semibold text-accent">{totalEmbeddedChunks}</div>
             <div className="text-caption">Embeddings</div>
           </div>
           <div>
             <div className="text-lg font-semibold text-green-400">
-              {Math.round((embeddedChunks / Math.max(totalChunks, 1)) * 100)}%
+              {Math.round((totalEmbeddedChunks / Math.max(totalEstimatedChunks, 1)) * 100)}%
             </div>
             <div className="text-caption">Complete</div>
           </div>
@@ -157,4 +183,15 @@ export const StatusCard: React.FC<StatusCardProps> = ({ className = '' }) => {
       </div>
     </div>
   );
+  } catch (error) {
+    console.error('StatusCard Error:', error);
+    return (
+      <div className={`glass-card p-6 ${className}`}>
+        <div className="text-center">
+          <div className="text-red-400 mb-2">⚠️ Status Unavailable</div>
+          <div className="text-caption">Processing status temporarily unavailable</div>
+        </div>
+      </div>
+    );
+  }
 };

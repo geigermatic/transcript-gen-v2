@@ -69,6 +69,9 @@ interface AppState {
   // Onboarding
   hasCompletedOnboarding: boolean;
   setOnboardingComplete: (completed: boolean) => void;
+  
+  // Data Management
+  clearAllData: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -228,6 +231,28 @@ export const useAppStore = create<AppState>()(
       hasCompletedOnboarding: false,
       setOnboardingComplete: (completed) =>
         set({ hasCompletedOnboarding: completed }),
+      
+      // Data Management
+      clearAllData: () => 
+        set(() => ({
+          // Clear all documents and related data
+          documents: [],
+          embeddings: new Map<string, EmbeddedChunk[]>(),
+          embeddingProgress: new Map<string, EmbeddingProgress>(),
+          abSummaryPairs: [],
+          
+          // Clear chat data
+          chatMessages: [],
+          
+          // Clear logs
+          logs: [],
+          
+          // Clear user preferences (but keep settings and style guide)
+          preferences: [],
+          
+          // Keep UI state and settings intact
+          // isDarkMode, isUserTestingMode, hasCompletedOnboarding, styleGuide, settings stay the same
+        })),
     }),
     {
       name: 'transcript-summarizer-storage',

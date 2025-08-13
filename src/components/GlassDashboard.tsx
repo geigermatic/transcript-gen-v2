@@ -129,16 +129,7 @@ export const GlassDashboard: React.FC = () => {
 
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Upload & Recent Documents */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Upload Card */}
-            <UploadCard onUploadComplete={handleUploadComplete} />
-            
-            {/* Recent Documents Card - moved below Upload */}
-            <RecentDocsCard onDocumentSelect={handleDocumentSelect} />
-          </div>
-
-          {/* Center & Right Columns - Summary spans both */}
+          {/* Center & Left Columns - Summary spans both (now centered) */}
           <div className="lg:col-span-2">
             <SummaryPreviewCard 
               summary={getSelectedDocumentSummary()} 
@@ -146,6 +137,18 @@ export const GlassDashboard: React.FC = () => {
               chunksProcessed={chunksProcessed}
               totalChunks={totalChunks}
               processingStartTime={processingStartTime}
+            />
+          </div>
+
+          {/* Right Column - Upload & Recent Documents */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Upload Card */}
+            <UploadCard onUploadComplete={handleUploadComplete} />
+            
+            {/* Recent Documents Card - below Upload */}
+            <RecentDocsCard 
+              key={`recent-docs-${documents.length}`} 
+              onDocumentSelect={handleDocumentSelect} 
             />
           </div>
 

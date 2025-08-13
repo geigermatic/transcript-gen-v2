@@ -4,7 +4,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, MessageCircle, Bot, User } from 'lucide-react';
+import { ChatEngine } from '../lib/chatEngine';
+import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
+import type { ChatContext } from '../types';
 
 interface ChatMessage {
   id: string;
@@ -19,11 +22,25 @@ interface ChatCardProps {
 }
 
 export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMessage }) => {
+  const { embeddings, styleGuide, documents } = useAppStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize with welcome message
+  useEffect(() => {
+    if (messages.length === 0) {
+      const welcomeMessage: ChatMessage = {
+        id: 'welcome',
+        role: 'assistant',
+        content: '👋 Hi! I\'m your AI assistant. Upload some documents and I\'ll help you ask questions about their content, find specific information, and discuss the topics covered.',
+        timestamp: new Date().toISOString()
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, [messages.length]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -45,20 +62,81 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
 
     logInfo('CHAT', 'User message sent', { content: userMessage.content });
 
-    // TODO: Integrate with actual chat engine once documents are uploaded
-    setTimeout(() => {
+    try {
+      // Check if we have any documents and embeddings
+      if (documents.length === 0) {
+        const noDocsResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'I don\'t have any documents to chat about yet. Please upload some documents first, and I\'ll be able to answer questions about their content.',
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, noDocsResponse]);
+        setIsTyping(false);
+        return;
+      }
+
+      if (embeddings.size === 0) {
+        const noEmbeddingsResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'Your documents are still being processed for search. I need to generate embeddings first before I can answer questions about the content. Please wait a moment and try again.',
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, noEmbeddingsResponse]);
+        setIsTyping(false);
+        return;
+      }
+
+      // Create chat context from previous messages
+      const context: ChatContext = {
+        messages: messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        })),
+        documentIds: selectedDocument ? [selectedDocument.id] : documents.map(d => d.id),
+        activeDocument: selectedDocument || null
+      };
+
+      // Process query with ChatEngine
+      const response = await ChatEngine.processQuery(
+        userMessage.content,
+        context,
+        styleGuide
+      );
+
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Chat functionality requires uploaded documents and Ollama integration. Please upload documents first.',
+        content: response.message.content,
         timestamp: new Date().toISOString()
       };
 
       setMessages(prev => [...prev, assistantMessage]);
       setIsTyping(false);
       
-      logInfo('CHAT', 'Assistant placeholder response', { content: assistantMessage.content });
-    }, 1000);
+      logInfo('CHAT', 'Assistant response generated', { 
+        responseLength: response.message.content.length,
+        processingTime: response.responseMetrics.processingTime,
+        retrievalCount: response.responseMetrics.retrievalCount
+      });
+
+    } catch (error) {
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Sorry, I encountered an error while processing your question. Please try again.',
+        timestamp: new Date().toISOString()
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+      setIsTyping(false);
+      
+      logInfo('CHAT', 'Chat error occurred', { 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        query: userMessage.content
+      });
+    }
 
     onSendMessage?.(userMessage.content);
   };
