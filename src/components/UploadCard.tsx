@@ -54,8 +54,8 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
       const result = await SummarizationEngine.summarizeDocument(
         document,
         styleGuide,
-        (current, total) => {
-          logInfo('SUMMARIZE', `Progress: ${current}/${total} chunks processed`);
+        (current, total, status) => {
+          logInfo('SUMMARIZE', status || `Progress: ${current}%`);
         }
       );
 

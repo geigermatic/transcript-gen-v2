@@ -39,7 +39,7 @@ export class SummarizationEngine {
   static async summarizeDocument(
     document: Document,
     styleGuide: StyleGuide,
-    onProgress?: (current: number, total: number) => void
+    onProgress?: (current: number, total: number, status?: string) => void
   ): Promise<SummarizationResult> {
     const startTime = Date.now();
     
@@ -50,12 +50,15 @@ export class SummarizationEngine {
 
     try {
       // Split document into chunks for processing
+      onProgress?.(0, 100, 'Splitting document into chunks...');
       const chunks = TextSplitter.splitText(document.text, document.id);
       
       logInfo('SUMMARIZE', `Document split into ${chunks.length} chunks for fact extraction`, {
         documentId: document.id, 
         chunkCount: chunks.length
       });
+
+      onProgress?.(10, 100, `Processing ${chunks.length} chunks for fact extraction...`);
 
       // Extract facts from each chunk (with configurable parallel processing)
       const config = ChunkingConfigManager.getCurrentConfig();
@@ -68,14 +71,18 @@ export class SummarizationEngine {
       );
 
       // Merge facts from all chunks
+      onProgress?.(70, 100, 'Merging facts from all chunks...');
       const mergedFacts = this.mergeFacts(chunkFacts);
       
       // Generate final markdown summary
+      onProgress?.(80, 100, 'Generating final markdown summary...');
       const markdownSummary = await this.generateMarkdownSummary(
         document, 
         mergedFacts, 
         styleGuide
       );
+
+      onProgress?.(95, 100, 'Finalizing summary...');
 
       const processingTime = Date.now() - startTime;
       const successfulChunks = chunkFacts.filter(cf => cf.parseSuccess).length;
@@ -100,6 +107,7 @@ export class SummarizationEngine {
         mergedFactKeys: Object.keys(mergedFacts)
       });
 
+      onProgress?.(100, 100, 'Summary completed successfully!');
       return result;
 
     } catch (error) {
@@ -250,52 +258,56 @@ JSON RESPONSE:`;
     styleGuide: StyleGuide, 
     documentId: string, 
     config: any,
-    onProgress?: (current: number, total: number) => void
+    onProgress?: (current: number, total: number, status?: string) => void
   ): Promise<ChunkFacts[]> {
     const chunkFacts: ChunkFacts[] = [];
     
     if (config.enableParallelFactExtraction && config.chunking.parallelProcessing) {
-      // Parallel processing in batches with granular progress updates
+      // Parallel processing in batches with detailed progress updates
       const batchSize = config.chunking.batchSize;
       let completedChunks = 0;
       
+      const processChunk = async (chunk: any): Promise<ChunkFacts> => {
+        const chunkNumber = completedChunks + 1;
+        onProgress?.(10 + (chunkNumber - 1) * 60 / chunks.length, 100, 
+          `Extracting facts from chunk ${chunkNumber}/${chunks.length}...`);
+        
+        try {
+          const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);
+          completedChunks++;
+          
+          onProgress?.(10 + completedChunks * 60 / chunks.length, 100, 
+            `Completed chunk ${completedChunks}/${chunks.length}`);
+          
+          return {
+            chunkId: chunk.id,
+            chunkIndex: chunk.chunkIndex,
+            facts: facts.facts,
+            parseSuccess: facts.parseSuccess,
+            rawResponse: facts.rawResponse,
+            error: facts.error,
+          };
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          completedChunks++;
+          
+          onProgress?.(10 + completedChunks * 60 / chunks.length, 100, 
+            `Failed chunk ${completedChunks}/${chunks.length} - ${errorMessage}`);
+          
+          return {
+            chunkId: chunk.id,
+            chunkIndex: chunk.chunkIndex,
+            facts: {},
+            parseSuccess: false,
+            rawResponse: '',
+            error: errorMessage,
+          };
+        }
+      };
+      
       for (let i = 0; i < chunks.length; i += batchSize) {
         const batch = chunks.slice(i, i + batchSize);
-        const batchPromises = batch.map(async (chunk) => {
-          try {
-            const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);
-            
-            // Update progress for individual chunk completion
-            completedChunks++;
-            onProgress?.(completedChunks, chunks.length);
-            
-            return {
-              chunkId: chunk.id,
-              chunkIndex: chunk.chunkIndex,
-              facts: facts.facts,
-              parseSuccess: facts.parseSuccess,
-              rawResponse: facts.rawResponse,
-              error: facts.error,
-            };
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            
-            // Update progress even for failed chunks
-            completedChunks++;
-            onProgress?.(completedChunks, chunks.length);
-            
-            return {
-              chunkId: chunk.id,
-              chunkIndex: chunk.chunkIndex,
-              facts: {},
-              parseSuccess: false,
-              rawResponse: '',
-              error: errorMessage,
-            };
-          }
-        });
-
-        const batchResults = await Promise.all(batchPromises);
+        const batchResults = await Promise.all(batch.map(processChunk));
         chunkFacts.push(...batchResults);
         
         // Log batch completion
@@ -311,10 +323,11 @@ JSON RESPONSE:`;
         }
       }
     } else {
-      // Sequential processing (original behavior)
+      // Sequential processing with detailed progress updates
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
-        onProgress?.(i + 1, chunks.length);
+        onProgress?.(10 + i * 60 / chunks.length, 100, 
+          `Extracting facts from chunk ${i + 1}/${chunks.length}...`);
         
         try {
           const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);

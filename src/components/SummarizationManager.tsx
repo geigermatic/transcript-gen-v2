@@ -12,7 +12,7 @@ interface SummarizationManagerProps {
 export function SummarizationManager({ document }: SummarizationManagerProps) {
   const { styleGuide } = useAppStore();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [progress, setProgress] = useState({ current: 0, total: 0, status: '' });
   const [result, setResult] = useState<SummarizationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ollamaAvailable, setOllamaAvailable] = useState<boolean | null>(null);
@@ -45,8 +45,8 @@ export function SummarizationManager({ document }: SummarizationManagerProps) {
       const summaryResult = await SummarizationEngine.summarizeDocument(
         document,
         styleGuide,
-        (current: number, total: number) => {
-          setProgress({ current, total });
+        (current: number, total: number, status?: string) => {
+          setProgress({ current, total, status });
         }
       );
 
@@ -124,19 +124,19 @@ export function SummarizationManager({ document }: SummarizationManagerProps) {
         {isGenerating && progress.total > 0 && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-white text-sm">Extracting facts from chunks...</span>
+              <span className="text-white text-sm">{progress.status || 'Processing...'}</span>
               <span className="text-gray-300 text-sm">
-                {progress.current}/{progress.total} ({Math.round((progress.current / progress.total) * 100)}%)
+                {Math.round(progress.current)}%
               </span>
             </div>
             <div className="w-full bg-gray-600 rounded-full h-2">
               <div 
                 className="bg-blue-400 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                style={{ width: `${progress.current}%` }}
               />
             </div>
             <div className="text-xs text-gray-400 mt-1">
-              Processing chunk {progress.current} of {progress.total}...
+              {progress.status || `${Math.round(progress.current)}% complete`}
             </div>
           </div>
         )}
