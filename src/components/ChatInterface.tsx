@@ -20,7 +20,10 @@ export function ChatInterface() {
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    // Only auto-scroll if there are messages to avoid scrolling on initial page load
+    if (chatMessages.length > 0) {
+      scrollToBottom();
+    }
   }, [chatMessages]);
 
   const checkOllamaStatus = async () => {
@@ -272,7 +275,6 @@ export function ChatInterface() {
             }
             className="glass-input flex-1"
             disabled={isProcessing || !hasEmbeddings || !ollamaAvailable}
-            autoFocus
           />
           <button
             type="submit"

@@ -47,14 +47,22 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
     }
   }, [selectedDocument, getAllEmbeddings]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom only when there are messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
-  // Focus input on mount
+  // Focus input on mount - but don't scroll to it
   useEffect(() => {
-    inputRef.current?.focus();
+    // Use a small delay to prevent scrolling and only focus if user hasn't interacted
+    const timer = setTimeout(() => {
+      if (inputRef.current && document.activeElement === document.body) {
+        inputRef.current.focus({ preventScroll: true });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleSendMessage = async () => {

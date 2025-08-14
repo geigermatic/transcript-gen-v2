@@ -61,7 +61,10 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
   };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Only auto-scroll if there are messages to avoid scrolling on initial page load
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   const handleSendMessage = async () => {

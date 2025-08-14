@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { GlassDashboard } from './components/GlassDashboard';
 import { UploadPage } from './pages/UploadPage';
 import { GlossaryPage } from './pages/GlossaryPage';
@@ -7,9 +7,22 @@ import { LibraryPage } from './pages/LibraryPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { DevConsolePage } from './pages/DevConsolePage';
 
+// Component to handle scroll restoration
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    // Always scroll to top when route changes
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         {/* Main Dashboard - All functionality consolidated here */}
         <Route path="/" element={<GlassDashboard />} />
