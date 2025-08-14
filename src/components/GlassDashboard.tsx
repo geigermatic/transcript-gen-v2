@@ -24,6 +24,11 @@ export const GlassDashboard: React.FC = () => {
   const [totalChunks, setTotalChunks] = useState(0);
   const [processingStartTime, setProcessingStartTime] = useState<Date | null>(null);
 
+  // Ensure page starts at top on component mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
+
 
 
   const handleUploadComplete = (success: boolean, message: string, document?: any) => {

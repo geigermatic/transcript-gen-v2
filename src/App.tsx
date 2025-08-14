@@ -16,6 +16,23 @@ function ScrollToTop() {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [pathname]);
 
+  // Also ensure scroll to top after component mounting
+  useEffect(() => {
+    // Use multiple strategies to ensure we stay at the top
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    // Immediate scroll
+    scrollToTop();
+
+    // Also scroll after a short delay to override any component scrolling
+    const timer = setTimeout(scrollToTop, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return null;
 }
 

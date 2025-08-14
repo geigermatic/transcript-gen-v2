@@ -20,8 +20,8 @@ export function ChatInterface() {
   }, []);
 
   useEffect(() => {
-    // Only auto-scroll if there are messages to avoid scrolling on initial page load
-    if (chatMessages.length > 0) {
+    // Only auto-scroll if there are actual user/assistant messages (not empty or initial state)
+    if (chatMessages.length > 0 && chatMessages.some(msg => msg.content.trim().length > 0)) {
       scrollToBottom();
     }
   }, [chatMessages]);

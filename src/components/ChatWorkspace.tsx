@@ -47,9 +47,9 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
     }
   }, [selectedDocument, getAllEmbeddings]);
 
-  // Auto-scroll to bottom only when there are messages
+  // Auto-scroll to bottom only when there are actual user/assistant messages
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && messages.some(msg => msg.content.trim().length > 0)) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
