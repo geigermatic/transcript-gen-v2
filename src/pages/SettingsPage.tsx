@@ -1,4 +1,5 @@
 import { StyleGuideManager } from '../components/StyleGuideManager';
+import { AppShell } from '../components/AppShell';
 import { useAppStore } from '../store';
 
 export function SettingsPage() {
@@ -12,7 +13,8 @@ export function SettingsPage() {
   } = useAppStore();
 
   return (
-    <div className="space-y-6">
+    <AppShell>
+      <div className="space-y-6">
       <div className="glass-panel p-6">
         <h1 className="text-2xl font-bold text-white mb-4">Settings</h1>
         <p className="text-gray-300">
@@ -143,5 +145,6 @@ export function SettingsPage() {
         </p>
       </div>
     </div>
+    </AppShell>
   );
 }
