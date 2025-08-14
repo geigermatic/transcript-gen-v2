@@ -255,14 +255,20 @@ JSON RESPONSE:`;
     const chunkFacts: ChunkFacts[] = [];
     
     if (config.enableParallelFactExtraction && config.chunking.parallelProcessing) {
-      // Parallel processing in batches
+      // Parallel processing in batches with granular progress updates
       const batchSize = config.chunking.batchSize;
+      let completedChunks = 0;
       
       for (let i = 0; i < chunks.length; i += batchSize) {
         const batch = chunks.slice(i, i + batchSize);
         const batchPromises = batch.map(async (chunk) => {
           try {
             const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);
+            
+            // Update progress for individual chunk completion
+            completedChunks++;
+            onProgress?.(completedChunks, chunks.length);
+            
             return {
               chunkId: chunk.id,
               chunkIndex: chunk.chunkIndex,
@@ -273,6 +279,11 @@ JSON RESPONSE:`;
             };
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            
+            // Update progress even for failed chunks
+            completedChunks++;
+            onProgress?.(completedChunks, chunks.length);
+            
             return {
               chunkId: chunk.id,
               chunkIndex: chunk.chunkIndex,
@@ -286,9 +297,6 @@ JSON RESPONSE:`;
 
         const batchResults = await Promise.all(batchPromises);
         chunkFacts.push(...batchResults);
-        
-        // Update progress
-        onProgress?.(Math.min(i + batchSize, chunks.length), chunks.length);
         
         // Log batch completion
         logInfo('SUMMARIZE', `Completed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(chunks.length / batchSize)} (${batchResults.length} chunks)`, {
