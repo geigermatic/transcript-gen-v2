@@ -1,4 +1,4 @@
-import { useState, useRef, type DragEvent, type ChangeEvent } from 'react';
+import { useState, useRef, useEffect, type DragEvent, type ChangeEvent } from 'react';
 import { DocumentProcessor } from '../lib/documentProcessor';
 import { useAppStore } from '../store';
 import { HelpTooltip } from './Tooltip';
@@ -12,7 +12,20 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingFile, setProcessingFile] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { addDocument, addLog } = useAppStore();
+  const { addDocument, addLog, documents } = useAppStore();
+
+  // Reset file input when all documents are cleared
+  useEffect(() => {
+    if (documents.length === 0 && fileInputRef.current) {
+      fileInputRef.current.value = '';
+      addLog({
+        level: 'info',
+        category: 'file-upload',
+        message: 'File input reset after data clear',
+        details: {}
+      });
+    }
+  }, [documents.length, addLog]);
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -101,6 +114,10 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
     } finally {
       setIsProcessing(false);
       setProcessingFile('');
+      // Reset file input value to allow re-uploading the same file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 

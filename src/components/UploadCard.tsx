@@ -2,7 +2,7 @@
  * UploadCard - File upload dropzone with glass styling
  */
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, FileText } from 'lucide-react';
 import { DocumentProcessor } from '../lib/documentProcessor';
 import { SummarizationEngine } from '../lib/summarizationEngine';
@@ -19,7 +19,15 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { addDocument, addABSummaryPair, addEmbeddings, styleGuide } = useAppStore();
+  const { addDocument, addABSummaryPair, addEmbeddings, styleGuide, documents } = useAppStore();
+
+  // Reset file input when all documents are cleared
+  useEffect(() => {
+    if (documents.length === 0 && fileInputRef.current) {
+      fileInputRef.current.value = '';
+      logInfo('UPLOAD', 'File input reset after data clear');
+    }
+  }, [documents.length]);
 
   const triggerSummarization = async (document: any) => {
     try {
@@ -143,6 +151,10 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
       onUploadComplete?.(false, errorMessage);
     } finally {
       setIsProcessing(false);
+      // Reset file input value to allow re-uploading the same file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
