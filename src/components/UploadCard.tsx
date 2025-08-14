@@ -25,37 +25,37 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
   useEffect(() => {
     if (documents.length === 0 && fileInputRef.current) {
       fileInputRef.current.value = '';
-      logInfo('UPLOAD', 'File input reset after data clear');
+      logInfo('UI', 'File input reset after data clear');
     }
   }, [documents.length]);
 
   const triggerSummarization = async (document: any) => {
     try {
-      logInfo('PROCESSING', `Starting background processing for: ${document.filename}`);
+      logInfo('SYSTEM', `Starting background processing for: ${document.filename}`);
       
       // Generate embeddings first (needed for chat)
-      logInfo('EMBEDDINGS', `Generating embeddings for: ${document.filename}`);
+      logInfo('EMBED', `Generating embeddings for: ${document.filename}`);
       const embeddedChunks = await EmbeddingEngine.generateDocumentEmbeddings(
         document.id,
         document.text,
         (progress) => {
-          logInfo('EMBEDDINGS', `Embedding progress: ${progress.current}/${progress.total} chunks (${progress.percentage}%)`);
+          logInfo('EMBED', `Embedding progress: ${progress.current}/${progress.total} chunks (${progress.percentage}%)`);
         }
       );
       
       // Store embeddings in the store
       addEmbeddings(document.id, embeddedChunks);
-      logInfo('EMBEDDINGS', `Embeddings stored for: ${document.filename}`, {
+      logInfo('EMBED', `Embeddings stored for: ${document.filename}`, {
         chunkCount: embeddedChunks.length
       });
       
       // Then generate summary
-      logInfo('SUMMARIZATION', `Starting summarization for: ${document.filename}`);
+      logInfo('SUMMARIZE', `Starting summarization for: ${document.filename}`);
       const result = await SummarizationEngine.summarizeDocument(
         document,
         styleGuide,
         (current, total) => {
-          logInfo('SUMMARIZATION', `Progress: ${current}/${total} chunks processed`);
+          logInfo('SUMMARIZE', `Progress: ${current}/${total} chunks processed`);
         }
       );
 
@@ -72,12 +72,12 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
 
       addABSummaryPair(summaryPair);
       
-      logInfo('PROCESSING', `Processing completed for: ${document.filename}`, {
+      logInfo('SYSTEM', `Processing completed for: ${document.filename}`, {
         summaryLength: result.markdownSummary.length,
         factsExtracted: Object.keys(result.mergedFacts).length
       });
     } catch (error) {
-      logInfo('PROCESSING', `Processing failed for: ${document.filename}`, { error });
+      logInfo('SYSTEM', `Processing failed for: ${document.filename}`, { error });
     }
   };
 
@@ -103,7 +103,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    logInfo('UPLOAD', `File selection detected: ${files.length} files`, { 
+    logInfo('UI', `File selection detected: ${files.length} files`, { 
       filenames: files.map(f => f.name) 
     });
     
@@ -160,7 +160,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
 
   const handleClick = () => {
     console.log('Upload area clicked');
-    logInfo('UPLOAD', 'Upload area clicked - attempting to open file dialog');
+    logInfo('UI', 'Upload area clicked - attempting to open file dialog');
     fileInputRef.current?.click();
   };
 

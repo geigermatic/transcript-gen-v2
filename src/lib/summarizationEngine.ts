@@ -5,8 +5,7 @@
 import { ollama } from './ollama';
 import { TextSplitter } from './textSplitter';
 import { ChunkingConfigManager } from './chunkingConfig';
-import { useAppStore } from '../store';
-import { addLog } from './logger';
+import { logInfo, logError } from './logger';
 import type { Document, ExtractedFacts, StyleGuide } from '../types';
 
 export interface ChunkFacts {
@@ -44,22 +43,18 @@ export class SummarizationEngine {
   ): Promise<SummarizationResult> {
     const startTime = Date.now();
     
-    addLog({
-      level: 'info',
-      category: 'summarization',
-      message: `Starting summarization for document: ${document.title}`,
-      details: { documentId: document.id, textLength: document.text.length }
+    logInfo('SUMMARIZE', `Starting summarization for document: ${document.title}`, {
+      documentId: document.id, 
+      textLength: document.text.length
     });
 
     try {
       // Split document into chunks for processing
       const chunks = TextSplitter.splitText(document.text, document.id);
       
-      addLog({
-        level: 'info',
-        category: 'summarization',
-        message: `Document split into ${chunks.length} chunks for fact extraction`,
-        details: { documentId: document.id, chunkCount: chunks.length }
+      logInfo('SUMMARIZE', `Document split into ${chunks.length} chunks for fact extraction`, {
+        documentId: document.id, 
+        chunkCount: chunks.length
       });
 
       // Extract facts from each chunk (with configurable parallel processing)
@@ -98,26 +93,19 @@ export class SummarizationEngine {
         }
       };
 
-      addLog({
-        level: 'info',
-        category: 'summarization',
-        message: `Summarization completed for document: ${document.title}`,
-        details: { 
-          documentId: document.id,
-          ...result.processingStats,
-          summaryLength: markdownSummary.length,
-          mergedFactKeys: Object.keys(mergedFacts)
-        }
+      logInfo('SUMMARIZE', `Summarization completed for document: ${document.title}`, {
+        documentId: document.id,
+        ...result.processingStats,
+        summaryLength: markdownSummary.length,
+        mergedFactKeys: Object.keys(mergedFacts)
       });
 
       return result;
 
     } catch (error) {
-      addLog({
-        level: 'error',
-        category: 'summarization',
-        message: `Summarization failed for document: ${document.title}`,
-        details: { documentId: document.id, error: error instanceof Error ? error.message : error }
+      logError('SUMMARIZE', `Summarization failed for document: ${document.title}`, {
+        documentId: document.id, 
+        error: error instanceof Error ? error.message : error
       });
       throw error;
     }
@@ -303,15 +291,10 @@ JSON RESPONSE:`;
         onProgress?.(Math.min(i + batchSize, chunks.length), chunks.length);
         
         // Log batch completion
-        addLog({
-          level: 'info',
-          category: 'summarization',
-          message: `Completed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(chunks.length / batchSize)} (${batchResults.length} chunks)`,
-          details: { 
-            documentId,
-            batchSize: batchResults.length,
-            successful: batchResults.filter(r => r.parseSuccess).length
-          }
+        logInfo('SUMMARIZE', `Completed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(chunks.length / batchSize)} (${batchResults.length} chunks)`, {
+          documentId,
+          batchSize: batchResults.length,
+          successful: batchResults.filter(r => r.parseSuccess).length
         });
         
         // Small delay between batches to avoid overwhelming Ollama
@@ -336,16 +319,11 @@ JSON RESPONSE:`;
             error: facts.error,
           });
           
-          addLog({
-            level: 'info',
-            category: 'summarization',
-            message: `Extracted facts from chunk ${i + 1}/${chunks.length}`,
-            details: { 
-              documentId, 
-              chunkId: chunk.id, 
-              parseSuccess: facts.parseSuccess,
-              factKeys: Object.keys(facts.facts)
-            }
+          logInfo('SUMMARIZE', `Extracted facts from chunk ${i + 1}/${chunks.length}`, {
+            documentId, 
+            chunkId: chunk.id, 
+            parseSuccess: facts.parseSuccess,
+            factKeys: Object.keys(facts.facts)
           });
           
         } catch (error) {
@@ -359,11 +337,8 @@ JSON RESPONSE:`;
             error: errorMessage,
           });
           
-          addLog({
-            level: 'error',
-            category: 'summarization',
-            message: `Failed to extract facts from chunk ${i + 1}/${chunks.length}`,
-            details: { documentId, chunkId: chunk.id, error: errorMessage }
+          logError('SUMMARIZE', `Failed to extract facts from chunk ${i + 1}/${chunks.length}`, {
+            documentId, chunkId: chunk.id, error: errorMessage
           });
         }
         
