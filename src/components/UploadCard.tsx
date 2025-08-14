@@ -188,11 +188,11 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
         />
         
         <div className="space-y-4">
-          <div className="w-12 h-12 mx-auto bg-white bg-opacity-10 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 mx-auto bg-white/5 border border-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm">
             {isProcessing ? (
-              <div className="w-6 h-6 border-2 border-white border-opacity-30 border-t-blue-500 rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-white/30 border-t-blue-400 rounded-full animate-spin" />
             ) : (
-              <Upload size={24} className="text-white text-opacity-70" />
+              <Upload size={24} className="text-white/70" />
             )}
           </div>
           

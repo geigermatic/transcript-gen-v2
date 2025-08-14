@@ -6,6 +6,7 @@ import { ollama } from './ollama';
 import { TextSplitter } from './textSplitter';
 import { ChunkingConfigManager } from './chunkingConfig';
 import { useAppStore } from '../store';
+import { addLog } from './logger';
 import type { Document, ExtractedFacts, StyleGuide } from '../types';
 
 export interface ChunkFacts {
@@ -41,7 +42,6 @@ export class SummarizationEngine {
     styleGuide: StyleGuide,
     onProgress?: (current: number, total: number) => void
   ): Promise<SummarizationResult> {
-    const { addLog } = useAppStore.getState();
     const startTime = Date.now();
     
     addLog({
