@@ -14,6 +14,8 @@ interface SummaryPreviewCardProps {
   chunksProcessed?: number;
   totalChunks?: number;
   processingStartTime?: Date;
+  progressPercent?: number;
+  progressStatus?: string;
 }
 
 export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({ 
@@ -21,7 +23,9 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
   isLoading = false,
   chunksProcessed = 0,
   totalChunks = 0,
-  processingStartTime
+  processingStartTime,
+  progressPercent = 0,
+  progressStatus = ''
 }) => {
   const [copied, setCopied] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -100,13 +104,13 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
           {/* Progress bar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm text-white text-opacity-70">
-              <span>Processing chunks</span>
-              <span>{chunksProcessed}/{totalChunks}</span>
+              <span>{progressStatus || 'Processing chunks'}</span>
+              <span>{progressPercent > 0 ? `${Math.round(progressPercent)}%` : `${chunksProcessed}/${totalChunks}`}</span>
             </div>
             <div className="w-full bg-white bg-opacity-10 rounded-full h-2">
               <div 
                 className="bg-blue-400 h-2 rounded-full transition-all duration-300 ease-out"
-                style={{ width: `${totalChunks > 0 ? (chunksProcessed / totalChunks) * 100 : 0}%` }}
+                style={{ width: `${progressPercent > 0 ? progressPercent : (totalChunks > 0 ? (chunksProcessed / totalChunks) * 100 : 0)}%` }}
               />
             </div>
           </div>

@@ -13,9 +13,10 @@ import type { ABSummaryPair } from '../types';
 
 interface UploadCardProps {
   onUploadComplete?: (success: boolean, message: string, document?: any) => void;
+  onProgress?: (current: number, total: number, status?: string) => void;
 }
 
-export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
+export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete, onProgress }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,6 +57,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete }) => {
         styleGuide,
         (current, total, status) => {
           logInfo('SUMMARIZE', status || `Progress: ${current}%`);
+          onProgress?.(current, total, status);
         }
       );
 

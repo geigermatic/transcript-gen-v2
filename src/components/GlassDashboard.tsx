@@ -23,6 +23,8 @@ export const GlassDashboard: React.FC = () => {
   const [chunksProcessed, setChunksProcessed] = useState(0);
   const [totalChunks, setTotalChunks] = useState(0);
   const [processingStartTime, setProcessingStartTime] = useState<Date | null>(null);
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [progressStatus, setProgressStatus] = useState('');
 
   // Ensure page starts at top on component mount
   useEffect(() => {
@@ -142,13 +144,32 @@ export const GlassDashboard: React.FC = () => {
               chunksProcessed={chunksProcessed}
               totalChunks={totalChunks}
               processingStartTime={processingStartTime}
+              progressPercent={progressPercent}
+              progressStatus={progressStatus}
             />
           </div>
 
           {/* Right Column - Upload & Recent Documents */}
           <div className="lg:col-span-1 space-y-6">
             {/* Upload Card */}
-            <UploadCard onUploadComplete={handleUploadComplete} />
+            <UploadCard 
+              onUploadComplete={handleUploadComplete}
+              onProgress={(current, total, status) => {
+                setProgressPercent(current);
+                setProgressStatus(status || '');
+                setIsSummarizing(current < 100);
+                
+                // Also set chunk info for backward compatibility
+                const estimatedTotalChunks = 7;
+                const estimatedProcessedChunks = Math.floor((current / 100) * estimatedTotalChunks);
+                setChunksProcessed(estimatedProcessedChunks);
+                setTotalChunks(estimatedTotalChunks);
+                
+                if (current === 0) {
+                  setProcessingStartTime(new Date());
+                }
+              }}
+            />
             
             {/* Recent Documents Card - below Upload */}
             <RecentDocsCard 
