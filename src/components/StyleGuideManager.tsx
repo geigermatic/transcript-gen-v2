@@ -268,7 +268,7 @@ export const StyleGuideManager: React.FC = () => {
         
         // Fix array elements that are missing commas between quoted strings
         // This handles cases like ["item1" "item2"] -> ["item1", "item2"]
-        cleaned = cleaned.replace(/(")\s+("/g, '$1, $2');
+        cleaned = cleaned.replace(/(\")\s+(\")/g, '$1, $2');
         
         // First fix JSON structure issues
         cleaned = cleaned
@@ -316,7 +316,7 @@ export const StyleGuideManager: React.FC = () => {
           try {
             const lastResortClean = sanitizedAttempt
               // Fix missing commas in arrays first
-              .replace(/(")\s+("/g, '$1, $2')
+              .replace(/(\")\s+(\")/g, '$1, $2')
               // Remove any remaining control characters more aggressively
               .replace(/[\u0000-\u001F]/g, '')
               // Fix common JSON issues more aggressively
