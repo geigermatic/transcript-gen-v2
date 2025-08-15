@@ -5,6 +5,8 @@ import { SemanticSearchTest } from '../components/SemanticSearchTest';
 import { ChatTester } from '../components/ChatTester';
 import { ABTestingDashboard } from '../components/ABTestingDashboard';
 import { QATestRunner } from '../components/QATestRunner';
+import { PromptEditor } from '../components/PromptEditor';
+import { AppShell } from '../components/AppShell';
 
 export function DevConsolePage() {
   const { documents, logs, clearLogs, getAllEmbeddings } = useAppStore();
@@ -59,9 +61,10 @@ export function DevConsolePage() {
   const documentsWithEmbeddings = new Set(allEmbeddings.map(e => e.documentId)).size;
 
   return (
-    <div className="space-y-6">
+    <AppShell>
+      <div className="space-y-6">
       <div className="glass-panel p-6">
-        <h1 className="text-2xl font-bold text-white mb-4">Developer Console</h1>
+        <h1 className="text-hierarchy-h1">Developer Console</h1>
         <p className="text-gray-300">
           View detailed logs, status tracking, and debugging information for development builds.
         </p>
@@ -69,7 +72,7 @@ export function DevConsolePage() {
 
       <div className="glass-panel p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-white">System Status</h2>
+          <h2 className="text-hierarchy-h2">System Status</h2>
           <button
             onClick={checkOllamaConnection}
             className="glass-button text-white text-sm"
@@ -80,29 +83,29 @@ export function DevConsolePage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="glass-panel p-4">
-            <h3 className="text-white font-medium">Ollama Status</h3>
+            <h3 className="text-hierarchy-h3">Ollama Status</h3>
             <p className={getStatusColor(ollamaStatus)}>{getStatusText(ollamaStatus)}</p>
           </div>
           <div className="glass-panel p-4">
-            <h3 className="text-white font-medium">Documents</h3>
+            <h3 className="text-hierarchy-h3">Documents</h3>
             <p className="text-gray-400">{documents.length}</p>
           </div>
           <div className="glass-panel p-4">
-            <h3 className="text-white font-medium">Total Words</h3>
+            <h3 className="text-hierarchy-h3">Total Words</h3>
             <p className="text-gray-400">{totalWords.toLocaleString()}</p>
           </div>
           <div className="glass-panel p-4">
-            <h3 className="text-white font-medium">Storage Used</h3>
+            <h3 className="text-hierarchy-h3">Storage Used</h3>
             <p className="text-gray-400">
               {totalSize > 0 ? (totalSize / 1024 / 1024).toFixed(2) + ' MB' : '0 MB'}
             </p>
           </div>
           <div className="glass-panel p-4">
-            <h3 className="text-white font-medium">Embeddings</h3>
+            <h3 className="text-hierarchy-h3">Embeddings</h3>
             <p className="text-gray-400">{totalEmbeddings} chunks</p>
           </div>
           <div className="glass-panel p-4">
-            <h3 className="text-white font-medium">Indexed Docs</h3>
+            <h3 className="text-hierarchy-h3">Indexed Docs</h3>
             <p className="text-gray-400">{documentsWithEmbeddings}/{documents.length}</p>
           </div>
         </div>
@@ -110,7 +113,7 @@ export function DevConsolePage() {
 
       <div className="glass-panel p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-white">Application Logs</h2>
+          <h2 className="text-hierarchy-h2">Application Logs</h2>
           <div className="flex space-x-2">
             <span className="text-sm text-gray-400">{logs.length} entries</span>
             <button
@@ -150,6 +153,9 @@ export function DevConsolePage() {
         </div>
       </div>
 
+      {/* AI Prompt Editor */}
+      <PromptEditor />
+
       {/* AI Features Testing */}
       <div className="space-y-6">
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -159,6 +165,7 @@ export function DevConsolePage() {
         <ABTestingDashboard />
         <QATestRunner />
       </div>
-    </div>
+      </div>
+    </AppShell>
   );
 }

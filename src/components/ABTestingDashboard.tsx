@@ -4,11 +4,26 @@ import { useAppStore } from '../store';
 
 export const ABTestingDashboard: React.FC = () => {
   const { abSummaryPairs } = useAppStore();
-  const stats = ABSummaryEngine.getABTestingStats();
-
-  const recentTests = abSummaryPairs
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+  
+  let stats;
+  let recentTests;
+  
+  try {
+    stats = ABSummaryEngine.getABTestingStats();
+    recentTests = (abSummaryPairs || [])
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+  } catch (error) {
+    console.error('Error in ABTestingDashboard:', error);
+    stats = {
+      totalTests: 0,
+      completedTests: 0,
+      variantAWins: 0,
+      variantBWins: 0,
+      completionRate: 0
+    };
+    recentTests = [];
+  }
 
   return (
     <div className="space-y-6">
@@ -20,29 +35,29 @@ export const ABTestingDashboard: React.FC = () => {
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="glass-panel p-4 text-center">
-          <div className="text-2xl font-bold text-blue-400">{stats.totalTests}</div>
+          <div className="text-2xl font-bold text-blue-400">{stats?.totalTests || 0}</div>
           <div className="text-gray-400 text-sm">Total Tests</div>
         </div>
         <div className="glass-panel p-4 text-center">
-          <div className="text-2xl font-bold text-green-400">{stats.completedTests}</div>
+          <div className="text-2xl font-bold text-green-400">{stats?.completedTests || 0}</div>
           <div className="text-gray-400 text-sm">Completed</div>
         </div>
         <div className="glass-panel p-4 text-center">
-          <div className="text-2xl font-bold text-purple-400">{stats.variantAWins}</div>
+          <div className="text-2xl font-bold text-purple-400">{stats?.variantAWins || 0}</div>
           <div className="text-gray-400 text-sm">Variant A Wins</div>
         </div>
         <div className="glass-panel p-4 text-center">
-          <div className="text-2xl font-bold text-orange-400">{stats.variantBWins}</div>
+          <div className="text-2xl font-bold text-orange-400">{stats?.variantBWins || 0}</div>
           <div className="text-gray-400 text-sm">Variant B Wins</div>
         </div>
         <div className="glass-panel p-4 text-center">
-          <div className="text-2xl font-bold text-yellow-400">{stats.completionRate}%</div>
+          <div className="text-2xl font-bold text-yellow-400">{stats?.completionRate || 0}%</div>
           <div className="text-gray-400 text-sm">Completion Rate</div>
         </div>
       </div>
 
       {/* Win Rate Analysis */}
-      {stats.completedTests > 0 && (
+      {(stats?.completedTests || 0) > 0 && (
         <div className="glass-panel p-4">
           <h4 className="text-white font-medium mb-3">Win Rate Analysis</h4>
           <div className="space-y-2">
@@ -53,12 +68,12 @@ export const ABTestingDashboard: React.FC = () => {
                   <div
                     className="bg-purple-500 h-2 rounded-full"
                     style={{ 
-                      width: `${stats.completedTests > 0 ? (stats.variantAWins / stats.completedTests) * 100 : 0}%` 
+                      width: `${(stats?.completedTests || 0) > 0 ? ((stats?.variantAWins || 0) / (stats?.completedTests || 1)) * 100 : 0}%` 
                     }}
                   />
                 </div>
                 <span className="text-purple-400 text-sm font-medium w-12">
-                  {stats.completedTests > 0 ? Math.round((stats.variantAWins / stats.completedTests) * 100) : 0}%
+                  {(stats?.completedTests || 0) > 0 ? Math.round(((stats?.variantAWins || 0) / (stats?.completedTests || 1)) * 100) : 0}%
                 </span>
               </div>
             </div>
@@ -69,12 +84,12 @@ export const ABTestingDashboard: React.FC = () => {
                   <div
                     className="bg-orange-500 h-2 rounded-full"
                     style={{ 
-                      width: `${stats.completedTests > 0 ? (stats.variantBWins / stats.completedTests) * 100 : 0}%` 
+                      width: `${(stats?.completedTests || 0) > 0 ? ((stats?.variantBWins || 0) / (stats?.completedTests || 1)) * 100 : 0}%` 
                     }}
                   />
                 </div>
                 <span className="text-orange-400 text-sm font-medium w-12">
-                  {stats.completedTests > 0 ? Math.round((stats.variantBWins / stats.completedTests) * 100) : 0}%
+                  {(stats?.completedTests || 0) > 0 ? Math.round(((stats?.variantBWins || 0) / (stats?.completedTests || 1)) * 100) : 0}%
                 </span>
               </div>
             </div>
@@ -99,28 +114,28 @@ export const ABTestingDashboard: React.FC = () => {
               >
                 <div className="flex-1">
                   <div className="font-medium text-white truncate">
-                    {test.documentTitle}
+                    {test?.documentTitle || 'Unknown Document'}
                   </div>
                   <div className="text-sm text-gray-400">
-                    {new Date(test.createdAt).toLocaleDateString()} at{' '}
-                    {new Date(test.createdAt).toLocaleTimeString()}
+                    {test?.createdAt ? new Date(test.createdAt).toLocaleDateString() : 'Unknown Date'} at{' '}
+                    {test?.createdAt ? new Date(test.createdAt).toLocaleTimeString() : 'Unknown Time'}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-sm">
                     <span className="text-gray-400">A:</span>
                     <span className="text-purple-400 ml-1">
-                      {test.variantDetails.variantA.name}
+                      {test?.variantDetails?.variantA?.name || 'Professional'}
                     </span>
                   </div>
                   <div className="text-sm">
                     <span className="text-gray-400">B:</span>
                     <span className="text-orange-400 ml-1">
-                      {test.variantDetails.variantB.name}
+                      {test?.variantDetails?.variantB?.name || 'Conversational'}
                     </span>
                   </div>
                   <div className="text-sm">
-                    {test.userFeedback ? (
+                    {test?.userFeedback ? (
                       <span className={`font-medium ${
                         test.userFeedback.winner === 'A' ? 'text-purple-400' : 'text-orange-400'
                       }`}>
@@ -138,27 +153,27 @@ export const ABTestingDashboard: React.FC = () => {
       </div>
 
       {/* Feedback Insights */}
-      {stats.completedTests > 0 && (
+      {(stats?.completedTests || 0) > 0 && (
         <div className="glass-panel p-4">
           <h4 className="text-white font-medium mb-3">User Feedback Insights</h4>
           <div className="space-y-2">
-            {abSummaryPairs
-              .filter(test => test.userFeedback?.reason)
+            {(abSummaryPairs || [])
+              .filter(test => test?.userFeedback?.reason)
               .slice(0, 3)
               .map((test) => (
-                <div key={test.id} className="p-3 bg-black/20 rounded-lg">
+                <div key={test?.id || Math.random()} className="p-3 bg-black/20 rounded-lg">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-white font-medium">
-                      {test.documentTitle}
+                      {test?.documentTitle || 'Unknown Document'}
                     </span>
                     <span className={`text-sm font-medium ${
-                      test.userFeedback?.winner === 'A' ? 'text-purple-400' : 'text-orange-400'
+                      test?.userFeedback?.winner === 'A' ? 'text-purple-400' : 'text-orange-400'
                     }`}>
-                      Winner: {test.userFeedback?.winner}
+                      Winner: {test?.userFeedback?.winner || 'Unknown'}
                     </span>
                   </div>
                   <p className="text-gray-400 text-sm italic">
-                    "{test.userFeedback?.reason}"
+                    "{test?.userFeedback?.reason || 'No reason provided'}"
                   </p>
                 </div>
               ))}

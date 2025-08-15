@@ -33,6 +33,7 @@ interface AppState {
   // Style Guide
   styleGuide: StyleGuide;
   updateStyleGuide: (updates: Partial<StyleGuide>) => void;
+  resetStyleGuide: () => void;
   
   // Settings
   settings: AppSettings;
@@ -157,6 +158,24 @@ export const useAppStore = create<AppState>()(
       updateStyleGuide: (updates) =>
         set((state) => ({
           styleGuide: { ...state.styleGuide, ...updates },
+        })),
+      resetStyleGuide: () =>
+        set(() => ({
+          styleGuide: {
+            instructions_md: '',
+            tone_settings: {
+              formality: 50,
+              enthusiasm: 50,
+              technicality: 50,
+            },
+            keywords: [],
+            example_phrases: {
+              preferred_openings: [],
+              preferred_transitions: [],
+              preferred_conclusions: [],
+              avoid_phrases: [],
+            },
+          },
         })),
 
       // Settings

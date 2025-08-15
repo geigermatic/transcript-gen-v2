@@ -2,7 +2,7 @@
  * Topbar - Glass navigation header
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Settings, Sun, Moon, Archive, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
@@ -13,6 +13,7 @@ interface TopbarProps {
 
 export const Topbar: React.FC<TopbarProps> = ({ sidebarCollapsed = false }) => {
   const { isDarkMode, toggleDarkMode, clearAllData, documents } = useAppStore();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -54,6 +55,18 @@ export const Topbar: React.FC<TopbarProps> = ({ sidebarCollapsed = false }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
+  // Auto-focus search input when component mounts (home page navigation)
+  useEffect(() => {
+    // Small delay to ensure the component is fully rendered
+    const timer = setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <header 
       className={`fixed right-0 z-50 p-6 transition-all duration-300 ease-out ${
@@ -85,9 +98,11 @@ export const Topbar: React.FC<TopbarProps> = ({ sidebarCollapsed = false }) => {
             <div className="relative w-full">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white text-opacity-50" />
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="Search transcripts..."
-                className="glass-input w-full pl-10 py-2"
+                className="glass-input w-full py-2"
+                style={{ paddingLeft: '3.5rem', paddingRight: '1rem' }}
                 readOnly
               />
             </div>

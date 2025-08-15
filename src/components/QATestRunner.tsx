@@ -94,14 +94,14 @@ export const QATestRunner: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-800 p-4 rounded border border-gray-600">
+    <div className="glass-panel p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-white font-medium">QA Test Suite</h3>
+        <h3 className="text-hierarchy-h3">QA Test Suite</h3>
         <div className="flex gap-2">
           {testResults.length > 0 && (
             <button
               onClick={downloadResults}
-              className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors"
+              className="glass-button-secondary text-sm"
             >
               📥 Export Results
             </button>
@@ -109,11 +109,7 @@ export const QATestRunner: React.FC = () => {
           <button
             onClick={runAllTests}
             disabled={isRunning}
-            className={`text-xs px-3 py-1 rounded transition-colors ${
-              isRunning 
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
-                : 'bg-green-600 hover:bg-green-700 text-white'
-            }`}
+            className="glass-button text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isRunning ? '⏳ Running...' : '▶️ Run All Tests'}
           </button>
@@ -121,7 +117,7 @@ export const QATestRunner: React.FC = () => {
       </div>
 
       {isRunning && (
-        <div className="mb-4 bg-blue-500/10 border border-blue-500/30 rounded p-3">
+        <div className="mb-4 glass-panel p-4">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
             <span className="text-blue-400 text-sm">Running comprehensive QA tests...</span>

@@ -4,6 +4,7 @@
 
 import { ollama } from './ollama';
 import { EmbeddingEngine } from './embeddingEngine';
+import { PromptService } from './promptService';
 import { useAppStore } from '../store';
 import type { ChatMessage, ChatContext, ChatResponse, EmbeddedChunk, SearchResult, StyleGuide } from '../types';
 
@@ -277,8 +278,6 @@ export class ChatEngine {
     styleGuide: StyleGuide
   ): string {
     const styleInstructions = styleGuide.instructions_md || 'Use a helpful, professional tone.';
-    
-    // Build example phrases section
     const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
     
     // Format conversation context
@@ -307,42 +306,19 @@ NOTE: When the user refers to "the summary", "the generated summary", or "this s
     // Detect format requirements in the user's query
     const formatRequirements = this.detectFormatRequirements(query);
 
-    return `You are a helpful AI assistant answering questions about teaching transcripts. You must answer based on the provided source excerpts and any generated summary.
-
-${summarySection}${formatRequirements}STYLE GUIDE:
-${styleInstructions}
-
-Tone Settings:
-- Formality: ${styleGuide.tone_settings.formality}/100 (0=casual, 100=formal)
-- Enthusiasm: ${styleGuide.tone_settings.enthusiasm}/100 (0=calm, 100=energetic)
-- Technical Level: ${styleGuide.tone_settings.technicality}/100 (0=simple, 100=technical)
-
-Keywords to emphasize: ${styleGuide.keywords.join(', ') || 'None specified'}
-
-${examplePhrasesSection}
-
-CONVERSATION CONTEXT:
-${contextMessages}
-
-SOURCE EXCERPTS:
-${sourceChunks}
-
-RULES:
-1. Answer based on the provided source excerpts${context.selectedDocumentSummary ? ' and generated summary' : ''}
-2. When users reference "the summary" or "the generated summary", use the GENERATED SUMMARY section above
-3. You can work with the summary (rewrite it, extract from it, compare it to sources, etc.)
-4. If the sources and summary don't contain relevant information, say "I don't have enough information to answer that question."
-5. Reference specific sources when possible (e.g., "According to Source 1...")
-6. Apply the style guide to your response
-7. Be helpful and direct
-8. NEVER include individual names from the transcript - use generic terms like "the instructor", "the teacher", "the speaker", "a student", "a participant"
-${formatRequirements ? '9. STRICTLY follow the CRITICAL FORMAT REQUIREMENTS above - count sentences, use exact formatting, respect word limits' : ''}
-
-HUMAN QUESTION: ${query}
-
-${formatRequirements ? 'REMINDER: Follow the format requirements exactly. Count your output before responding.' : ''}
-
-ASSISTANT RESPONSE:`;
+    return PromptService.buildPrompt('chat-response', {
+      summarySection,
+      formatRequirements,
+      styleInstructions,
+      formalityLevel: styleGuide.tone_settings.formality.toString(),
+      enthusiasmLevel: styleGuide.tone_settings.enthusiasm.toString(),
+      technicalityLevel: styleGuide.tone_settings.technicality.toString(),
+      keywords: styleGuide.keywords.join(', ') || 'None specified',
+      examplePhrasesSection,
+      contextMessages,
+      sourceChunks,
+      userQuery: query
+    });
   }
 
   /**

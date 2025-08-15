@@ -277,20 +277,34 @@ export class ABSummaryEngine {
     variantBWins: number;
     completionRate: number;
   } {
-    const { abSummaryPairs } = useAppStore.getState();
-    
-    const totalTests = abSummaryPairs.length;
-    const completedTests = abSummaryPairs.filter(pair => pair.userFeedback).length;
-    const variantAWins = abSummaryPairs.filter(pair => pair.userFeedback?.winner === 'A').length;
-    const variantBWins = abSummaryPairs.filter(pair => pair.userFeedback?.winner === 'B').length;
-    const completionRate = totalTests > 0 ? (completedTests / totalTests) * 100 : 0;
+    try {
+      const { abSummaryPairs } = useAppStore.getState();
+      
+      // Ensure abSummaryPairs is an array
+      const pairs = Array.isArray(abSummaryPairs) ? abSummaryPairs : [];
+      
+      const totalTests = pairs.length;
+      const completedTests = pairs.filter(pair => pair?.userFeedback).length;
+      const variantAWins = pairs.filter(pair => pair?.userFeedback?.winner === 'A').length;
+      const variantBWins = pairs.filter(pair => pair?.userFeedback?.winner === 'B').length;
+      const completionRate = totalTests > 0 ? (completedTests / totalTests) * 100 : 0;
 
-    return {
-      totalTests,
-      completedTests,
-      variantAWins,
-      variantBWins,
-      completionRate: Math.round(completionRate * 100) / 100,
-    };
+      return {
+        totalTests,
+        completedTests,
+        variantAWins,
+        variantBWins,
+        completionRate: Math.round(completionRate * 100) / 100,
+      };
+    } catch (error) {
+      console.error('Error getting A/B testing stats:', error);
+      return {
+        totalTests: 0,
+        completedTests: 0,
+        variantAWins: 0,
+        variantBWins: 0,
+        completionRate: 0,
+      };
+    }
   }
 }

@@ -10,6 +10,7 @@ import {
   BookOpen, 
   FileText,
   Settings,
+  Terminal,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -33,6 +34,7 @@ const navigationItems: NavItem[] = [
   { id: 'glossary', label: 'Glossary', icon: <BookOpen size={20} />, href: '/glossary' },
   { id: 'library', label: 'Library', icon: <FileText size={20} />, href: '/library' },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} />, href: '/settings' },
+  { id: 'dev-console', label: 'Developer Console', icon: <Terminal size={20} />, href: '/dev-console' },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {

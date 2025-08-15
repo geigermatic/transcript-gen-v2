@@ -5,6 +5,7 @@
 import { ollama } from './ollama';
 import { TextSplitter } from './textSplitter';
 import { ChunkingConfigManager } from './chunkingConfig';
+import { PromptService } from './promptService';
 import { logInfo, logError } from './logger';
 import type { Document, ExtractedFacts, StyleGuide } from '../types';
 
@@ -203,51 +204,18 @@ export class SummarizationEngine {
     chunkIndex: number
   ): string {
     const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
-    
-    // Build example phrases section
     const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
     
-    return `You are extracting structured facts from a teaching transcript chunk. Extract information according to this JSON schema and style guide.
-
-STYLE GUIDE:
-${styleInstructions}
-
-Tone Settings:
-- Formality: ${styleGuide.tone_settings.formality}/100 (0=casual, 100=formal)
-- Enthusiasm: ${styleGuide.tone_settings.enthusiasm}/100 (0=calm, 100=energetic) 
-- Technical Level: ${styleGuide.tone_settings.technicality}/100 (0=simple, 100=technical)
-
-Keywords to emphasize: ${styleGuide.keywords.join(', ') || 'None specified'}
-
-${examplePhrasesSection}
-
-JSON SCHEMA:
-{
-  "class_title": "string (optional)",
-  "date_or_series": "string (optional)", 
-  "audience": "string (optional)",
-  "learning_objectives": ["string array"],
-  "key_takeaways": ["string array - REQUIRED"],
-  "topics": ["string array - REQUIRED"], 
-  "techniques": ["string array - REQUIRED"],
-  "action_items": ["string array"],
-  "notable_quotes": ["string array"],
-  "open_questions": ["string array"],
-  "timestamp_refs": ["string array"]
-}
-
-INSTRUCTIONS:
-1. Extract facts ONLY from this chunk (chunk ${chunkIndex + 1})
-2. Return ONLY valid JSON - no explanations or markdown
-3. Include key_takeaways, topics, and techniques (required fields)
-4. Use empty arrays for fields with no relevant content
-5. Apply the style guide to your extracted content
-6. NEVER include individual names - use generic terms like "the instructor", "the teacher", "the speaker", "a student", "a participant"
-
-CHUNK TEXT:
-${chunkText}
-
-JSON RESPONSE:`;
+    return PromptService.buildPrompt('fact-extraction', {
+      styleInstructions,
+      formalityLevel: styleGuide.tone_settings.formality.toString(),
+      enthusiasmLevel: styleGuide.tone_settings.enthusiasm.toString(),
+      technicalityLevel: styleGuide.tone_settings.technicality.toString(),
+      keywords: styleGuide.keywords.join(', ') || 'None specified',
+      examplePhrasesSection,
+      chunkIndex: (chunkIndex + 1).toString(),
+      chunkText
+    });
   }
 
   /**
@@ -478,39 +446,18 @@ JSON RESPONSE:`;
     styleGuide: StyleGuide
   ): string {
     const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
-    
-    // Build example phrases section
     const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
     
-    return `Generate a comprehensive markdown summary from the extracted facts below. Follow the style guide precisely.
-
-STYLE GUIDE:
-${styleInstructions}
-
-Tone Settings:
-- Formality: ${styleGuide.tone_settings.formality}/100 (0=casual, 100=formal)
-- Enthusiasm: ${styleGuide.tone_settings.enthusiasm}/100 (0=calm, 100=energetic)
-- Technical Level: ${styleGuide.tone_settings.technicality}/100 (0=simple, 100=technical)
-
-Keywords to emphasize: ${styleGuide.keywords.join(', ') || 'None specified'}
-
-${examplePhrasesSection}
-
-DOCUMENT: ${document.title}
-EXTRACTED FACTS:
-${JSON.stringify(mergedFacts, null, 2)}
-
-INSTRUCTIONS:
-1. Create a well-structured markdown summary
-2. Use the extracted facts as your foundation
-3. Apply the style guide consistently
-4. Include relevant headings and formatting
-5. Emphasize techniques and key takeaways
-6. Make it engaging and useful for the target audience
-7. NEVER include individual names - use generic terms like "the instructor", "the teacher", "the speaker", "a student", "a participant"
-8. START with a "## Synopsis" section containing 4-6 sentences that provide a concise overview of the key content and outcomes
-
-MARKDOWN SUMMARY:`;
+    return PromptService.buildPrompt('summary-generation', {
+      styleInstructions,
+      formalityLevel: styleGuide.tone_settings.formality.toString(),
+      enthusiasmLevel: styleGuide.tone_settings.enthusiasm.toString(),
+      technicalityLevel: styleGuide.tone_settings.technicality.toString(),
+      keywords: styleGuide.keywords.join(', ') || 'None specified',
+      examplePhrasesSection,
+      documentTitle: document.title,
+      extractedFacts: JSON.stringify(mergedFacts, null, 2)
+    });
   }
 
   /**

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, FileText, Download, Upload, Edit3, Save, RotateCcw, RefreshCw } from 'lucide-react';
+import { Search, FileText, Download, Upload, Edit3, Save, RotateCcw, RefreshCw, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
+import { PromptService } from '../lib/promptService';
 import type { ToneSettings } from '../types';
 
 export const StyleGuideManager: React.FC = () => {
-  const { styleGuide, updateStyleGuide, addLog } = useAppStore();
+  const { styleGuide, updateStyleGuide, resetStyleGuide, addLog } = useAppStore();
   const [showTextInput, setShowTextInput] = useState(false);
   const [newsletterText, setNewsletterText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -210,28 +211,10 @@ export const StyleGuideManager: React.FC = () => {
     try {
       const { ollama } = await import('../lib/ollama');
       
-      const analysisPrompt = `Analyze the following newsletter/content sample and extract its writing style characteristics. Generate a JSON response with this exact structure:
-
-{
-  "instructions_md": "## Writing Style Analysis\\n\\n[Detailed markdown analysis of the writing style, tone, and approach based on the sample]",
-  "tone_settings": {
-    "formality": [0-100 number based on how formal/professional vs casual the writing is],
-    "enthusiasm": [0-100 number based on how energetic/excited vs neutral the writing is],
-    "technicality": [0-100 number based on how technical/detailed vs simple the writing is]
-  },
-  "keywords": [array of 5-10 key terms frequently used or emphasized],
-  "example_phrases": {
-    "preferred_openings": [3-5 typical ways this content starts paragraphs/sections],
-    "preferred_transitions": [3-5 ways this content connects ideas],
-    "preferred_conclusions": [3-5 ways this content ends sections or wraps up],
-    "avoid_phrases": [3-5 words/phrases that seem inconsistent with this style]
-  }
-}
-
-IMPORTANT: Respond ONLY with valid JSON, no other text.
-
-Newsletter/Content Sample:
-${newsletterText}`;
+      const analysisPrompt = PromptService.buildPrompt('style-guide-analysis', {
+        currentStyleGuide: JSON.stringify(styleGuide, null, 2),
+        contentSample: newsletterText
+      });
 
       const response = await ollama.chat([
         {
@@ -240,19 +223,51 @@ ${newsletterText}`;
         }
       ]);
       
-      // Try to parse the JSON response
+      // Clean and parse the JSON response
       const cleanResponse = response.trim();
       let parsedStyleGuide;
+      
+      // Function to sanitize JSON string by removing/escaping control characters
+      const sanitizeJsonString = (str: string): string => {
+        // Remove common markdown formatting that might be around JSON
+        let cleaned = str.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+        
+        // Extract JSON object if it's embedded in other text
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          cleaned = jsonMatch[0];
+        }
+        
+        // Replace control characters that commonly break JSON parsing
+        // Use a simple but effective approach
+        cleaned = cleaned
+          // Replace unescaped newlines (not preceded by backslash)
+          .replace(/([^\\])\r?\n/g, '$1\\n')
+          .replace(/^\r?\n/g, '\\n') // Handle newlines at start
+          // Replace unescaped tabs
+          .replace(/([^\\])\t/g, '$1\\t')
+          .replace(/^\t/g, '\\t') // Handle tabs at start
+          // Replace unescaped carriage returns
+          .replace(/([^\\])\r/g, '$1\\n')
+          .replace(/^\r/g, '\\n') // Handle CR at start
+          // Remove other problematic control characters
+          .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+        
+        return cleaned;
+      };
       
       try {
         parsedStyleGuide = JSON.parse(cleanResponse);
       } catch (parseError) {
-        // If JSON parsing fails, try to extract JSON from the response
-        const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          parsedStyleGuide = JSON.parse(jsonMatch[0]);
-        } else {
-          throw new Error('Could not extract valid JSON from response');
+        console.warn('Initial JSON parse failed, attempting to sanitize:', parseError);
+        try {
+          const sanitizedJson = sanitizeJsonString(cleanResponse);
+          parsedStyleGuide = JSON.parse(sanitizedJson);
+        } catch (sanitizeError) {
+          console.error('JSON sanitization also failed:', sanitizeError);
+          console.error('Original response:', cleanResponse);
+          console.error('Sanitized response:', sanitizeJsonString(cleanResponse));
+          throw new Error(`Could not parse JSON response: ${sanitizeError instanceof Error ? sanitizeError.message : 'Unknown parsing error'}`);
         }
       }
 
@@ -273,9 +288,9 @@ ${newsletterText}`;
         if (error.message.includes('Failed to fetch')) {
           errorMessage = 'Cannot connect to Ollama service';
           userMessage = 'Make sure Ollama is running locally (ollama serve) and try again.';
-        } else if (error.message.includes('JSON')) {
+        } else if (error.message.includes('JSON') || error.message.includes('parse')) {
           errorMessage = 'Invalid response format from AI';
-          userMessage = 'The AI returned an invalid response. Try rephrasing your content or try again.';
+          userMessage = 'The AI response contained formatting errors and could not be parsed. This can happen with complex content containing special characters. Try simplifying your newsletter text, removing special formatting, or try again.';
         } else {
           userMessage = error.message;
         }
@@ -295,20 +310,109 @@ ${newsletterText}`;
     }
   };
 
+  const mergeStyleGuides = (current: any, analyzed: any) => {
+    // Intelligently merge keywords (deduplicate, max 15)
+    const existingKeywords = current.keywords || [];
+    const newKeywords = analyzed.keywords || [];
+    const allKeywords = [...existingKeywords, ...newKeywords];
+    const uniqueKeywords = Array.from(new Set(allKeywords.map(k => k.toLowerCase())))
+      .map(k => allKeywords.find(orig => orig.toLowerCase() === k))
+      .slice(0, 15);
+
+    // Blend tone settings (70% existing, 30% new for gentle refinement)
+    const blendedToneSettings = {
+      formality: Math.round((current.tone_settings?.formality || 50) * 0.7 + (analyzed.tone_settings?.formality || 50) * 0.3),
+      enthusiasm: Math.round((current.tone_settings?.enthusiasm || 50) * 0.7 + (analyzed.tone_settings?.enthusiasm || 50) * 0.3),
+      technicality: Math.round((current.tone_settings?.technicality || 50) * 0.7 + (analyzed.tone_settings?.technicality || 50) * 0.3),
+    };
+
+          // Synthesize instructions into one cohesive set (not append)
+      const currentInstructions = current.instructions_md || '';
+      const newInstructions = analyzed.instructions_md || '';
+      
+      let enhancedInstructions;
+      if (!currentInstructions) {
+        // First time - use new instructions as-is
+        enhancedInstructions = newInstructions;
+      } else {
+        // Rewrite the entire instruction set by combining insights
+        // This should create a cohesive, unified guide rather than appending
+        enhancedInstructions = newInstructions; // Use the newly analyzed instructions which should incorporate all learnings
+      }
+
+    // Merge example phrases intelligently
+    const mergePhrasesArray = (existing: string[], newOnes: string[]) => {
+      const combined = [...(existing || []), ...(newOnes || [])];
+      return Array.from(new Set(combined.map(p => p.toLowerCase())))
+        .map(p => combined.find(orig => orig.toLowerCase() === p))
+        .slice(0, 8); // Limit each category
+    };
+
+    const mergedExamplePhrases = {
+      preferred_openings: mergePhrasesArray(
+        current.example_phrases?.preferred_openings,
+        analyzed.example_phrases?.preferred_openings
+      ),
+      preferred_transitions: mergePhrasesArray(
+        current.example_phrases?.preferred_transitions,
+        analyzed.example_phrases?.preferred_transitions
+      ),
+      preferred_conclusions: mergePhrasesArray(
+        current.example_phrases?.preferred_conclusions,
+        analyzed.example_phrases?.preferred_conclusions
+      ),
+      avoid_phrases: mergePhrasesArray(
+        current.example_phrases?.avoid_phrases,
+        analyzed.example_phrases?.avoid_phrases
+      ),
+    };
+
+    return {
+      instructions_md: enhancedInstructions,
+      tone_settings: blendedToneSettings,
+      keywords: uniqueKeywords,
+      example_phrases: mergedExamplePhrases,
+    };
+  };
+
   const applyAnalyzedStyleGuide = () => {
     if (!analyzedStyleGuide) return;
     
-    updateStyleGuide(analyzedStyleGuide);
+    // Merge the analyzed style guide with the current one
+    const refinedStyleGuide = mergeStyleGuides(styleGuide, analyzedStyleGuide);
+    updateStyleGuide(refinedStyleGuide);
+    
     setAnalyzedStyleGuide(null);
-    setNewsletterText('');
-    setShowTextInput(false);
+    // Keep the text analyzer open and preserve the text for reference
+    // setNewsletterText(''); // Don't clear the text
+    // setShowTextInput(false); // Don't collapse the analyzer
     
     addLog({
       level: 'info',
       category: 'style-guide',
-      message: 'Style guide applied from newsletter analysis',
-      details: {}
+      message: 'Style guide refined with newsletter analysis',
+      details: { 
+        keywordsAdded: (refinedStyleGuide.keywords?.length || 0) - (styleGuide.keywords?.length || 0),
+        toneAdjustments: {
+          formality: refinedStyleGuide.tone_settings.formality - styleGuide.tone_settings.formality,
+          enthusiasm: refinedStyleGuide.tone_settings.enthusiasm - styleGuide.tone_settings.enthusiasm,
+          technicality: refinedStyleGuide.tone_settings.technicality - styleGuide.tone_settings.technicality,
+        }
+      }
     });
+  };
+
+  const handleClearStyleGuide = () => {
+    if (confirm('⚠️ Clear Style Guide?\n\nThis will reset all tone settings, keywords, example phrases, and custom instructions to defaults. This action cannot be undone.\n\nClick OK to proceed.')) {
+      resetStyleGuide();
+      
+      addLog({
+        level: 'info',
+        category: 'style-guide',
+        message: 'Style guide reset to defaults',
+        details: {}
+      });
+    }
   };
 
   const importStyleGuide = () => {
@@ -410,12 +514,12 @@ ${newsletterText}`;
     <>
       <div className="glass-panel p-6">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-hierarchy-h2">Voice & Style Guide</h2>
+          <h1 className="text-hierarchy-h1" style={{ fontSize: '1.75rem', fontWeight: '700', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.2', letterSpacing: '-0.02em' }}>Voice & Style Guide</h1>
           <div className="flex gap-4">
             <button
               onClick={() => setShowTextInput(!showTextInput)}
               className={`glass-button-secondary ${showTextInput ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400 border-opacity-30' : 'text-green-400 hover:bg-green-400 hover:bg-opacity-10'}`}
-              title={`Analyze newsletter text to create style guide${ollamaStatus !== 'available' ? ' (Requires Ollama)' : ''}`}
+              title={`Analyze newsletter text to refine style guide${ollamaStatus !== 'available' ? ' (Requires Ollama)' : ''}`}
             >
               <span className="flex items-center gap-2">
                 {showTextInput ? (
@@ -449,6 +553,14 @@ ${newsletterText}`;
             >
               <Download size={16} />
               Export
+            </button>
+            <button
+              onClick={handleClearStyleGuide}
+              className="glass-button-secondary text-red-400 hover:bg-red-400 hover:bg-opacity-10 border-red-400 border-opacity-30"
+              title="Reset style guide to defaults"
+            >
+              <Trash2 size={16} />
+              Clear Style Guide
             </button>
             <button
               onClick={() => {
@@ -573,6 +685,17 @@ ${newsletterText}`;
                           </>
                         )}
                       </button>
+                      
+                      <button
+                        onClick={() => setNewsletterText('')}
+                        disabled={!newsletterText.trim() || isAnalyzing}
+                        className="glass-button-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-gray-400 hover:text-gray-200"
+                        title="Clear text input"
+                      >
+                        <RotateCcw size={16} />
+                        Clear
+                      </button>
+                      
                       <button
                         onClick={() => {
                           setShowTextInput(false);
@@ -656,7 +779,7 @@ ${newsletterText}`;
                       onClick={applyAnalyzedStyleGuide}
                       className="glass-button-primary bg-green-500 hover:bg-green-400"
                     >
-                      ✅ Apply Style Guide
+                      ✨ Refine Style Guide
                     </button>
                     <button
                       onClick={() => setAnalyzedStyleGuide(null)}
@@ -696,7 +819,7 @@ ${newsletterText}`;
 
           {/* Tone Settings */}
           <div>
-            <h3 className="text-hierarchy-h3 mb-6">Tone Settings</h3>
+            <h3 className="text-hierarchy-h3 mb-6" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Tone Settings</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {(Object.keys(currentStyleGuide.tone_settings) as Array<keyof ToneSettings>).map((key) => {
                 const value = currentStyleGuide.tone_settings[key];
@@ -707,7 +830,7 @@ ${newsletterText}`;
                       <span className="text-blue-400 font-medium px-3 py-1 rounded-full bg-blue-400 bg-opacity-20">
                         {getToneLabel(value)} ({value})
                       </span>
-                    </div>
+                  </div>
                     
                     {isEditing ? (
                       <>
@@ -731,8 +854,8 @@ ${newsletterText}`;
                         <div className="w-full bg-white bg-opacity-10 rounded-full h-3 mb-3">
                           <div
                             className="bg-gradient-to-r from-blue-400 to-purple-500 h-3 rounded-full transition-all duration-500 ease-out"
-                            style={{ width: `${value}%` }}
-                          />
+                      style={{ width: `${value}%` }}
+                    />
                         </div>
                         <div className="text-right text-white text-opacity-70 font-medium">{value}/100</div>
                       </>
@@ -746,7 +869,7 @@ ${newsletterText}`;
           {/* Keywords */}
           <div className="glass-card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-hierarchy-h3">Keywords & Phrases</h3>
+              <h3 className="text-hierarchy-h3" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Keywords & Phrases</h3>
               {isEditing && (
                 <button
                   onClick={addKeyword}
@@ -791,7 +914,7 @@ ${newsletterText}`;
 
           {/* Custom Instructions */}
           <div className="glass-card p-6">
-            <h3 className="text-hierarchy-h3 mb-4">Custom Instructions</h3>
+            <h3 className="text-hierarchy-h3 mb-4" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Custom Instructions</h3>
             
             {isEditing ? (
               <div className="space-y-3">
@@ -807,9 +930,19 @@ ${newsletterText}`;
               </div>
             ) : hasCustomInstructions ? (
               <div className="bg-white bg-opacity-5 rounded-xl p-4 border border-white border-opacity-10">
-                <p className="text-white text-opacity-90 leading-relaxed whitespace-pre-wrap">
-                  {currentStyleGuide.instructions_md}
-                </p>
+                <div className="prose prose-sm max-w-none">
+                  <div 
+                    className="leading-relaxed"
+                    dangerouslySetInnerHTML={{
+                      __html: currentStyleGuide.instructions_md
+                        .replace(/### (.*)/g, '<h3 style="color: #1e40af; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 600;">$1</h3>')
+                        .replace(/## (.*)/g, '<h2 style="color: #1e3a8a; margin-top: 2rem; margin-bottom: 1rem; font-weight: 700;">$1</h2>')
+                        .replace(/\n\n/g, '</p><p style="margin-bottom: 1rem; color: #1f2937;">')
+                        .replace(/^(.+)/, '<p style="margin-bottom: 1rem; color: #1f2937;">$1')
+                        + '</p>'
+                    }}
+                  />
+                </div>
               </div>
             ) : (
               <p className="text-white text-opacity-60 italic">No custom instructions added yet</p>
@@ -818,7 +951,7 @@ ${newsletterText}`;
 
           {/* Example Phrases */}
           <div className="glass-card p-6">
-            <h3 className="text-hierarchy-h3 mb-6">Example Phrases</h3>
+            <h3 className="text-hierarchy-h3 mb-6" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Example Phrases</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Object.entries(currentStyleGuide.example_phrases).map(([category, phrases]) => (
                 <div key={category}>
@@ -848,15 +981,15 @@ ${newsletterText}`;
                           <div className="flex items-center justify-between">
                             <span className="text-purple-100 text-sm">{phrase}</span>
                             {isEditing && (
-                              <button
+                  <button
                                 onClick={() => removeExamplePhrase(category, index)}
                                 className="text-purple-200 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100"
-                              >
+                  >
                                 ×
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                  </button>
+                )}
+              </div>
+            </div>
                       ))}
                     </div>
                   ) : (
