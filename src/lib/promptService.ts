@@ -128,13 +128,21 @@ ASSISTANT RESPONSE:`,
 CURRENT STYLE GUIDE:
 {{currentStyleGuide}}
 
-Analyze the following newsletter/content sample and CREATE A UNIFIED, COHESIVE style guide that synthesizes all previous learnings with this new sample. You should rewrite the entire guide to be comprehensive and non-repetitive.
+You have access to ALL source content that was used to build the current style guide, PLUS a new content sample. Your task is to CREATE A COMPLETELY NEW, UNIFIED style guide that synthesizes insights from ALL content samples (both previous and new). 
+
+ALL SOURCE CONTENT (including previous samples):
+{{allSourceContent}}
+
+NEW CONTENT SAMPLE:
+{{contentSample}}
+
+Study ALL the content above and create a comprehensive style guide that captures patterns across the entire body of work. This should be increasingly sophisticated as more samples are added.
 
 For tone_settings: Adjust the existing values slightly toward what you observe in the new sample (don't make dramatic changes, just refine).
 
 For keywords: Focus on VOICE MARKERS that make this author distinctive - transitional words ("however", "meanwhile", "in fact"), connective phrases ("that said", "here's the thing"), characteristic expressions, unique terminology, or signature words. Avoid generic topic words. Merge existing keywords with new ones, removing duplicates (maximum 15 total).
 
-For instructions_md: REWRITE the entire instructions section to be one cohesive writing guide that synthesizes all insights from previous content AND this new sample. Create unified sections that consolidate patterns rather than separate sections. Make it read like a complete, professional style guide.
+For instructions_md: You MUST completely REWRITE the entire instructions section from scratch, analyzing ALL source content provided above. Do NOT append or add sections. Do NOT include "### Additional Insights" or similar headers. Instead, synthesize insights from the ENTIRE BODY OF CONTENT (all samples) into ONE unified, comprehensive writing guide. Look for patterns that emerge across multiple samples - the more samples you have, the more sophisticated and nuanced your analysis should become. Consolidate all patterns into integrated sections. The result should read like a single, expert-level style guide that captures the author's voice across their entire body of work.
 
 For example_phrases: Focus on the LINGUISTIC PATTERNS that make this author's voice recognizable:
 - preferred_openings: How they uniquely start sentences/paragraphs
@@ -157,6 +165,36 @@ Generate a JSON response with this exact structure:
     "preferred_transitions": [3-5 specific transitional phrases, connectives, or linking words this author uses to connect ideas - focus on their unique connective style],
     "preferred_conclusions": [3-5 ways this author wraps up thoughts or concludes sections - look for signature closing patterns],
     "avoid_phrases": [3-5 transitional words, connectives, or stylistic patterns that would sound unlike this author]
+  }
+}
+
+CRITICAL JSON FORMATTING REQUIREMENTS:
+1. Respond with ONLY valid JSON - no markdown, no explanations, no extra text
+2. Use proper JSON escaping for all special characters (\n for newlines, \" for quotes)
+3. Do NOT include trailing commas anywhere in the JSON
+4. Ensure all string values are properly quoted
+5. Test your JSON mentally before responding
+
+CRITICAL CONTENT REQUIREMENTS:
+1. The instructions_md field must be a COMPLETE REWRITE, not an addition
+2. Do NOT include headers like "### Additional Insights" or "### Update from [Date]"  
+3. Do NOT append new sections to existing content
+4. Write the instructions_md as if creating a brand new style guide that happens to incorporate all the insights
+
+EXAMPLE JSON FORMAT (note: no trailing commas):
+{
+  "instructions_md": "## Writing Style Analysis\\n\\n[content with proper escaping]",
+  "tone_settings": {
+    "formality": 50,
+    "enthusiasm": 70,
+    "technicality": 40
+  },
+  "keywords": ["word1", "word2"],
+  "example_phrases": {
+    "preferred_openings": ["example1", "example2"],
+    "preferred_transitions": ["example1", "example2"],
+    "preferred_conclusions": ["example1", "example2"],
+    "avoid_phrases": ["example1", "example2"]
   }
 }
 

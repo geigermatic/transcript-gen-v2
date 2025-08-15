@@ -211,9 +211,37 @@ export const StyleGuideManager: React.FC = () => {
     try {
       const { ollama } = await import('../lib/ollama');
       
+      // Accumulate all source content for comprehensive analysis
+      const allSourceContent = [
+        ...(styleGuide.source_content || []),
+        newsletterText
+      ];
+      
+      // Limit total content length to prevent prompt truncation (keep under 3000 chars for safety)
+      const maxContentLength = 3000;
+      let combinedContent = allSourceContent.map((content, index) => 
+        `--- SAMPLE ${index + 1} ---\n${content}`
+      ).join('\n\n');
+      
+      if (combinedContent.length > maxContentLength) {
+        // If too long, prioritize recent content and trim older content
+        const recentContent = allSourceContent.slice(-2); // Keep last 2 samples
+        combinedContent = recentContent.map((content, index) => 
+          `--- SAMPLE ${index + 1} (Recent) ---\n${content.substring(0, 1200)}`
+        ).join('\n\n');
+        
+        addLog({
+          level: 'warn',
+          category: 'style-guide',
+          message: 'Source content too long, using recent samples only',
+          details: { totalSamples: allSourceContent.length, usedSamples: recentContent.length }
+        });
+      }
+      
       const analysisPrompt = PromptService.buildPrompt('style-guide-analysis', {
         currentStyleGuide: JSON.stringify(styleGuide, null, 2),
-        contentSample: newsletterText
+        contentSample: newsletterText,
+        allSourceContent: combinedContent
       });
 
       const response = await ollama.chat([
@@ -238,20 +266,35 @@ export const StyleGuideManager: React.FC = () => {
           cleaned = jsonMatch[0];
         }
         
-        // Replace control characters that commonly break JSON parsing
-        // Use a simple but effective approach
+        // Fix array elements that are missing commas between quoted strings
+        // This handles cases like ["item1" "item2"] -> ["item1", "item2"]
+        cleaned = cleaned.replace(/(")\s+("/g, '$1, $2');
+        
+        // First fix JSON structure issues
         cleaned = cleaned
-          // Replace unescaped newlines (not preceded by backslash)
-          .replace(/([^\\])\r?\n/g, '$1\\n')
-          .replace(/^\r?\n/g, '\\n') // Handle newlines at start
-          // Replace unescaped tabs
-          .replace(/([^\\])\t/g, '$1\\t')
-          .replace(/^\t/g, '\\t') // Handle tabs at start
-          // Replace unescaped carriage returns
-          .replace(/([^\\])\r/g, '$1\\n')
-          .replace(/^\r/g, '\\n') // Handle CR at start
-          // Remove other problematic control characters
-          .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+          // Fix trailing commas in JSON (common AI mistake)
+          .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas before } or ]
+          // Fix the specific pattern: quote, newline, comma, newline  
+          .replace(/"\s*\n\s*,\s*\n/g, '",\n')
+          // Fix standalone commas on their own lines
+          .replace(/,\s*\n\s*([}\]])/g, '\n$1');
+        
+        // Then handle control characters within string values
+        // This approach protects JSON structure while fixing string content
+        const fixStringContent = (jsonStr: string): string => {
+          return jsonStr.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, (match, content) => {
+            // Only fix control characters inside the quotes
+            const fixed = content
+              .replace(/\r\n/g, '\\n')
+              .replace(/\n/g, '\\n')
+              .replace(/\r/g, '\\n')
+              .replace(/\t/g, '\\t')
+              .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+            return `"${fixed}"`;
+          });
+        };
+        
+        cleaned = fixStringContent(cleaned);
         
         return cleaned;
       };
@@ -266,8 +309,32 @@ export const StyleGuideManager: React.FC = () => {
         } catch (sanitizeError) {
           console.error('JSON sanitization also failed:', sanitizeError);
           console.error('Original response:', cleanResponse);
-          console.error('Sanitized response:', sanitizeJsonString(cleanResponse));
-          throw new Error(`Could not parse JSON response: ${sanitizeError instanceof Error ? sanitizeError.message : 'Unknown parsing error'}`);
+          const sanitizedAttempt = sanitizeJsonString(cleanResponse);
+          console.error('Sanitized response:', sanitizedAttempt);
+          
+          // Try one more aggressive cleanup as a last resort
+          try {
+            const lastResortClean = sanitizedAttempt
+              // Fix missing commas in arrays first
+              .replace(/(")\s+("/g, '$1, $2')
+              // Remove any remaining control characters more aggressively
+              .replace(/[\u0000-\u001F]/g, '')
+              // Fix common JSON issues more aggressively
+              .replace(/,(\s*[}\]])/g, '$1')
+              // Remove any trailing commas at the end of lines
+              .replace(/,\s*$/gm, '')
+              // Fix malformed object starts/ends
+              .replace(/^\s*[^{]*\{/, '{')
+              .replace(/\}[^}]*$/, '}');
+              
+            console.log('Last resort cleanup attempt:', lastResortClean);
+            parsedStyleGuide = JSON.parse(lastResortClean);
+            console.log('Last resort cleanup succeeded!');
+          } catch (lastResortError) {
+            // If all parsing attempts fail, provide a helpful fallback
+            console.error('All JSON parsing attempts failed:', lastResortError);
+            throw new Error(`Could not parse AI response as JSON. The AI response may contain invalid formatting. Original error: ${sanitizeError instanceof Error ? sanitizeError.message : 'Unknown parsing error'}`);
+          }
         }
       }
 
@@ -310,7 +377,7 @@ export const StyleGuideManager: React.FC = () => {
     }
   };
 
-  const mergeStyleGuides = (current: any, analyzed: any) => {
+  const mergeStyleGuides = (current: any, analyzed: any, allSourceContent: string[]) => {
     // Intelligently merge keywords (deduplicate, max 15)
     const existingKeywords = current.keywords || [];
     const newKeywords = analyzed.keywords || [];
@@ -372,14 +439,21 @@ export const StyleGuideManager: React.FC = () => {
       tone_settings: blendedToneSettings,
       keywords: uniqueKeywords,
       example_phrases: mergedExamplePhrases,
+      source_content: allSourceContent, // Include all accumulated source content
     };
   };
 
   const applyAnalyzedStyleGuide = () => {
     if (!analyzedStyleGuide) return;
     
+    // Accumulate all source content for the refined style guide
+    const allSourceContent = [
+      ...(styleGuide.source_content || []),
+      newsletterText
+    ];
+    
     // Merge the analyzed style guide with the current one
-    const refinedStyleGuide = mergeStyleGuides(styleGuide, analyzedStyleGuide);
+    const refinedStyleGuide = mergeStyleGuides(styleGuide, analyzedStyleGuide, allSourceContent);
     updateStyleGuide(refinedStyleGuide);
     
     setAnalyzedStyleGuide(null);
