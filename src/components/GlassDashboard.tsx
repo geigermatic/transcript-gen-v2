@@ -137,16 +137,14 @@ export const GlassDashboard: React.FC = () => {
 
   // Handle regenerating the stylized summary
   const handleRegenerateStyled = async () => {
-    logInfo('UI', 'Regenerate button clicked!', { 
+    logInfo('UI', 'Regenerate button clicked - starting regeneration process', {
       hasSelectedDocument: !!selectedDocument,
-      hasStyleGuide: !!styleGuide 
+      hasStyleGuide: !!styleGuide,
+      regenerationCount
     });
 
     if (!selectedDocument || !styleGuide) {
-      logInfo('UI', 'Cannot regenerate: missing document or style guide', {
-        selectedDocument: !!selectedDocument,
-        styleGuide: !!styleGuide
-      });
+      logInfo('UI', 'Cannot regenerate: missing document or style guide');
       return;
     }
 
@@ -155,10 +153,10 @@ export const GlassDashboard: React.FC = () => {
       .filter(pair => pair.documentId === selectedDocument.id)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
-    logInfo('UI', 'Recent summary found', { 
+    logInfo('UI', 'Found recent summary pair', {
       found: !!recentSummary,
       hasFacts: !!recentSummary?.summaryA.mergedFacts,
-      summaryId: recentSummary?.id
+      pairId: recentSummary?.id
     });
 
     if (!recentSummary?.summaryA.mergedFacts) {
@@ -169,6 +167,13 @@ export const GlassDashboard: React.FC = () => {
     try {
       setIsSummarizing(true);
       setProgressStatus('Regenerating stylized summary...');
+      
+      logInfo('UI', 'Starting regeneration with SummarizationEngine', {
+        documentId: selectedDocument.id,
+        regenerationCount,
+        factsKeys: Object.keys(recentSummary.summaryA.mergedFacts),
+        styleGuideHasInstructions: !!styleGuide.instructions_md
+      });
       
       logInfo('UI', 'Starting stylized summary regeneration', { 
         documentId: selectedDocument.id,
@@ -182,6 +187,11 @@ export const GlassDashboard: React.FC = () => {
         styleGuide,
         regenerationCount
       );
+
+      logInfo('UI', 'Regeneration completed successfully', {
+        newSummaryLength: newStyledSummary.length,
+        newSummaryPreview: newStyledSummary.substring(0, 200) + '...'
+      });
 
       // Increment regeneration count for next time
       setRegenerationCount(prev => prev + 1);
@@ -201,14 +211,14 @@ export const GlassDashboard: React.FC = () => {
 
       logInfo('UI', 'About to update AB summary pair', {
         pairId: updatedPair.id,
-        newSummaryLength: newStyledSummary.length,
-        newSummaryPreview: newStyledSummary.substring(0, 100) + '...'
+        hasUpdatedPair: !!updatedPair
       });
 
       updateABSummaryPair(updatedPair);
       
-      logInfo('UI', 'Stylized summary regenerated successfully', {
-        summaryLength: newStyledSummary.length
+      logInfo('UI', 'AB summary pair updated successfully - regeneration complete', {
+        summaryLength: newStyledSummary.length,
+        regenerationCount: regenerationCount + 1
       });
 
     } catch (error) {
@@ -216,6 +226,7 @@ export const GlassDashboard: React.FC = () => {
     } finally {
       setIsSummarizing(false);
       setProgressStatus('');
+      logInfo('UI', 'Regeneration process finished (finally block)');
     }
   };
 
