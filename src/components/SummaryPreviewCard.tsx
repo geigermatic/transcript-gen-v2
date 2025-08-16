@@ -148,7 +148,7 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
             className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
               activeTab === 'styled'
                 ? 'bg-blue-500 bg-opacity-20 text-blue-200 shadow-sm'
-                : 'text-white text-opacity-70 hover:text-white hover:bg-white hover:bg-opacity-5'
+                : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-5'
             }`}
           >
             <FileText size={16} className="inline mr-2" />
@@ -159,7 +159,7 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
             className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
               activeTab === 'raw'
                 ? 'bg-blue-500 bg-opacity-20 text-blue-200 shadow-sm'
-                : 'text-white text-opacity-70 hover:text-white hover:bg-white hover:bg-opacity-5'
+                : 'text-gray-300 hover:text-white hover:bg-white hover:bg-opacity-5'
             }`}
           >
             <Database size={16} className="inline mr-2" />
