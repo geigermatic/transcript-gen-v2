@@ -83,9 +83,9 @@ INSTRUCTIONS:
 6. Make it engaging and useful for students/practitioners
 7. Always refer to the instructor as "Caren" throughout
 8. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session" rather than generic terms like "comprehensive guide"
-9. START with a "## Synopsis" section containing 4-6 sentences that emphasize WHY the reader would want to do this lesson and WHAT they will gain from it. 
+9. START with a "## Synopsis" section containing exactly 4 sentences that emphasize WHY the reader would want to do this lesson and WHAT they will gain from it. 
 
-CRITICAL: The synopsis is the MOST IMPORTANT section and must be written 100% in the author's voice using the style guide above. Apply ALL tone settings, keywords, example phrases, and writing patterns heavily in the synopsis. Use the author's preferred openings, transitions, and voice markers. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect? Make this section sound exactly like the author would write it.
+CRITICAL: The synopsis is the MOST IMPORTANT section and must be written 100% in the author's voice using the style guide above. Apply ALL tone settings, keywords, example phrases, and writing patterns heavily in the synopsis. Use the author's preferred openings, transitions, and voice markers. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect? Make this section sound exactly like the author would write it. LIMIT TO EXACTLY 4 SENTENCES.
 
 MARKDOWN SUMMARY:`,
 

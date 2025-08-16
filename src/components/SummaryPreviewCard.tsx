@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Copy, Check, FileText, Clock, Database } from 'lucide-react';
+import { Copy, Check, FileText, Database, Clock } from 'lucide-react';
 import { logInfo } from '../lib/logger';
 
 interface SummaryPreviewCardProps {
@@ -53,17 +53,6 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Calculate estimated time remaining
-  const getEstimatedTimeRemaining = (): string => {
-    if (!chunksProcessed || chunksProcessed === 0 || !totalChunks) return 'Calculating...';
-    
-    const avgTimePerChunk = elapsedTime / chunksProcessed;
-    const remainingChunks = totalChunks - chunksProcessed;
-    const estimatedSeconds = Math.round(avgTimePerChunk * remainingChunks);
-    
-    return formatTime(estimatedSeconds);
   };
 
   // Determine which summaries are available and what to display
@@ -126,16 +115,10 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
             </div>
           </div>
 
-          {/* Time indicators */}
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2 text-white text-opacity-60">
-              <Clock size={14} />
-              <span>Elapsed: {formatTime(elapsedTime)}</span>
-            </div>
-            <div className="flex items-center gap-2 text-white text-opacity-60">
-              <Database size={14} />
-              <span>ETA: {getEstimatedTimeRemaining()}</span>
-            </div>
+          {/* Elapsed time indicator */}
+          <div className="flex items-center justify-center gap-2 text-sm text-white text-opacity-60">
+            <Clock size={14} />
+            <span>Elapsed: {formatTime(elapsedTime)}</span>
           </div>
         </div>
       )}
