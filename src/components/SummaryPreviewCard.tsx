@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Copy, Check, FileText, Database, Clock } from 'lucide-react';
+import { Copy, Check, FileText, Database, Clock, RefreshCw } from 'lucide-react';
 import { logInfo } from '../lib/logger';
 
 interface SummaryPreviewCardProps {
@@ -18,6 +18,7 @@ interface SummaryPreviewCardProps {
   processingStartTime?: Date;
   progressPercent?: number;
   progressStatus?: string;
+  onRegenerateStyled?: () => void;
 }
 
 export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({ 
@@ -29,7 +30,8 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
   totalChunks = 0,
   processingStartTime,
   progressPercent = 0,
-  progressStatus = ''
+  progressStatus = '',
+  onRegenerateStyled
 }) => {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'raw' | 'styled'>('styled');
@@ -79,23 +81,38 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
     <div className="glass-content-card p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-heading">Summary</h2>
-        <button
-          onClick={handleCopy}
-          disabled={isLoading || !currentSummary}
-          className="glass-button flex items-center gap-2 focus-visible"
-        >
-          {copied ? (
-            <>
-              <Check size={16} className="text-green-400" />
-              <span className="text-green-400">Copied!</span>
-            </>
-          ) : (
-            <>
-              <Copy size={16} />
-              <span>Copy</span>
-            </>
+        <div className="flex items-center gap-2">
+          {/* Regenerate button - only show for stylized tab when both summaries exist */}
+          {hasBothSummaries && activeTab === 'styled' && onRegenerateStyled && (
+            <button
+              onClick={onRegenerateStyled}
+              disabled={isLoading}
+              className="glass-button flex items-center gap-2 focus-visible"
+              title="Regenerate stylized summary with style guide"
+            >
+              <RefreshCw size={16} />
+              <span>Regenerate</span>
+            </button>
           )}
-        </button>
+          
+          <button
+            onClick={handleCopy}
+            disabled={isLoading || !currentSummary}
+            className="glass-button flex items-center gap-2 focus-visible"
+          >
+            {copied ? (
+              <>
+                <Check size={16} className="text-green-400" />
+                <span className="text-green-400">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy size={16} />
+                <span>Copy</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Progress indicators when processing */}

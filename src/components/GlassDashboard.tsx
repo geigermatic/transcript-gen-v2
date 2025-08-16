@@ -14,10 +14,11 @@ import { ChatCard } from './ChatCard';
 import { StatusCard } from './StatusCard';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
+import { SummarizationEngine } from '../lib/summarizationEngine';
 
 export const GlassDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { documents, abSummaryPairs, logs } = useAppStore();
+  const { documents, abSummaryPairs, logs, styleGuide, updateABSummaryPair } = useAppStore();
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [chunksProcessed, setChunksProcessed] = useState(0);
@@ -132,6 +133,66 @@ export const GlassDashboard: React.FC = () => {
     };
   };
 
+  // Handle regenerating the stylized summary
+  const handleRegenerateStyled = async () => {
+    if (!selectedDocument || !styleGuide) {
+      logInfo('UI', 'Cannot regenerate: missing document or style guide');
+      return;
+    }
+
+    // Get the most recent summary pair to access the merged facts
+    const recentSummary = abSummaryPairs
+      .filter(pair => pair.documentId === selectedDocument.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+    if (!recentSummary?.summaryA.mergedFacts) {
+      logInfo('UI', 'Cannot regenerate: no existing facts found');
+      return;
+    }
+
+    try {
+      setIsSummarizing(true);
+      setProgressStatus('Regenerating stylized summary...');
+      
+      logInfo('UI', 'Starting stylized summary regeneration', { 
+        documentId: selectedDocument.id,
+        documentTitle: selectedDocument.title 
+      });
+
+      // Regenerate just the stylized summary
+      const newStyledSummary = await SummarizationEngine.regenerateStyledSummary(
+        selectedDocument,
+        recentSummary.summaryA.mergedFacts,
+        styleGuide
+      );
+
+      // Update the existing summary pair with the new stylized summary
+      const updatedSummaryA = {
+        ...recentSummary.summaryA,
+        styledSummary: newStyledSummary,
+        markdownSummary: newStyledSummary // Update backward compatibility field
+      };
+
+      const updatedPair = {
+        ...recentSummary,
+        summaryA: updatedSummaryA,
+        createdAt: new Date().toISOString() // Update timestamp
+      };
+
+      updateABSummaryPair(updatedPair);
+      
+      logInfo('UI', 'Stylized summary regenerated successfully', {
+        summaryLength: newStyledSummary.length
+      });
+
+    } catch (error) {
+      logInfo('UI', 'Failed to regenerate stylized summary', { error });
+    } finally {
+      setIsSummarizing(false);
+      setProgressStatus('');
+    }
+  };
+
   return (
     <AppShell>
       <div className="py-8 space-y-8">
@@ -162,6 +223,7 @@ export const GlassDashboard: React.FC = () => {
               processingStartTime={processingStartTime}
               progressPercent={progressPercent}
               progressStatus={progressStatus}
+              onRegenerateStyled={handleRegenerateStyled}
             />
           </div>
 

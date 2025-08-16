@@ -37,6 +37,29 @@ export class SummarizationEngine {
   private static readonly MAX_RETRIES = 2;
 
   /**
+   * Regenerate just the stylized summary using existing facts
+   */
+  static async regenerateStyledSummary(
+    document: Document,
+    mergedFacts: ExtractedFacts,
+    styleGuide: StyleGuide
+  ): Promise<string> {
+    logInfo('SUMMARIZATION', `Regenerating stylized summary for: ${document.title}`);
+    
+    try {
+      const styledSummary = await this.generateStyledSummary(document, mergedFacts, styleGuide);
+      logInfo('SUMMARIZATION', `Stylized summary regenerated for: ${document.title}`, {
+        summaryLength: styledSummary.length
+      });
+      
+      return styledSummary;
+    } catch (error) {
+      logError('SUMMARIZATION', `Failed to regenerate stylized summary for: ${document.title}`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Extract facts from a document and generate a summary
    */
   static async summarizeDocument(
