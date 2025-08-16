@@ -535,17 +535,41 @@ DOCUMENT: ${document.title}
 EXTRACTED FACTS:
 ${JSON.stringify(mergedFacts, null, 2)}
 
-Generate a comprehensive markdown summary that:
-- Captures all key points, insights, and takeaways from this lesson/teaching
-- Uses clear, professional language appropriate for educational content
-- Organizes information logically with appropriate headings
-- Includes specific techniques, practices, and examples taught
-- Maintains objectivity and factual accuracy
-- Refers to the instructor as "Caren" throughout
-- Uses lesson-appropriate language (e.g., "In this lesson", "In this teaching")
-- STARTS with a "## Synopsis" section (exactly 4 sentences) that emphasizes WHY someone would want to do this lesson and WHAT benefits/transformation they will gain. Even though this is a raw summary, make the synopsis compelling and benefit-focused. Answer: What problems does this solve? What will you feel/experience? How will you be different after? LIMIT TO EXACTLY 4 SENTENCES.
+REQUIRED STRUCTURE (use this exact format):
+# ${document.title}
 
-Focus on substance over style. This is a raw, factual summary without any specific voice or tone requirements.
+## Synopsis
+[Exactly 4 sentences emphasizing WHY and WHAT benefits - compelling and benefit-focused]
+
+## Learning Objectives
+[What students will learn - bulleted list]
+
+## Key Takeaways
+[Main insights and lessons - bulleted list]
+
+## Topics
+[Subject areas covered - bulleted list]
+
+## Techniques
+[Specific methods, practices, exercises taught - bulleted list]
+
+## Notable Quotes
+[Memorable quotes from the lesson - bulleted list]
+
+## Open Questions
+[Questions for reflection or further exploration - bulleted list]
+
+INSTRUCTIONS:
+1. Follow the exact structure above - ALL sections must be included in this order
+2. Use the extracted facts to populate each section appropriately
+3. Use clear, professional language appropriate for educational content
+4. Maintain objectivity and factual accuracy
+5. Refer to the instructor as "Caren" throughout
+6. Use lesson-appropriate language (e.g., "In this lesson", "In this teaching")
+7. If a section has no content in the extracted facts, write "No specific [section name] identified in this lesson"
+8. Focus on substance over style - this is a factual summary without specific voice requirements
+
+SYNOPSIS REQUIREMENTS: Make the synopsis compelling and benefit-focused. Answer: What problems does this solve? What will you feel/experience? How will you be different after? LIMIT TO EXACTLY 4 SENTENCES.
 
 Generate ONLY the markdown summary, no other text:`;
   }

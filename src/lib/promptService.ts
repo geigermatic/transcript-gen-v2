@@ -74,18 +74,40 @@ DOCUMENT: {{documentTitle}}
 EXTRACTED FACTS:
 {{extractedFacts}}
 
-INSTRUCTIONS:
-1. Create a well-structured markdown summary for this lesson/teaching/meditation
-2. Use the extracted facts as your foundation
-3. Apply the style guide consistently throughout, but ESPECIALLY in the synopsis
-4. Include relevant headings and formatting
-5. Emphasize techniques, practices, and key takeaways taught
-6. Make it engaging and useful for students/practitioners
-7. Always refer to the instructor as "Caren" throughout
-8. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session" rather than generic terms like "comprehensive guide"
-9. START with a "## Synopsis" section containing exactly 4 sentences that emphasize WHY the reader would want to do this lesson and WHAT they will gain from it. 
+REQUIRED STRUCTURE (use this exact format):
+# {{documentTitle}}
 
-CRITICAL: The synopsis is the MOST IMPORTANT section and must be written 100% in the author's voice using the style guide above. Apply ALL tone settings, keywords, example phrases, and writing patterns heavily in the synopsis. Use the author's preferred openings, transitions, and voice markers. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect? Make this section sound exactly like the author would write it. LIMIT TO EXACTLY 4 SENTENCES.
+## Synopsis
+[Exactly 4 sentences emphasizing WHY and WHAT benefits - in author's voice]
+
+## Learning Objectives
+[What students will learn - bulleted list]
+
+## Key Takeaways
+[Main insights and lessons - bulleted list]
+
+## Topics
+[Subject areas covered - bulleted list]
+
+## Techniques
+[Specific methods, practices, exercises taught - bulleted list]
+
+## Notable Quotes
+[Memorable quotes from the lesson - bulleted list]
+
+## Open Questions
+[Questions for reflection or further exploration - bulleted list]
+
+INSTRUCTIONS:
+1. Follow the exact structure above - ALL sections must be included in this order
+2. Use the extracted facts to populate each section appropriately
+3. Apply the style guide consistently throughout, but ESPECIALLY in the synopsis
+4. Make each section engaging and useful for students/practitioners
+5. Always refer to the instructor as "Caren" throughout
+6. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session"
+7. If a section has no content in the extracted facts, write "No specific [section name] identified in this lesson"
+
+CRITICAL SYNOPSIS REQUIREMENTS: The synopsis is the MOST IMPORTANT section and must be written 100% in the author's voice using the style guide above. Apply ALL tone settings, keywords, example phrases, and writing patterns heavily in the synopsis. Use the author's preferred openings, transitions, and voice markers. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect? Make this section sound exactly like the author would write it. LIMIT TO EXACTLY 4 SENTENCES.
 
 MARKDOWN SUMMARY:`,
 
@@ -109,6 +131,30 @@ DOCUMENT: {{documentTitle}}
 EXTRACTED FACTS:
 {{extractedFacts}}
 
+REQUIRED STRUCTURE (use this exact format):
+# {{documentTitle}}
+
+## Synopsis
+[Exactly 4 sentences emphasizing WHY and WHAT benefits - in author's voice - MAKE THIS DRAMATICALLY DIFFERENT]
+
+## Learning Objectives
+[What students will learn - bulleted list]
+
+## Key Takeaways
+[Main insights and lessons - bulleted list]
+
+## Topics
+[Subject areas covered - bulleted list]
+
+## Techniques
+[Specific methods, practices, exercises taught - bulleted list]
+
+## Notable Quotes
+[Memorable quotes from the lesson - bulleted list]
+
+## Open Questions
+[Questions for reflection or further exploration - bulleted list]
+
 MANDATORY VARIATION REQUIREMENTS:
 This is regeneration #{{regenerationCount}} - you MUST create something substantially different.
 
@@ -127,6 +173,15 @@ MANDATORY SYNOPSIS CHANGES:
 - Use different combinations of your voice markers
 - Focus on different aspects of transformation
 - MUST start with a different phrase pattern than any standard approach
+
+INSTRUCTIONS:
+1. Follow the exact structure above - ALL sections must be included in this order
+2. Use the extracted facts to populate each section appropriately
+3. Apply the style guide consistently throughout, but ESPECIALLY in the synopsis
+4. Make each section engaging and useful for students/practitioners
+5. Always refer to the instructor as "Caren" throughout
+6. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session"
+7. If a section has no content in the extracted facts, write "No specific [section name] identified in this lesson"
 
 CRITICAL: If you find yourself writing something that feels similar to a typical summary, STOP and rewrite with a more unique angle. Push beyond your comfort zone while staying true to the author's voice.
 
