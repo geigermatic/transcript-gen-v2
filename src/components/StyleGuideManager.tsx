@@ -161,7 +161,24 @@ export const StyleGuideManager: React.FC = () => {
   };
 
   const removeKeyword = (index: number) => {
-    updateKeywords(localStyleGuide.keywords.filter((_, i) => i !== index));
+    const newKeywords = localStyleGuide.keywords.filter((_, i) => i !== index);
+    updateKeywords(newKeywords);
+    
+    // Immediately save the change to the store
+    updateStyleGuide({
+      ...styleGuide,
+      keywords: newKeywords
+    });
+    
+    addLog({
+      level: 'info',
+      category: 'style-guide',
+      message: 'Keyword removed',
+      details: { 
+        removed: localStyleGuide.keywords[index],
+        remaining_count: newKeywords.length 
+      }
+    });
   };
 
   const addExamplePhrase = (category: string) => {
@@ -174,7 +191,28 @@ export const StyleGuideManager: React.FC = () => {
 
   const removeExamplePhrase = (category: string, index: number) => {
     const currentPhrases = localStyleGuide.example_phrases[category as keyof typeof localStyleGuide.example_phrases] || [];
-    updateExamplePhrases(category, currentPhrases.filter((_, i) => i !== index));
+    const newPhrases = currentPhrases.filter((_, i) => i !== index);
+    updateExamplePhrases(category, newPhrases);
+    
+    // Immediately save the change to the store
+    updateStyleGuide({
+      ...styleGuide,
+      example_phrases: {
+        ...styleGuide.example_phrases,
+        [category]: newPhrases
+      }
+    });
+    
+    addLog({
+      level: 'info',
+      category: 'style-guide',
+      message: 'Example phrase removed',
+      details: { 
+        category,
+        removed: currentPhrases[index],
+        remaining_count: newPhrases.length 
+      }
+    });
   };
 
   const exportStyleGuide = () => {
@@ -959,19 +997,16 @@ export const StyleGuideManager: React.FC = () => {
                 {currentStyleGuide.keywords.map((keyword, index) => (
                   <div
                     key={index}
-                    className={`px-4 py-2 text-sm font-medium text-blue-100 bg-blue-500 bg-opacity-20 rounded-full border border-blue-400 border-opacity-30 transition-all duration-200 ${
-                      isEditing ? 'group hover:bg-opacity-30 hover:border-opacity-50' : 'hover:bg-opacity-30 hover:border-opacity-50'
-                    }`}
+                    className="group px-4 py-2 text-sm font-medium text-blue-100 bg-blue-500 bg-opacity-20 rounded-full border border-blue-400 border-opacity-30 transition-all duration-200 hover:bg-opacity-30 hover:border-opacity-50 flex items-center"
                   >
                     <span>{keyword}</span>
-                    {isEditing && (
-                      <button
-                        onClick={() => removeKeyword(index)}
-                        className="ml-2 text-blue-200 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        ×
-                      </button>
-                    )}
+                    <button
+                      onClick={() => removeKeyword(index)}
+                      className="ml-2 text-blue-200 hover:text-red-300 transition-colors opacity-70 hover:opacity-100"
+                      title={`Remove "${keyword}"`}
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1048,22 +1083,19 @@ export const StyleGuideManager: React.FC = () => {
                       {phrases.map((phrase: string, index: number) => (
                         <div
                           key={index}
-                          className={`bg-purple-500 bg-opacity-10 rounded-lg p-3 border border-purple-400 border-opacity-20 ${
-                            isEditing ? 'group hover:bg-opacity-15 hover:border-opacity-30' : ''
-                          }`}
+                          className="group bg-purple-500 bg-opacity-10 rounded-lg p-3 border border-purple-400 border-opacity-20 hover:bg-opacity-15 hover:border-opacity-30 transition-all duration-200"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-purple-100 text-sm">{phrase}</span>
-                            {isEditing && (
-                  <button
-                                onClick={() => removeExamplePhrase(category, index)}
-                                className="text-purple-200 hover:text-red-300 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                                ×
-                  </button>
-                )}
-              </div>
-            </div>
+                            <button
+                              onClick={() => removeExamplePhrase(category, index)}
+                              className="text-purple-200 hover:text-red-300 transition-colors opacity-70 hover:opacity-100"
+                              title={`Remove "${phrase}"`}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   ) : (
