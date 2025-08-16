@@ -83,7 +83,7 @@ INSTRUCTIONS:
 6. Make it engaging and useful for students/practitioners
 7. Always refer to the instructor as "Caren" throughout
 8. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session" rather than generic terms like "comprehensive guide"
-9. START with a "## Synopsis" section containing 4-6 sentences that provide a concise overview of the key content and outcomes
+9. START with a "## Synopsis" section containing 4-6 sentences that emphasize WHY the reader would want to do this lesson and WHAT they will gain from it. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect?
 
 MARKDOWN SUMMARY:`,
 
