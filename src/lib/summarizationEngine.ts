@@ -47,12 +47,25 @@ export class SummarizationEngine {
     logInfo('SUMMARIZATION', `Regenerating stylized summary for: ${document.title || document.filename || 'Unknown Document'}`);
     
     try {
-      const styledSummary = await this.generateStyledSummary(document, mergedFacts, styleGuide);
+      // Use the special regeneration prompt for variation
+      const regenerationPrompt = PromptService.buildPrompt('summary-regeneration', {
+        documentTitle: document.title || document.filename || 'Untitled Document',
+        extractedFacts: JSON.stringify(mergedFacts, null, 2),
+        styleInstructions: styleGuide.instructions_md,
+        formalityLevel: styleGuide.tone_settings.formality,
+        enthusiasmLevel: styleGuide.tone_settings.enthusiasm,
+        technicalityLevel: styleGuide.tone_settings.technicality,
+        keywords: styleGuide.keywords.join(', '),
+        examplePhrasesSection: this.buildExamplePhrasesSection(styleGuide)
+      });
+
+      const response = await ollama.generate(regenerationPrompt);
+      
       logInfo('SUMMARIZATION', `Stylized summary regenerated for: ${document.title || document.filename || 'Unknown Document'}`, {
-        summaryLength: styledSummary.length
+        summaryLength: response.length
       });
       
-      return styledSummary;
+      return response;
     } catch (error) {
       logError('SUMMARIZATION', `Failed to regenerate stylized summary for: ${document.title || document.filename || 'Unknown Document'}`, error);
       throw error;

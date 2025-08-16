@@ -89,6 +89,51 @@ CRITICAL: The synopsis is the MOST IMPORTANT section and must be written 100% in
 
 MARKDOWN SUMMARY:`,
 
+  'summary-regeneration': `Regenerate a fresh version of the stylized summary from the extracted facts below. This is a lesson/teaching/meditation transcript. Create a NEW APPROACH to the synopsis while maintaining the style guide.
+
+STYLE GUIDE:
+{{styleInstructions}}
+
+Tone Settings:
+- Formality: {{formalityLevel}}/100 (0=casual, 100=formal)
+- Enthusiasm: {{enthusiasmLevel}}/100 (0=calm, 100=energetic)
+- Technical Level: {{technicalityLevel}}/100 (0=simple, 100=technical)
+
+Keywords to emphasize: {{keywords}}
+
+{{examplePhrasesSection}}
+
+DOCUMENT: {{documentTitle}}
+EXTRACTED FACTS:
+{{extractedFacts}}
+
+REGENERATION INSTRUCTIONS:
+1. Create a FRESH, NEW stylized summary using the same facts but with different angles and perspectives
+2. Use the extracted facts as your foundation but explore different ways to present them
+3. Apply the style guide consistently throughout, but ESPECIALLY in the synopsis
+4. Include relevant headings and formatting
+5. Emphasize techniques, practices, and key takeaways taught from new angles
+6. Make it engaging and useful for students/practitioners
+7. Always refer to the instructor as "Caren" throughout
+8. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session"
+
+9. CREATE A COMPLETELY NEW "## Synopsis" section containing exactly 4 sentences:
+   - Use DIFFERENT opening hooks and angles than typical summaries
+   - Explore alternative benefits and transformation outcomes
+   - Highlight different aspects of WHY someone would do this lesson
+   - Present WHAT they will gain from fresh perspectives
+   - Try different combinations of the author's voice markers and transitions
+
+CRITICAL REGENERATION FOCUS: 
+- The synopsis must be COMPLETELY DIFFERENT from standard approaches
+- Use the author's voice but explore different emotional angles (curiosity, urgency, relief, discovery)
+- Try different benefit framings (immediate vs. long-term, personal vs. practical, emotional vs. physical)
+- Experiment with different opening techniques from the style guide
+- Focus on different transformation aspects that make the lesson compelling
+- LIMIT TO EXACTLY 4 SENTENCES but make each one count with fresh perspective
+
+MARKDOWN SUMMARY:`,
+
   'chat-response': `You are a helpful AI assistant answering questions about lesson/teaching/meditation transcripts. You must answer based on the provided source excerpts and any generated summary.
 
 {{summarySection}}{{formatRequirements}}STYLE GUIDE:
