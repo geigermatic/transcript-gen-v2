@@ -23,6 +23,8 @@ export interface SummarizationResult {
   chunkFacts: ChunkFacts[];
   mergedFacts: ExtractedFacts;
   markdownSummary: string;
+  rawSummary?: string; // Summary without style guide applied
+  styledSummary?: string; // Summary with style guide applied
   processingStats: {
     totalChunks: number;
     successfulChunks: number;
@@ -75,15 +77,17 @@ export class SummarizationEngine {
       onProgress?.(70, 100, 'Merging facts from all chunks...');
       const mergedFacts = this.mergeFacts(chunkFacts);
       
-      // Generate final markdown summary
-      onProgress?.(80, 100, 'Generating final markdown summary...');
-      const markdownSummary = await this.generateMarkdownSummary(
-        document, 
-        mergedFacts, 
-        styleGuide
-      );
+      // Generate both raw and styled summaries
+      onProgress?.(80, 100, 'Generating raw summary...');
+      const rawSummary = await this.generateRawSummary(document, mergedFacts);
+      
+      onProgress?.(85, 100, 'Generating styled summary...');
+      const styledSummary = await this.generateStyledSummary(document, mergedFacts, styleGuide);
+      
+      // For backward compatibility, keep markdownSummary as the styled version
+      const markdownSummary = styledSummary;
 
-      onProgress?.(95, 100, 'Finalizing summary...');
+      onProgress?.(95, 100, 'Finalizing summaries...');
 
       const processingTime = Date.now() - startTime;
       const successfulChunks = chunkFacts.filter(cf => cf.parseSuccess).length;
@@ -93,6 +97,8 @@ export class SummarizationEngine {
         chunkFacts,
         mergedFacts,
         markdownSummary,
+        rawSummary,
+        styledSummary,
         processingStats: {
           totalChunks: chunks.length,
           successfulChunks,
@@ -414,9 +420,32 @@ export class SummarizationEngine {
   }
 
   /**
-   * Generate final markdown summary
+   * Generate raw summary without style guide applied
    */
-  private static async generateMarkdownSummary(
+  private static async generateRawSummary(
+    document: Document,
+    mergedFacts: ExtractedFacts
+  ): Promise<string> {
+    const prompt = this.buildRawSummaryPrompt(document, mergedFacts);
+    
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: prompt
+      }]);
+      
+      return response.trim();
+      
+    } catch (error) {
+      logError('SUMMARIZE', 'Failed to generate raw summary', error);
+      throw new Error(`Raw summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Generate styled summary with style guide applied
+   */
+  private static async generateStyledSummary(
     document: Document,
     mergedFacts: ExtractedFacts,
     styleGuide: StyleGuide
@@ -435,6 +464,32 @@ export class SummarizationEngine {
       // Fallback: generate summary from facts
       return this.generateFallbackSummary(document, mergedFacts);
     }
+  }
+
+  /**
+   * Build raw summary generation prompt (without style guide)
+   */
+  private static buildRawSummaryPrompt(
+    document: Document,
+    mergedFacts: ExtractedFacts
+  ): string {
+    return `You are a professional transcript summarizer. Create a clear, factual summary of the following transcript data.
+
+DOCUMENT: ${document.title}
+
+EXTRACTED FACTS:
+${JSON.stringify(mergedFacts, null, 2)}
+
+Generate a comprehensive markdown summary that:
+- Captures all key points, insights, and takeaways
+- Uses clear, professional language
+- Organizes information logically with appropriate headings
+- Includes specific details and examples where relevant
+- Maintains objectivity and factual accuracy
+
+Focus on substance over style. This is a raw, factual summary without any specific voice or tone requirements.
+
+Generate ONLY the markdown summary, no other text:`;
   }
 
   /**

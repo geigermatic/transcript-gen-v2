@@ -92,6 +92,8 @@ export interface SummarizationResult {
   chunkFacts: ChunkFacts[];
   mergedFacts: ExtractedFacts;
   markdownSummary: string;
+  rawSummary?: string; // Summary without style guide applied
+  styledSummary?: string; // Summary with style guide applied
   processingStats: {
     totalChunks: number;
     successfulChunks: number;

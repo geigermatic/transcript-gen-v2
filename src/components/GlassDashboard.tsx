@@ -118,6 +118,20 @@ export const GlassDashboard: React.FC = () => {
     return recentSummary?.summaryA.markdownSummary || null;
   };
 
+  // Get both raw and styled summaries for the selected document
+  const getSelectedDocumentSummaries = () => {
+    if (!selectedDocument) return { raw: null, styled: null };
+    
+    const recentSummary = abSummaryPairs
+      .filter(pair => pair.documentId === selectedDocument.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+      
+    return {
+      raw: recentSummary?.summaryA.rawSummary || null,
+      styled: recentSummary?.summaryA.styledSummary || recentSummary?.summaryA.markdownSummary || null
+    };
+  };
+
   return (
     <AppShell>
       <div className="py-8 space-y-8">
@@ -139,7 +153,9 @@ export const GlassDashboard: React.FC = () => {
           {/* Center & Left Columns - Summary spans both (now centered) */}
           <div className="lg:col-span-2">
             <SummaryPreviewCard 
-              summary={getSelectedDocumentSummary()} 
+              summary={getSelectedDocumentSummary()} // backward compatibility
+              rawSummary={getSelectedDocumentSummaries().raw}
+              styledSummary={getSelectedDocumentSummaries().styled}
               isLoading={isSummarizing}
               chunksProcessed={chunksProcessed}
               totalChunks={totalChunks}

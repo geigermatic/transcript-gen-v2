@@ -9,7 +9,9 @@ import { Copy, Check, FileText, Clock, Database } from 'lucide-react';
 import { logInfo } from '../lib/logger';
 
 interface SummaryPreviewCardProps {
-  summary?: string;
+  summary?: string; // Backward compatibility - defaults to styled summary
+  rawSummary?: string;
+  styledSummary?: string;
   isLoading?: boolean;
   chunksProcessed?: number;
   totalChunks?: number;
@@ -20,6 +22,8 @@ interface SummaryPreviewCardProps {
 
 export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({ 
   summary, 
+  rawSummary,
+  styledSummary,
   isLoading = false,
   chunksProcessed = 0,
   totalChunks = 0,
@@ -28,6 +32,7 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
   progressStatus = ''
 }) => {
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<'raw' | 'styled'>('styled');
   const [elapsedTime, setElapsedTime] = useState(0);
 
   // Timer effect for processing
@@ -61,11 +66,17 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
     return formatTime(estimatedSeconds);
   };
 
+  // Determine which summaries are available and what to display
+  const hasRawSummary = !!rawSummary;
+  const hasStyledSummary = !!(styledSummary || summary); // backward compatibility
+  const hasBothSummaries = hasRawSummary && hasStyledSummary;
+  const currentSummary = activeTab === 'raw' ? rawSummary : (styledSummary || summary);
+
   const handleCopy = async () => {
-    if (!summary) return;
+    if (!currentSummary) return;
     
     try {
-      await navigator.clipboard.writeText(summary);
+      await navigator.clipboard.writeText(currentSummary);
       setCopied(true);
       logInfo('UI', 'Summary copied to clipboard');
       
@@ -81,7 +92,7 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
         <h2 className="text-heading">Summary</h2>
         <button
           onClick={handleCopy}
-          disabled={isLoading || !summary}
+          disabled={isLoading || !currentSummary}
           className="glass-button flex items-center gap-2 focus-visible"
         >
           {copied ? (
@@ -129,6 +140,34 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
         </div>
       )}
 
+      {/* Tabs for dual summaries */}
+      {hasBothSummaries && !isLoading && (
+        <div className="flex bg-white bg-opacity-5 rounded-lg p-1 mb-6">
+          <button
+            onClick={() => setActiveTab('styled')}
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+              activeTab === 'styled'
+                ? 'bg-blue-500 bg-opacity-20 text-blue-200 shadow-sm'
+                : 'text-white text-opacity-70 hover:text-white hover:bg-white hover:bg-opacity-5'
+            }`}
+          >
+            <FileText size={16} className="inline mr-2" />
+            Stylized Summary
+          </button>
+          <button
+            onClick={() => setActiveTab('raw')}
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+              activeTab === 'raw'
+                ? 'bg-blue-500 bg-opacity-20 text-blue-200 shadow-sm'
+                : 'text-white text-opacity-70 hover:text-white hover:bg-white hover:bg-opacity-5'
+            }`}
+          >
+            <Database size={16} className="inline mr-2" />
+            Raw Summary
+          </button>
+        </div>
+      )}
+
       <div className="space-y-4">
         {isLoading ? (
           <div className="space-y-3">
@@ -137,7 +176,7 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
             <div className="h-4 bg-white bg-opacity-10 rounded-lg animate-pulse w-3/4" />
             <div className="h-4 bg-white bg-opacity-10 rounded-lg animate-pulse w-5/6" />
           </div>
-        ) : summary ? (
+        ) : currentSummary ? (
           <div className="content-area">
             <div className="prose prose-gray max-w-none">
               <ReactMarkdown
@@ -193,7 +232,7 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
                   ),
                 }}
               >
-                {summary}
+                {currentSummary}
               </ReactMarkdown>
             </div>
           </div>
@@ -208,11 +247,18 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
         )}
       </div>
 
-      {summary && !isLoading && (
+      {currentSummary && !isLoading && (
         <div className="mt-6 pt-4 border-t border-gray-200">
           <div className="flex items-center justify-between text-gray-600 text-sm">
-            <span>Summary generated from transcript analysis</span>
-            <span>{summary.split(' ').length} words</span>
+            <span>
+              Summary generated from transcript analysis
+              {hasBothSummaries && (
+                <span className="ml-2 text-blue-600">
+                  ({activeTab === 'raw' ? 'Raw version' : 'Stylized version'})
+                </span>
+              )}
+            </span>
+            <span>{currentSummary.split(' ').length} words</span>
           </div>
         </div>
       )}
