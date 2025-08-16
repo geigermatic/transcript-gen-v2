@@ -106,6 +106,7 @@ export interface StyleGuide {
   tone_settings: ToneSettings;
   keywords: string[];
   example_phrases: ExamplePhrases;
+  source_content?: string[]; // Array of all newsletter/content samples used to build this guide
 }
 
 export interface ExamplePhrases {
