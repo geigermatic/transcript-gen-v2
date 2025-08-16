@@ -248,12 +248,12 @@ export const SummaryPreviewCard: React.FC<SummaryPreviewCardProps> = ({
       </div>
 
       {currentSummary && !isLoading && (
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <div className="flex items-center justify-between text-gray-600 text-sm">
+        <div className="mt-6 pt-4 border-t border-white border-opacity-20">
+          <div className="flex items-center justify-between text-white text-opacity-70 text-sm">
             <span>
               Summary generated from transcript analysis
               {hasBothSummaries && (
-                <span className="ml-2 text-blue-600">
+                <span className="ml-2 text-blue-300">
                   ({activeTab === 'raw' ? 'Raw version' : 'Stylized version'})
                 </span>
               )}
