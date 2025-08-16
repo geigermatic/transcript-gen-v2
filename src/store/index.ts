@@ -51,6 +51,7 @@ interface AppState {
   // A/B Testing
   abSummaryPairs: ABSummaryPair[];
   addABSummaryPair: (pair: ABSummaryPair) => void;
+  updateABSummaryPair: (pair: ABSummaryPair) => void;
   updateABSummaryFeedback: (pairId: string, feedback: UserPreference) => void;
   getABSummaryPair: (pairId: string) => ABSummaryPair | undefined;
   
@@ -210,6 +211,12 @@ export const useAppStore = create<AppState>()(
       addABSummaryPair: (pair) =>
         set((state) => ({
           abSummaryPairs: [...state.abSummaryPairs, pair],
+        })),
+      updateABSummaryPair: (updatedPair) =>
+        set((state) => ({
+          abSummaryPairs: state.abSummaryPairs.map((pair) =>
+            pair.id === updatedPair.id ? updatedPair : pair
+          ),
         })),
       updateABSummaryFeedback: (pairId, feedback) =>
         set((state) => ({

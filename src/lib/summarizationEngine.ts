@@ -44,17 +44,17 @@ export class SummarizationEngine {
     mergedFacts: ExtractedFacts,
     styleGuide: StyleGuide
   ): Promise<string> {
-    logInfo('SUMMARIZATION', `Regenerating stylized summary for: ${document.title}`);
+    logInfo('SUMMARIZATION', `Regenerating stylized summary for: ${document.title || document.filename || 'Unknown Document'}`);
     
     try {
       const styledSummary = await this.generateStyledSummary(document, mergedFacts, styleGuide);
-      logInfo('SUMMARIZATION', `Stylized summary regenerated for: ${document.title}`, {
+      logInfo('SUMMARIZATION', `Stylized summary regenerated for: ${document.title || document.filename || 'Unknown Document'}`, {
         summaryLength: styledSummary.length
       });
       
       return styledSummary;
     } catch (error) {
-      logError('SUMMARIZATION', `Failed to regenerate stylized summary for: ${document.title}`, error);
+      logError('SUMMARIZATION', `Failed to regenerate stylized summary for: ${document.title || document.filename || 'Unknown Document'}`, error);
       throw error;
     }
   }

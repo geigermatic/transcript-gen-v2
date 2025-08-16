@@ -156,7 +156,7 @@ export const GlassDashboard: React.FC = () => {
       
       logInfo('UI', 'Starting stylized summary regeneration', { 
         documentId: selectedDocument.id,
-        documentTitle: selectedDocument.title 
+        documentTitle: selectedDocument.title || selectedDocument.filename || 'Unknown Document'
       });
 
       // Regenerate just the stylized summary
