@@ -59,7 +59,10 @@ export class SummarizationEngine {
         examplePhrasesSection: this.buildExamplePhrasesSection(styleGuide)
       });
 
-      const response = await ollama.generate(regenerationPrompt);
+      const response = await ollama.chat([{
+        role: 'user',
+        content: regenerationPrompt
+      }]);
       
       logInfo('SUMMARIZATION', `Stylized summary regenerated for: ${document.title || document.filename || 'Unknown Document'}`, {
         summaryLength: response.length
