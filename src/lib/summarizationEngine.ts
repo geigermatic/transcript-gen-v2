@@ -488,7 +488,7 @@ Generate a comprehensive markdown summary that:
 - Maintains objectivity and factual accuracy
 - Refers to the instructor as "Caren" throughout
 - Uses lesson-appropriate language (e.g., "In this lesson", "In this teaching")
-- STARTS with a "## Synopsis" section (4-6 sentences) that emphasizes WHY someone would want to do this lesson and WHAT benefits/transformation they will gain. Answer: What problems does this solve? What will you feel/experience? How will you be different after?
+- STARTS with a "## Synopsis" section (4-6 sentences) that emphasizes WHY someone would want to do this lesson and WHAT benefits/transformation they will gain. Even though this is a raw summary, make the synopsis compelling and benefit-focused. Answer: What problems does this solve? What will you feel/experience? How will you be different after?
 
 Focus on substance over style. This is a raw, factual summary without any specific voice or tone requirements.
 

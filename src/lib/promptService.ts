@@ -77,13 +77,15 @@ EXTRACTED FACTS:
 INSTRUCTIONS:
 1. Create a well-structured markdown summary for this lesson/teaching/meditation
 2. Use the extracted facts as your foundation
-3. Apply the style guide consistently
+3. Apply the style guide consistently throughout, but ESPECIALLY in the synopsis
 4. Include relevant headings and formatting
 5. Emphasize techniques, practices, and key takeaways taught
 6. Make it engaging and useful for students/practitioners
 7. Always refer to the instructor as "Caren" throughout
 8. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session" rather than generic terms like "comprehensive guide"
-9. START with a "## Synopsis" section containing 4-6 sentences that emphasize WHY the reader would want to do this lesson and WHAT they will gain from it. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect?
+9. START with a "## Synopsis" section containing 4-6 sentences that emphasize WHY the reader would want to do this lesson and WHAT they will gain from it. 
+
+CRITICAL: The synopsis is the MOST IMPORTANT section and must be written 100% in the author's voice using the style guide above. Apply ALL tone settings, keywords, example phrases, and writing patterns heavily in the synopsis. Use the author's preferred openings, transitions, and voice markers. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect? Make this section sound exactly like the author would write it.
 
 MARKDOWN SUMMARY:`,
 
