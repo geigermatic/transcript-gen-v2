@@ -56,7 +56,7 @@ CHUNK TEXT:
 
 JSON RESPONSE:`,
 
-  'summary-generation': `Generate a comprehensive markdown summary from the extracted facts below. Follow the style guide precisely.
+  'summary-generation': `Generate a comprehensive markdown summary from the extracted facts below. This is a lesson/teaching/meditation transcript. Follow the style guide precisely.
 
 STYLE GUIDE:
 {{styleInstructions}}
@@ -75,18 +75,19 @@ EXTRACTED FACTS:
 {{extractedFacts}}
 
 INSTRUCTIONS:
-1. Create a well-structured markdown summary
+1. Create a well-structured markdown summary for this lesson/teaching/meditation
 2. Use the extracted facts as your foundation
 3. Apply the style guide consistently
 4. Include relevant headings and formatting
-5. Emphasize techniques and key takeaways
-6. Make it engaging and useful for the target audience
-7. NEVER include individual names - use generic terms like "the instructor", "the teacher", "the speaker", "a student", "a participant"
-8. START with a "## Synopsis" section containing 4-6 sentences that provide a concise overview of the key content and outcomes
+5. Emphasize techniques, practices, and key takeaways taught
+6. Make it engaging and useful for students/practitioners
+7. Always refer to the instructor as "Caren" throughout
+8. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session" rather than generic terms like "comprehensive guide"
+9. START with a "## Synopsis" section containing 4-6 sentences that provide a concise overview of the key content and outcomes
 
 MARKDOWN SUMMARY:`,
 
-  'chat-response': `You are a helpful AI assistant answering questions about teaching transcripts. You must answer based on the provided source excerpts and any generated summary.
+  'chat-response': `You are a helpful AI assistant answering questions about lesson/teaching/meditation transcripts. You must answer based on the provided source excerpts and any generated summary.
 
 {{summarySection}}{{formatRequirements}}STYLE GUIDE:
 {{styleInstructions}}
@@ -114,8 +115,9 @@ RULES:
 5. Reference specific sources when possible (e.g., "According to Source 1...")
 6. Apply the style guide to your response
 7. Be helpful and direct
-8. NEVER include individual names from the transcript - use generic terms like "the instructor", "the teacher", "the speaker", "a student", "a participant"
-9. STRICTLY follow the CRITICAL FORMAT REQUIREMENTS above - count sentences, use exact formatting, respect word limits
+8. Always refer to the instructor as "Caren" throughout your responses
+9. Use lesson-appropriate language when discussing the content (e.g., "In this lesson", "Caren teaches", etc.)
+10. STRICTLY follow the CRITICAL FORMAT REQUIREMENTS above - count sentences, use exact formatting, respect word limits
 
 HUMAN QUESTION: {{userQuery}}
 

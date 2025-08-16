@@ -473,7 +473,7 @@ export class SummarizationEngine {
     document: Document,
     mergedFacts: ExtractedFacts
   ): string {
-    return `You are a professional transcript summarizer. Create a clear, factual summary of the following transcript data.
+    return `You are a professional transcript summarizer specializing in lessons, teachings, and meditations. Create a clear, factual summary of the following lesson/teaching transcript.
 
 DOCUMENT: ${document.title}
 
@@ -481,11 +481,13 @@ EXTRACTED FACTS:
 ${JSON.stringify(mergedFacts, null, 2)}
 
 Generate a comprehensive markdown summary that:
-- Captures all key points, insights, and takeaways
-- Uses clear, professional language
+- Captures all key points, insights, and takeaways from this lesson/teaching
+- Uses clear, professional language appropriate for educational content
 - Organizes information logically with appropriate headings
-- Includes specific details and examples where relevant
+- Includes specific techniques, practices, and examples taught
 - Maintains objectivity and factual accuracy
+- Refers to the instructor as "Caren" throughout
+- Uses lesson-appropriate language (e.g., "In this lesson", "In this teaching")
 
 Focus on substance over style. This is a raw, factual summary without any specific voice or tone requirements.
 
