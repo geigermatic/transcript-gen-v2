@@ -89,7 +89,9 @@ CRITICAL: The synopsis is the MOST IMPORTANT section and must be written 100% in
 
 MARKDOWN SUMMARY:`,
 
-  'summary-regeneration': `Regenerate a fresh version of the stylized summary from the extracted facts below. This is a lesson/teaching/meditation transcript. Create a NEW APPROACH to the synopsis while maintaining the style guide.
+  'summary-regeneration': `REGENERATION MODE: Create a DRAMATICALLY DIFFERENT version of the stylized summary. You MUST vary your approach significantly from any previous version.
+
+RANDOMIZATION SEED: {{timestamp}}
 
 STYLE GUIDE:
 {{styleInstructions}}
@@ -107,30 +109,26 @@ DOCUMENT: {{documentTitle}}
 EXTRACTED FACTS:
 {{extractedFacts}}
 
-REGENERATION INSTRUCTIONS:
-1. Create a FRESH, NEW stylized summary using the same facts but with different angles and perspectives
-2. Use the extracted facts as your foundation but explore different ways to present them
-3. Apply the style guide consistently throughout, but ESPECIALLY in the synopsis
-4. Include relevant headings and formatting
-5. Emphasize techniques, practices, and key takeaways taught from new angles
-6. Make it engaging and useful for students/practitioners
-7. Always refer to the instructor as "Caren" throughout
-8. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session"
+MANDATORY VARIATION REQUIREMENTS:
+This is regeneration #{{regenerationCount}} - you MUST create something substantially different.
 
-9. CREATE A COMPLETELY NEW "## Synopsis" section containing exactly 4 sentences:
-   - Use DIFFERENT opening hooks and angles than typical summaries
-   - Explore alternative benefits and transformation outcomes
-   - Highlight different aspects of WHY someone would do this lesson
-   - Present WHAT they will gain from fresh perspectives
-   - Try different combinations of the author's voice markers and transitions
+SYNOPSIS VARIATION STRATEGIES (pick ONE and commit fully):
+A) URGENCY ANGLE: Focus on immediate relief, problems being solved right now
+B) DISCOVERY ANGLE: Frame as uncovering secrets, hidden knowledge, breakthrough insights  
+C) TRANSFORMATION ANGLE: Emphasize the before/after state, who you become
+D) PRACTICAL ANGLE: Stress tangible skills, concrete tools, real-world application
+E) EMOTIONAL ANGLE: Lead with feelings, inner states, emotional journey
+F) CURIOSITY ANGLE: Pose intriguing questions, mysteries to be solved
 
-CRITICAL REGENERATION FOCUS: 
-- The synopsis must be COMPLETELY DIFFERENT from standard approaches
-- Use the author's voice but explore different emotional angles (curiosity, urgency, relief, discovery)
-- Try different benefit framings (immediate vs. long-term, personal vs. practical, emotional vs. physical)
-- Experiment with different opening techniques from the style guide
-- Focus on different transformation aspects that make the lesson compelling
-- LIMIT TO EXACTLY 4 SENTENCES but make each one count with fresh perspective
+MANDATORY SYNOPSIS CHANGES:
+- Use COMPLETELY different opening sentence structure than before
+- Choose different benefits/outcomes to highlight
+- Vary the emotional tone within your style guide parameters
+- Use different combinations of your voice markers
+- Focus on different aspects of transformation
+- MUST start with a different phrase pattern than any standard approach
+
+CRITICAL: If you find yourself writing something that feels similar to a typical summary, STOP and rewrite with a more unique angle. Push beyond your comfort zone while staying true to the author's voice.
 
 MARKDOWN SUMMARY:`,
 

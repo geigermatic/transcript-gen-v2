@@ -26,6 +26,7 @@ export const GlassDashboard: React.FC = () => {
   const [processingStartTime, setProcessingStartTime] = useState<Date | null>(null);
   const [progressPercent, setProgressPercent] = useState(0);
   const [progressStatus, setProgressStatus] = useState('');
+  const [regenerationCount, setRegenerationCount] = useState(1);
 
   // Ensure page starts at top on component mount
   useEffect(() => {
@@ -40,6 +41,7 @@ export const GlassDashboard: React.FC = () => {
       setIsSummarizing(true);
       setChunksProcessed(0);
       setProcessingStartTime(new Date());
+      setRegenerationCount(1); // Reset regeneration count for new document
       
       // Estimate total chunks based on word count (updated chunk size ~500 words)
       const wordCount = document.metadata.wordCount || 1000;
@@ -163,8 +165,12 @@ export const GlassDashboard: React.FC = () => {
       const newStyledSummary = await SummarizationEngine.regenerateStyledSummary(
         selectedDocument,
         recentSummary.summaryA.mergedFacts,
-        styleGuide
+        styleGuide,
+        regenerationCount
       );
+
+      // Increment regeneration count for next time
+      setRegenerationCount(prev => prev + 1);
 
       // Update the existing summary pair with the new stylized summary
       const updatedSummaryA = {

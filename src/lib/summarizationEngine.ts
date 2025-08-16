@@ -42,12 +42,14 @@ export class SummarizationEngine {
   static async regenerateStyledSummary(
     document: Document,
     mergedFacts: ExtractedFacts,
-    styleGuide: StyleGuide
+    styleGuide: StyleGuide,
+    regenerationCount: number = 1
   ): Promise<string> {
     logInfo('SUMMARIZATION', `Regenerating stylized summary for: ${document.title || document.filename || 'Unknown Document'}`);
     
     try {
       // Use the special regeneration prompt for variation
+      const timestamp = Date.now();
       const regenerationPrompt = PromptService.buildPrompt('summary-regeneration', {
         documentTitle: document.title || document.filename || 'Untitled Document',
         extractedFacts: JSON.stringify(mergedFacts, null, 2),
@@ -56,7 +58,9 @@ export class SummarizationEngine {
         enthusiasmLevel: styleGuide.tone_settings.enthusiasm,
         technicalityLevel: styleGuide.tone_settings.technicality,
         keywords: styleGuide.keywords.join(', '),
-        examplePhrasesSection: this.buildExamplePhrasesSection(styleGuide)
+        examplePhrasesSection: this.buildExamplePhrasesSection(styleGuide),
+        timestamp: timestamp.toString(),
+        regenerationCount: regenerationCount.toString()
       });
 
       const response = await ollama.chat([{
