@@ -45,7 +45,11 @@ export class SummarizationEngine {
     styleGuide: StyleGuide,
     regenerationCount: number = 1
   ): Promise<string> {
-    logInfo('SUMMARIZATION', `Regenerating stylized summary for: ${document.title || document.filename || 'Unknown Document'}`);
+    logInfo('SUMMARIZATION', `🔄 REGENERATION STARTED for: ${document.title || document.filename || 'Unknown Document'}`, {
+      regenerationCount,
+      hasStyleGuide: !!styleGuide,
+      hasFacts: !!mergedFacts
+    });
     
     try {
       // Use the special regeneration prompt for variation
@@ -63,13 +67,18 @@ export class SummarizationEngine {
         regenerationCount: regenerationCount.toString()
       });
 
+      logInfo('SUMMARIZATION', '🚀 About to call Ollama for regeneration...', {
+        promptLength: regenerationPrompt.length
+      });
+
       const response = await ollama.chat([{
         role: 'user',
         content: regenerationPrompt
       }]);
       
-      logInfo('SUMMARIZATION', `Stylized summary regenerated for: ${document.title || document.filename || 'Unknown Document'}`, {
-        summaryLength: response.length
+      logInfo('SUMMARIZATION', `✅ Ollama response received for regeneration of: ${document.title || document.filename || 'Unknown Document'}`, {
+        summaryLength: response.length,
+        responsePreview: response.substring(0, 100) + '...'
       });
       
       return response;

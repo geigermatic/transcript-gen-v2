@@ -137,8 +137,16 @@ export const GlassDashboard: React.FC = () => {
 
   // Handle regenerating the stylized summary
   const handleRegenerateStyled = async () => {
+    logInfo('UI', 'Regenerate button clicked!', { 
+      hasSelectedDocument: !!selectedDocument,
+      hasStyleGuide: !!styleGuide 
+    });
+
     if (!selectedDocument || !styleGuide) {
-      logInfo('UI', 'Cannot regenerate: missing document or style guide');
+      logInfo('UI', 'Cannot regenerate: missing document or style guide', {
+        selectedDocument: !!selectedDocument,
+        styleGuide: !!styleGuide
+      });
       return;
     }
 
@@ -146,6 +154,12 @@ export const GlassDashboard: React.FC = () => {
     const recentSummary = abSummaryPairs
       .filter(pair => pair.documentId === selectedDocument.id)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+    logInfo('UI', 'Recent summary found', { 
+      found: !!recentSummary,
+      hasFacts: !!recentSummary?.summaryA.mergedFacts,
+      summaryId: recentSummary?.id
+    });
 
     if (!recentSummary?.summaryA.mergedFacts) {
       logInfo('UI', 'Cannot regenerate: no existing facts found');
@@ -184,6 +198,12 @@ export const GlassDashboard: React.FC = () => {
         summaryA: updatedSummaryA,
         createdAt: new Date().toISOString() // Update timestamp
       };
+
+      logInfo('UI', 'About to update AB summary pair', {
+        pairId: updatedPair.id,
+        newSummaryLength: newStyledSummary.length,
+        newSummaryPreview: newStyledSummary.substring(0, 100) + '...'
+      });
 
       updateABSummaryPair(updatedPair);
       
