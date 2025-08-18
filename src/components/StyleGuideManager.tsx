@@ -1023,7 +1023,18 @@ export const StyleGuideManager: React.FC = () => {
 
           {/* Custom Instructions */}
           <div className="glass-card p-6">
-            <h3 className="text-hierarchy-h3 mb-4" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Custom Instructions</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-hierarchy-h3" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Custom Instructions</h3>
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="glass-button-secondary text-sm text-blue-400 hover:text-blue-300"
+                >
+                  <Edit3 size={14} />
+                  Edit Instructions
+                </button>
+              )}
+            </div>
             
             {isEditing ? (
               <div className="space-y-3">
@@ -1069,14 +1080,14 @@ export const StyleGuideManager: React.FC = () => {
                       {category.replace('_', ' ')}
                     </h4>
                     {isEditing && (
-                      <button
+                  <button
                         onClick={() => addExamplePhrase(category)}
                         className="text-blue-400 hover:text-blue-300 text-sm"
-                      >
+                  >
                         + Add
-                      </button>
-                    )}
-                  </div>
+                  </button>
+                )}
+              </div>
                   
                   {phrases.length > 0 ? (
                     <div className="space-y-2">
@@ -1087,13 +1098,13 @@ export const StyleGuideManager: React.FC = () => {
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-purple-100 text-sm">{phrase}</span>
-                            <button
+              <button
                               onClick={() => removeExamplePhrase(category, index)}
                               className="text-purple-200 hover:text-red-300 transition-colors opacity-70 hover:opacity-100"
                               title={`Remove "${phrase}"`}
-                            >
+              >
                               ×
-                            </button>
+              </button>
                           </div>
                         </div>
                       ))}
