@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { Calendar, FileText, Tag, ChevronDown, ChevronUp, FolderOpen, Trash2 } from 'lucide-react';
+import { Calendar, FileText, Tag, ChevronDown, ChevronUp, FolderOpen, Trash2, Clock } from 'lucide-react';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
 
@@ -24,7 +24,7 @@ interface RecentDocsCardProps {
 }
 
 export const RecentDocsCard: React.FC<RecentDocsCardProps> = ({ onDocumentSelect }) => {
-  const { documents, clearAllData } = useAppStore();
+  const { documents, clearAllData, abSummaryPairs } = useAppStore();
   const [showAll, setShowAll] = useState(false);
 
   const handleClearAllData = () => {
@@ -38,7 +38,28 @@ export const RecentDocsCard: React.FC<RecentDocsCardProps> = ({ onDocumentSelect
     }
   };
 
+  // Helper function to format processing time
+  const formatProcessingTime = (milliseconds: number): string => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+  };
 
+  // Helper function to get processing time for a document
+  const getDocumentProcessingTime = (documentId: string): number | null => {
+    const summaryPair = abSummaryPairs.find(pair => pair.documentId === documentId);
+    if (summaryPair?.summaryA?.processingStats?.processingTime) {
+      return summaryPair.summaryA.processingStats.processingTime;
+    }
+    return null;
+  };
 
   // Use real documents only - sort by upload date (most recent first)
   const sortedDocuments = documents.sort((a, b) => 
@@ -58,7 +79,8 @@ export const RecentDocsCard: React.FC<RecentDocsCardProps> = ({ onDocumentSelect
       month: 'long', 
       day: 'numeric' 
     }),
-    wordCount: doc.metadata.wordCount || 0
+    wordCount: doc.metadata.wordCount || 0,
+    processingTime: getDocumentProcessingTime(doc.id)
   }));
 
   const handleDocumentClick = (doc: any) => {
@@ -122,6 +144,17 @@ export const RecentDocsCard: React.FC<RecentDocsCardProps> = ({ onDocumentSelect
                   </div>
                   {doc.wordCount && (
                     <span>{doc.wordCount.toLocaleString()} words</span>
+                  )}
+                  {doc.processingTime ? (
+                    <span className="flex items-center gap-1 text-green-600">
+                      <Clock size={12} />
+                      {formatProcessingTime(doc.processingTime)}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-gray-500">
+                      <Clock size={12} />
+                      No summary yet
+                    </span>
                   )}
                 </div>
               </div>
