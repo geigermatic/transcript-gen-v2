@@ -5,10 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:full": "bash scripts/start-dev.sh",
+    "dev:full:win": "scripts\\start-dev.bat",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check-ollama": "curl -f http://127.0.0.1:11434/api/tags || echo 'Ollama not running on http://127.0.0.1:11434'"
+    "check-ollama": "curl -f http://127.0.0.1:11434/api/tags || echo 'Ollama not running on http://127.0.0.1:11434'",
+    "start-ollama": "ollama serve",
+    "postinstall": "chmod +x scripts/start-dev.sh"
   },
   "dependencies": {
     "localforage": "^1.10.0",

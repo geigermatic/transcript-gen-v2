@@ -40,8 +40,23 @@ export class OllamaClient {
 
   async isAvailable(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.config.baseUrl}/api/tags`);
-      return response.ok;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+      
+      try {
+        const response = await fetch(`${this.config.baseUrl}/api/tags`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response.ok;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.warn('Ollama availability check timed out after 3 seconds');
+          return false;
+        }
+        throw error;
+      }
     } catch (error) {
       console.warn('Ollama not available:', error);
       return false;
@@ -49,44 +64,72 @@ export class OllamaClient {
   }
 
   async chat(messages: ChatMessage[]): Promise<string> {
-    const response = await fetch(`${this.config.baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: this.config.chatModel,
-        messages,
-        stream: false,
-      }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for chat
+    
+    try {
+      const response = await fetch(`${this.config.baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.config.chatModel,
+          messages,
+          stream: false,
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Chat request failed: ${response.statusText}`);
+      }
 
-    if (!response.ok) {
-      throw new Error(`Chat request failed: ${response.statusText}`);
+      const data: ChatResponse = await response.json();
+      return data.message.content;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Chat request timed out after 60 seconds. Ollama may be unresponsive.');
+      }
+      throw error;
     }
-
-    const data: ChatResponse = await response.json();
-    return data.message.content;
   }
 
   async generateEmbedding(text: string): Promise<number[]> {
-    const response = await fetch(`${this.config.baseUrl}/api/embeddings`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: this.config.embeddingModel,
-        prompt: text,
-      }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for embeddings
+    
+    try {
+      const response = await fetch(`${this.config.baseUrl}/api/embeddings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.config.embeddingModel,
+          prompt: text,
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Embedding request failed: ${response.statusText}`);
+      }
 
-    if (!response.ok) {
-      throw new Error(`Embedding request failed: ${response.statusText}`);
+      const data: EmbeddingResponse = await response.json();
+      return data.embedding;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Embedding request timed out after 30 seconds. Ollama may be unresponsive.');
+      }
+      throw error;
     }
-
-    const data: EmbeddingResponse = await response.json();
-    return data.embedding;
   }
 }
 

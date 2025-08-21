@@ -3,6 +3,7 @@ import { Search, FileText, Download, Upload, Edit3, Save, RotateCcw, RefreshCw, 
 import { useAppStore } from '../store';
 import { PromptService } from '../lib/promptService';
 import type { ToneSettings } from '../types';
+import { StyleGuideTester } from './StyleGuideTester';
 
 export const StyleGuideManager: React.FC = () => {
   const { styleGuide, updateStyleGuide, resetStyleGuide, addLog } = useAppStore();
@@ -46,28 +47,47 @@ export const StyleGuideManager: React.FC = () => {
     try {
       const { ollama } = await import('../lib/ollama');
       
-      // Check if Ollama is available
-      const isAvailable = await ollama.isAvailable();
+      // Check if Ollama is available with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
       
-      if (isAvailable) {
-        // Get available models
-        try {
-          const response = await fetch('http://127.0.0.1:11434/api/tags');
-          const data = await response.json();
-          const modelNames = data.models?.map((model: any) => model.name) || [];
-          setOllamaModels(modelNames);
-          setOllamaStatus('available');
-        } catch (error) {
+      try {
+        const isAvailable = await ollama.isAvailable();
+        clearTimeout(timeoutId);
+        
+        if (isAvailable) {
+          // Get available models with timeout
+          const modelResponse = await fetch('http://127.0.0.1:11434/api/tags', {
+            signal: controller.signal
+          });
+          
+          if (modelResponse.ok) {
+            const data = await modelResponse.json();
+            const modelNames = data.models?.map((model: any) => model.name) || [];
+            setOllamaModels(modelNames);
+            setOllamaStatus('available');
+          } else {
+            setOllamaModels([]);
+            setOllamaStatus('available'); // Still available, just couldn't get models
+          }
+        } else {
+          setOllamaStatus('unavailable');
           setOllamaModels([]);
-          setOllamaStatus('available'); // Still available, just couldn't get models
         }
-      } else {
-        setOllamaStatus('unavailable');
-        setOllamaModels([]);
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          setOllamaStatus('unavailable');
+          setOllamaModels([]);
+          console.warn('Ollama status check timed out after 5 seconds');
+        } else {
+          throw fetchError;
+        }
       }
     } catch (error) {
       setOllamaStatus('unavailable');
       setOllamaModels([]);
+      console.error('Failed to check Ollama status:', error);
     }
   };
 
@@ -1116,6 +1136,9 @@ export const StyleGuideManager: React.FC = () => {
               ))}
             </div>
           </div>
+
+          {/* Style Guide Tester */}
+          <StyleGuideTester />
 
         </div>
       </div>

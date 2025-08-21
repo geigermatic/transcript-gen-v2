@@ -6,6 +6,7 @@ import { GlossaryPage } from './pages/GlossaryPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { DevConsolePage } from './pages/DevConsolePage';
+import { OllamaStatusMonitor } from './components/OllamaStatusMonitor';
 
 // Component to handle scroll restoration
 function ScrollToTop() {
@@ -40,6 +41,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      <OllamaStatusMonitor />
       <Routes>
         {/* Main Dashboard - All functionality consolidated here */}
         <Route path="/" element={<GlassDashboard />} />
