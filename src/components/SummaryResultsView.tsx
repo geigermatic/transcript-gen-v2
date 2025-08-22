@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Search, Grid3X3, HelpCircle, Globe, Paperclip, Mic, Send, Settings, Plus } from 'lucide-react';
+import { ArrowLeft, Search, Grid3X3, HelpCircle, Globe, Paperclip, Mic, Send, Settings, Plus, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
@@ -13,7 +13,7 @@ import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 export const SummaryResultsView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { documents, styleGuide, getDocumentSummary } = useAppStore();
+  const { documents, styleGuide, getDocumentSummary, clearAllData } = useAppStore();
   
   // Debug logging for store state
   console.log('SummaryResultsView render - documents:', documents);
@@ -167,6 +167,22 @@ export const SummaryResultsView: React.FC = () => {
               <Settings className="w-5 h-5 text-gray-600" />
               {isNavExpanded && <span className="text-gray-700">Settings</span>}
             </button>
+            
+            {/* Clear All Documents Button */}
+            <button 
+              onClick={() => {
+                if (window.confirm('Are you sure you want to delete all documents? This action cannot be undone.')) {
+                  console.log('Clearing all documents and data...');
+                  clearAllData();
+                  // Navigate back to chat which will show the clean interface
+                  navigate('/');
+                }
+              }}
+              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors"
+            >
+              <Trash2 className="w-5 h-5" />
+              {isNavExpanded && <span>Clear All Documents</span>}
+            </button>
           </div>
 
           {/* Documents Section - Only show when expanded */}
@@ -175,7 +191,23 @@ export const SummaryResultsView: React.FC = () => {
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                 Documents ({documents.length})
               </h3>
-
+              {/* Debug info */}
+              <div className="text-xs text-gray-400 mb-2">
+                Debug: isNavExpanded={isNavExpanded.toString()}, documents.length={documents.length}
+              </div>
+              
+              {/* Test button */}
+              <button 
+                onClick={() => {
+                  alert('Test button clicked! Check console for details.');
+                  console.log('Test button clicked!');
+                  console.log('Documents:', documents);
+                  console.log('Current document:', document);
+                }}
+                className="w-full mb-2 p-2 bg-red-100 text-red-800 rounded text-xs"
+              >
+                🧪 TEST CLICK - Check Console
+              </button>
 
               {documents.length === 0 ? (
                 <div className="text-center py-4">
@@ -198,6 +230,7 @@ export const SummaryResultsView: React.FC = () => {
                           : 'hover:bg-gray-100 text-gray-700'
                       }`}
                                                                    onClick={() => {
+                        alert(`Document clicked: ${doc.title || doc.filename}`);
                         console.log('Document clicked!', doc);
                         console.log('Current document:', document);
                         console.log('Document IDs match?', doc.id === document?.id);
