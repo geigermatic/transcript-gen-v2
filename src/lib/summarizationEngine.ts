@@ -4,10 +4,10 @@
 
 import { ollama } from './ollama';
 import { TextSplitter } from './textSplitter';
-import { ChunkingConfigManager } from './chunkingConfig';
+import { ChunkingConfigManager, type ProcessingConfig } from './chunkingConfig';
 import { PromptService } from './promptService';
 import { logInfo, logError } from './logger';
-import type { Document, ExtractedFacts, StyleGuide } from '../types';
+import type { Document, ExtractedFacts, StyleGuide, TextChunk } from '../types';
 
 export interface ChunkFacts {
   chunkId: string;
@@ -306,10 +306,10 @@ export class SummarizationEngine {
    * Process chunks with configurable parallel processing
    */
   private static async processChunks(
-    chunks: any[], 
+    chunks: TextChunk[], 
     styleGuide: StyleGuide, 
     documentId: string, 
-    config: any,
+    config: ProcessingConfig,
     onProgress?: (current: number, total: number, status?: string) => void
   ): Promise<ChunkFacts[]> {
     const chunkFacts: ChunkFacts[] = [];
@@ -319,7 +319,7 @@ export class SummarizationEngine {
       const batchSize = config.chunking.batchSize;
       let completedChunks = 0;
       
-      const processChunk = async (chunk: any): Promise<ChunkFacts> => {
+      const processChunk = async (chunk: TextChunk): Promise<ChunkFacts> => {
         const chunkNumber = completedChunks + 1;
         onProgress?.(10 + (chunkNumber - 1) * 60 / chunks.length, 100, 
           `Extracting facts from chunk ${chunkNumber}/${chunks.length}...`);

@@ -16,7 +16,7 @@ export interface QATestResult {
   testName: string;
   status: 'PASS' | 'FAIL' | 'SKIP';
   duration: number;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   error?: string;
 }
 
@@ -66,7 +66,7 @@ export class QATester {
     return testSuites;
   }
 
-  private async runTest(testName: string, testFn: () => Promise<any>): Promise<QATestResult> {
+  private async runTest(testName: string, testFn: () => Promise<unknown>): Promise<QATestResult> {
     const startTime = performance.now();
     
     try {

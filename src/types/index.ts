@@ -202,5 +202,5 @@ export interface LogEntry {
   level: 'info' | 'warn' | 'error' | 'debug';
   category: string;
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }

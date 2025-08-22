@@ -447,7 +447,7 @@ export class OfflineStorage {
   }
 
   // Health check
-  async healthCheck(): Promise<{ status: 'healthy' | 'degraded' | 'failed'; details: Record<string, any> }> {
+  async healthCheck(): Promise<{ status: 'healthy' | 'degraded' | 'failed'; details: Record<string, unknown> }> {
     const results = {
       documentsStore: false,
       embeddingsStore: false,
