@@ -22,7 +22,7 @@ export interface LogEvent {
   level: LogLevel;
   category: LogCategory;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   duration?: number; // milliseconds
   stackTrace?: string;
 }
@@ -122,7 +122,7 @@ export class Logger {
     level: LogLevel,
     category: LogCategory,
     message: string,
-    details?: Record<string, any>,
+    details?: Record<string, unknown>,
     duration?: number
   ): void {
     if (!this.isEnabled) return;
@@ -168,19 +168,19 @@ export class Logger {
     }
   }
 
-  debug(category: LogCategory, message: string, details?: Record<string, any>): void {
+  debug(category: LogCategory, message: string, details?: Record<string, unknown>): void {
     this.log('DEBUG', category, message, details);
   }
 
-  info(category: LogCategory, message: string, details?: Record<string, any>): void {
+  info(category: LogCategory, message: string, details?: Record<string, unknown>): void {
     this.log('INFO', category, message, details);
   }
 
-  warn(category: LogCategory, message: string, details?: Record<string, any>): void {
+  warn(category: LogCategory, message: string, details?: Record<string, unknown>): void {
     this.log('WARN', category, message, details);
   }
 
-  error(category: LogCategory, message: string, details?: Record<string, any>): void {
+  error(category: LogCategory, message: string, details?: Record<string, unknown>): void {
     this.log('ERROR', category, message, details);
   }
 
@@ -359,16 +359,16 @@ export class Logger {
 export const logger = Logger.getInstance();
 
 // Convenience functions
-export const logDebug = (category: LogCategory, message: string, details?: Record<string, any>) =>
+export const logDebug = (category: LogCategory, message: string, details?: Record<string, unknown>) =>
   logger.debug(category, message, details);
 
-export const logInfo = (category: LogCategory, message: string, details?: Record<string, any>) =>
+export const logInfo = (category: LogCategory, message: string, details?: Record<string, unknown>) =>
   logger.info(category, message, details);
 
-export const logWarn = (category: LogCategory, message: string, details?: Record<string, any>) =>
+export const logWarn = (category: LogCategory, message: string, details?: Record<string, unknown>) =>
   logger.warn(category, message, details);
 
-export const logError = (category: LogCategory, message: string, details?: Record<string, any>) =>
+export const logError = (category: LogCategory, message: string, details?: Record<string, unknown>) =>
   logger.error(category, message, details);
 
 export const logTime = (category: LogCategory, label: string) =>

@@ -9,10 +9,10 @@ import { SummarizationEngine } from '../lib/summarizationEngine';
 import { EmbeddingEngine } from '../lib/embeddingEngine';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
-import type { ABSummaryPair } from '../types';
+import type { ABSummaryPair, Document } from '../types';
 
 interface UploadCardProps {
-  onUploadComplete?: (success: boolean, message: string, document?: any) => void;
+  onUploadComplete?: (success: boolean, message: string, document?: Document) => void;
   onProgress?: (current: number, total: number, status?: string) => void;
 }
 
@@ -30,7 +30,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete, onProg
     }
   }, [documents.length]);
 
-  const triggerSummarization = async (document: any) => {
+  const triggerSummarization = async (document: Document) => {
     try {
       logInfo('SYSTEM', `Starting background processing for: ${document.filename}`);
       

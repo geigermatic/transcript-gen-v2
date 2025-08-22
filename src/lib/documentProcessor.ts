@@ -8,7 +8,7 @@ export interface ProcessedDocument {
 }
 
 export class DocumentProcessor {
-  private static addLog(level: 'info' | 'warn' | 'error', message: string, details?: any) {
+  private static addLog(level: 'info' | 'warn' | 'error', message: string, details?: Record<string, unknown>) {
     const { addLog } = useAppStore.getState();
     addLog({
       level,
