@@ -246,6 +246,7 @@ export const SummaryResultsView: React.FC = () => {
 
                 {/* Main Content */}
         <div className="flex-1 px-6 py-8 overflow-y-auto">
+          <div className="max-w-4xl mx-auto">
           {/* Document Title */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -293,10 +294,12 @@ export const SummaryResultsView: React.FC = () => {
               </div>
 
               {/* Summary Content */}
-              <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8 min-h-96">
-                <div className="prose prose-lg max-w-none">
-                  <div className="text-gray-800 whitespace-pre-wrap">
-                    {renderSummaryContent()}
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8 min-h-96">
+                  <div className="prose prose-lg max-w-none">
+                    <div className="text-gray-800 whitespace-pre-wrap">
+                      {renderSummaryContent()}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -351,6 +354,7 @@ export const SummaryResultsView: React.FC = () => {
             </div>
           </form>
         </div>
+          </div>
         </div>
       </div>
     </div>
