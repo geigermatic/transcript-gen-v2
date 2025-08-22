@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type DragEvent, type ChangeEvent } from 'react';
 import { DocumentProcessor } from '../lib/documentProcessor';
 import { useAppStore } from '../store';
+import type { Document } from '../types';
 
 interface FileUploadProps {
   onUploadComplete?: (success: boolean, message: string, document?: Document) => void;
