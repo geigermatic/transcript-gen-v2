@@ -10,7 +10,6 @@ export function Navigation() {
     { path: '/', label: 'Home', icon: '🏠' },
     { path: '/library', label: 'Library', icon: '📚' },
     { path: '/settings', label: 'Settings', icon: '⚙️' },
-    { path: '/dev-console', label: 'Dev Console', icon: '🔧' },
   ];
 
   const handleNavigation = (path: string, label: string) => {
@@ -29,6 +28,9 @@ export function Navigation() {
           <div className="flex items-center space-x-4">
             <h1 className="text-hierarchy-h3">
               Transcript Summarizer
+              <span className="ml-2 inline-block bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                BETA
+              </span>
             </h1>
             <div className="hidden md:flex text-sm text-gray-400">
               Local AI • Privacy First

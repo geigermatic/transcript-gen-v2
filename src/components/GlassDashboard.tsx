@@ -11,7 +11,7 @@ import { UploadCard } from './UploadCard';
 import { RecentDocsCard } from './RecentDocsCard';
 import { SummaryPreviewCard } from './SummaryPreviewCard';
 import { ChatCard } from './ChatCard';
-import { StatusCard } from './StatusCard';
+
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
 import { SummarizationEngine } from '../lib/summarizationEngine';
@@ -418,6 +418,9 @@ export const GlassDashboard: React.FC = () => {
           <div>
             <h1 className="text-display mb-4">
               Generate summaries and abstracts from transcripts
+              <span className="ml-3 inline-block bg-blue-500 text-white text-sm px-3 py-1 rounded-full font-medium">
+                BETA
+              </span>
             </h1>
             <p className="text-body text-white text-opacity-70 max-w-2xl mx-auto">
               Upload your teaching transcripts and documents to create AI-powered summaries, 
@@ -487,10 +490,10 @@ export const GlassDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Status Card - right column on second row */}
-          <div className="lg:col-span-1">
+          {/* Status Card - hidden for beta version */}
+          {/* <div className="lg:col-span-1">
             <StatusCard />
-          </div>
+          </div> */}
         </div>
 
 
