@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Plus, User, ChevronUp, Download, Clock } from 'lucide-react';
+import { Settings, Plus, User, ChevronUp, Download, Clock, Trash2 } from 'lucide-react';
 import { AppShell } from './AppShell';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 import { FileUpload } from './FileUpload';
@@ -18,7 +18,7 @@ import type { ABSummaryPair } from '../types';
 
 export const ChatCentricLayout: React.FC = () => {
   const navigate = useNavigate();
-  const { documents, styleGuide, addLog, addABSummaryPair } = useAppStore();
+  const { documents, styleGuide, addLog, addABSummaryPair, clearAllData } = useAppStore();
   
   // Navigation state
   const [isNavExpanded, setIsNavExpanded] = useState(false);
@@ -400,6 +400,22 @@ export const ChatCentricLayout: React.FC = () => {
                 <Settings className="w-5 h-5 text-gray-600" />
                 {isNavExpanded && <span className="text-gray-700">Settings</span>}
               </button>
+              
+              {/* Clear All Documents Button */}
+              <button 
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to delete all documents? This action cannot be undone.')) {
+                    console.log('Clearing all documents and data...');
+                    clearAllData();
+                    // Refresh the page to show clean interface
+                    window.location.reload();
+                  }
+                }}
+                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors"
+              >
+                <Trash2 className="w-5 h-5" />
+                {isNavExpanded && <span>Clear All Documents</span>}
+              </button>
             </div>
 
 
@@ -426,6 +442,13 @@ export const ChatCentricLayout: React.FC = () => {
                       <div 
                         key={doc.id}
                         className="p-3 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition-colors"
+                        onClick={() => {
+                          console.log('Document clicked in main view:', doc);
+                          // Navigate to summary view with document data
+                          navigate('/summary/' + doc.id, { 
+                            state: { document: doc }
+                          });
+                        }}
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
