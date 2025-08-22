@@ -3,7 +3,8 @@ import { FileUpload } from '../components/FileUpload';
 import { SearchBar } from '../components/SearchBar';
 import { DocumentCard } from '../components/DocumentCard';
 import { DocumentViewer } from '../components/DocumentViewer';
-import { useToast, ToastContainer } from '../components/Toast';
+import { useToast } from '../hooks/useToast';
+import { ToastContainer } from '../components/Toast';
 import { useAppStore } from '../store';
 import type { Document } from '../types';
 
