@@ -175,6 +175,23 @@ export const SummaryResultsView: React.FC = () => {
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                 Documents ({documents.length})
               </h3>
+              {/* Debug info */}
+              <div className="text-xs text-gray-400 mb-2">
+                Debug: isNavExpanded={isNavExpanded.toString()}, documents.length={documents.length}
+              </div>
+              
+              {/* Test button */}
+              <button 
+                onClick={() => {
+                  alert('Test button clicked! Check console for details.');
+                  console.log('Test button clicked!');
+                  console.log('Documents:', documents);
+                  console.log('Current document:', document);
+                }}
+                className="w-full mb-2 p-2 bg-red-100 text-red-800 rounded text-xs"
+              >
+                🧪 TEST CLICK - Check Console
+              </button>
 
               {documents.length === 0 ? (
                 <div className="text-center py-4">
@@ -197,6 +214,7 @@ export const SummaryResultsView: React.FC = () => {
                           : 'hover:bg-gray-100 text-gray-700'
                       }`}
                                                                    onClick={() => {
+                        alert(`Document clicked: ${doc.title || doc.filename}`);
                         console.log('Document clicked!', doc);
                         console.log('Current document:', document);
                         console.log('Document IDs match?', doc.id === document?.id);
