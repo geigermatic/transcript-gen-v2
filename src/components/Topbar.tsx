@@ -85,7 +85,7 @@ export const Topbar: React.FC<TopbarProps> = () => {
             </div>
             <div>
               <h1 className="text-lg font-semibold text-white">
-                Transcript Summarizer
+                Elira
               </h1>
               <p className="text-xs text-white text-opacity-60">
                 Local AI • Privacy First
