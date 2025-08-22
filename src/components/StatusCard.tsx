@@ -20,8 +20,9 @@ interface StatusItem {
 }
 
 export const StatusCard: React.FC<StatusCardProps> = ({ className = '' }) => {
+  const { documents, embeddings, abSummaryPairs } = useAppStore();
+  
   try {
-    const { documents, embeddings, abSummaryPairs } = useAppStore();
 
   // Add null checks to prevent errors
   const safeDocuments = documents || [];

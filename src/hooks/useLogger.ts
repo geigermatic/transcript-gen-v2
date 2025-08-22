@@ -71,7 +71,7 @@ export function useLogger(): UseLoggerReturn {
   // Initial load
   useEffect(() => {
     setEvents(logger.getEvents(filter));
-  }, []);
+  }, [filter]);
 
   const setEnabled = useCallback((enabled: boolean) => {
     setIsEnabledState(enabled);

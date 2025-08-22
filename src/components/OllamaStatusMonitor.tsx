@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { ollama } from '../lib/ollama';
 
@@ -24,9 +24,9 @@ export const OllamaStatusMonitor: React.FC = () => {
     const interval = setInterval(checkOllamaStatus, 30000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [checkOllamaStatus]);
 
-  const checkOllamaStatus = async () => {
+  const checkOllamaStatus = useCallback(async () => {
     if (isChecking) return;
     
     setIsChecking(true);
@@ -75,7 +75,7 @@ export const OllamaStatusMonitor: React.FC = () => {
     } finally {
       setIsChecking(false);
     }
-  };
+  }, [isChecking]);
 
   const getStatusIcon = () => {
     switch (ollamaStatus.status) {

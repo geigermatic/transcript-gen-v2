@@ -30,7 +30,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete, onProg
     }
   }, [documents.length]);
 
-  const triggerSummarization = async (document: Document) => {
+  const triggerSummarization = useCallback(async (document: Document) => {
     try {
       logInfo('SYSTEM', `Starting background processing for: ${document.filename}`);
       
@@ -94,7 +94,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete, onProg
     } catch (error) {
       logInfo('SYSTEM', `Processing failed for: ${document.filename}`, { error });
     }
-  };
+  }, [addEmbeddings, addABSummaryPair, styleGuide, onProgress]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -114,7 +114,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete, onProg
     if (files.length > 0) {
       handleFiles(files);
     }
-  }, []);
+  }, [handleFiles]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -125,9 +125,9 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete, onProg
     if (files.length > 0) {
       handleFiles(files);
     }
-  }, []);
+  }, [handleFiles]);
 
-  const handleFiles = async (files: File[]) => {
+  const handleFiles = useCallback(async (files: File[]) => {
     setIsProcessing(true);
     logInfo('INGEST', `Starting upload of ${files.length} file(s)`, { 
       filenames: files.map(f => f.name) 
@@ -171,7 +171,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete, onProg
         fileInputRef.current.value = '';
       }
     }
-  };
+  }, [addDocument, onUploadComplete, triggerSummarization]);
 
   const handleClick = () => {
     console.log('Upload area clicked');

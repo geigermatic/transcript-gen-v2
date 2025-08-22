@@ -3,7 +3,7 @@
  * Similar to Perplexity.ai's query results page layout
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Search, Grid3X3, HelpCircle, Globe, Paperclip, Mic, Send, Copy, Check } from 'lucide-react';
 import { useAppStore } from '../store';
@@ -31,7 +31,7 @@ export const SummaryResultsView: React.FC = () => {
   const handleNavMouseLeave = () => setIsNavExpanded(false);
 
   // Fetch summary for a document
-  const fetchDocumentSummary = async (doc: Document) => {
+  const fetchDocumentSummary = useCallback(async (doc: Document) => {
     if (!doc) return;
     
     // First check if we already have a summary for this document
@@ -57,7 +57,7 @@ export const SummaryResultsView: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getDocumentSummary, styleGuide]);
 
   useEffect(() => {
     // Get document and summary data from navigation state
@@ -80,7 +80,7 @@ export const SummaryResultsView: React.FC = () => {
       // Fallback: redirect back to chat if no document data
       navigate('/');
     }
-  }, [location.state, navigate, documents, getDocumentSummary]);
+  }, [location.state, navigate, documents, getDocumentSummary, fetchDocumentSummary]);
 
   const handleBack = () => {
     navigate('/');

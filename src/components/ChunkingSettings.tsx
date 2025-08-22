@@ -2,7 +2,7 @@
  * Chunking and Processing Speed Settings Component
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ChunkingConfigManager, PROCESSING_PRESETS } from '../lib/chunkingConfig';
 import { Zap, Settings, Clock, Target, AlertTriangle } from 'lucide-react';
 
@@ -36,13 +36,13 @@ export const ChunkingSettings: React.FC<ChunkingSettingsProps> = ({
       }
       updateEstimation(preset?.[0] || 'balanced');
     }
-  }, [isOpen]);
+  }, [isOpen, updateEstimation]);
 
-  const updateEstimation = (presetKey: string) => {
+  const updateEstimation = useCallback((presetKey: string) => {
     ChunkingConfigManager.setConfig(presetKey as keyof typeof PROCESSING_PRESETS);
     const est = ChunkingConfigManager.getEstimatedProcessingTime(documentWordCount);
     setEstimation(est);
-  };
+  }, [documentWordCount]);
 
   const handlePresetChange = (presetKey: string) => {
     setSelectedPreset(presetKey);

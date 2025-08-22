@@ -51,12 +51,12 @@ export const Toast: React.FC<ToastProps> = ({
       }, duration);
       return () => clearTimeout(timer);
     }
-  }, [duration]);
+  }, [duration, handleDismiss]);
 
-  const handleDismiss = () => {
+  const handleDismiss = useCallback(() => {
     setIsVisible(false);
     setTimeout(() => onDismiss(id), 300); // Wait for exit animation
-  };
+  }, [onDismiss, id]);
 
   const Icon = toastIcons[type];
 
