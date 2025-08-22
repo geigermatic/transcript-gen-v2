@@ -321,7 +321,7 @@ export const SummaryResultsView: React.FC = () => {
                           <h1 className="text-xl font-bold text-gray-900 mb-3 mt-0">{children}</h1>
                         ),
                         h2: ({ children }) => (
-                          <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-4 first:mt-0">{children}</h2>
+                          <h2 className="text-xl font-bold text-gray-900 mb-3 mt-0">{children}</h2>
                         ),
                         h3: ({ children }) => (
                           <h3 className="text-base font-medium text-gray-800 mb-1 mt-2">{children}</h3>
