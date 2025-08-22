@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { GlassDashboard } from './components/GlassDashboard';
+import { ChatCentricLayout } from './components/ChatCentricLayout';
 import { UploadPage } from './pages/UploadPage';
 import { GlossaryPage } from './pages/GlossaryPage';
 import { LibraryPage } from './pages/LibraryPage';
@@ -43,8 +43,8 @@ function App() {
       <ScrollToTop />
       <OllamaStatusMonitor />
       <Routes>
-        {/* Main Dashboard - All functionality consolidated here */}
-        <Route path="/" element={<GlassDashboard />} />
+        {/* Main Dashboard - Chat-centric interface */}
+        <Route path="/" element={<ChatCentricLayout />} />
         
         {/* Supporting Pages */}
         <Route path="/upload" element={<UploadPage />} />

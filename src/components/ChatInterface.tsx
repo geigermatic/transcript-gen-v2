@@ -1,296 +1,307 @@
-import { useState, useRef, useEffect } from 'react';
-import { useAppStore } from '../store';
-import { ChatEngine } from '../lib/chatEngine';
-import { ollama } from '../lib/ollama';
-import type { ChatMessage, ChatResponse, ChatContext } from '../types';
+/**
+ * ChatInterface - Main chat area with Perplexity-inspired design
+ * Features action chips, multi-modal input, and integrated document handling
+ */
 
-export function ChatInterface() {
-  const { styleGuide, addChatMessage, chatMessages, clearChat, getAllEmbeddings } = useAppStore();
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Search, Grid, Mic, Paperclip, Globe, Calendar, FileText } from 'lucide-react';
+
+import { useAppStore } from '../store';
+import { logInfo } from '../lib/logger';
+import { FileUpload } from './FileUpload';
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: string;
+  type?: 'text' | 'document' | 'summary';
+  metadata?: any;
+}
+
+interface ChatInterfaceProps {
+  className?: string;
+}
+
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) => {
+  const { documents } = useAppStore();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [ollamaAvailable, setOllamaAvailable] = useState<boolean | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+
+  const [showActionChips, setShowActionChips] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const allEmbeddings = getAllEmbeddings();
-  const hasEmbeddings = allEmbeddings.length > 0;
-
+  // Initialize with welcome message
   useEffect(() => {
-    checkOllamaStatus();
-  }, []);
+    if (messages.length === 0) {
+      const welcomeMessage: ChatMessage = {
+        id: 'welcome',
+        role: 'assistant',
+        content: '👋 Hi! I\'m Elira, your AI assistant for transcript analysis. I can help you:\n\n• Upload and analyze transcripts\n• Generate summaries with your preferred style\n• Answer questions about your documents\n• Compare different documents\n\nStart by uploading a document or asking me anything!',
+        timestamp: new Date().toISOString(),
+        type: 'text'
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, [messages.length]);
 
+  // Auto-scroll to bottom
   useEffect(() => {
-    // Only auto-scroll if there are actual user/assistant messages (not empty or initial state)
-    if (chatMessages.length > 0 && chatMessages.some(msg => msg.content.trim().length > 0)) {
-      scrollToBottom();
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [chatMessages]);
+  }, [messages]);
 
-  const checkOllamaStatus = async () => {
-    try {
-      const available = await ollama.isAvailable();
-      setOllamaAvailable(available);
-    } catch (error) {
-      setOllamaAvailable(false);
-    }
+  // Handle document upload
+  const handleDocumentUpload = (document: any) => {
+    const uploadMessage: ChatMessage = {
+      id: `upload-${Date.now()}`,
+      role: 'user',
+      content: `📄 Uploaded: ${document.title}`,
+      timestamp: new Date().toISOString(),
+      type: 'document',
+      metadata: { documentId: document.id, filename: document.filename }
+    };
+    
+    setMessages(prev => [...prev, uploadMessage]);
+    
+    // Add processing message
+    const processingMessage: ChatMessage = {
+      id: `processing-${Date.now()}`,
+      role: 'assistant',
+      content: '🔄 Processing your document... This may take a moment.',
+      timestamp: new Date().toISOString(),
+      type: 'text'
+    };
+    
+    setMessages(prev => [...prev, processingMessage]);
+    
+    // TODO: Trigger actual document processing
+    logInfo('CHAT', 'Document upload initiated', { documentId: document.id });
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!inputValue.trim() || isProcessing) return;
-    
-    if (!ollamaAvailable) {
-      alert('Ollama is not available. Please ensure Ollama is running.');
-      return;
-    }
+  // Handle message sending
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isTyping) return;
 
     const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: Date.now().toString(),
       role: 'user',
       content: inputValue.trim(),
       timestamp: new Date().toISOString(),
+      type: 'text'
     };
 
-    addChatMessage(userMessage);
+    setMessages(prev => [...prev, userMessage]);
     setInputValue('');
-    setIsProcessing(true);
+    setIsTyping(true);
+    setShowActionChips(false);
+
+    logInfo('CHAT', 'User message sent', { content: userMessage.content });
 
     try {
-      const context: ChatContext = {
-        messages: [...chatMessages, userMessage],
-        maxContextLength: 4000,
+      // Check if we have any documents and embeddings
+      if (documents.length === 0) {
+        const noDocsResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'I don\'t have any documents to chat about yet. Please upload some documents first, and I\'ll be able to answer questions about their content.',
+          timestamp: new Date().toISOString(),
+          type: 'text'
+        };
+        setMessages(prev => [...prev, noDocsResponse]);
+        setIsTyping(false);
+        setShowActionChips(true);
+        return;
+      }
+
+      // TODO: Implement actual chat processing with ChatEngine
+      const response: ChatMessage = {
+        id: (Date.now() + 2).toString(),
+        role: 'assistant',
+        content: 'This is a placeholder response. The actual chat functionality will be implemented in the next phase.',
+        timestamp: new Date().toISOString(),
+        type: 'text'
       };
-
-      const response: ChatResponse = await ChatEngine.processQuery(
-        userMessage.content,
-        context,
-        styleGuide
-      );
-
-      addChatMessage(response.message);
+      
+      setMessages(prev => [...prev, response]);
     } catch (error) {
       const errorMessage: ChatMessage = {
-        id: crypto.randomUUID(),
+        id: (Date.now() + 3).toString(),
         role: 'assistant',
-        content: `I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
+        content: 'Sorry, I encountered an error processing your message. Please try again.',
         timestamp: new Date().toISOString(),
+        type: 'text'
       };
-      addChatMessage(errorMessage);
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
-      setIsProcessing(false);
-      inputRef.current?.focus();
+      setIsTyping(false);
+      setShowActionChips(true);
     }
   };
 
+  // Handle action chip clicks
+  const handleActionChip = (action: string) => {
+    let message = '';
+    switch (action) {
+      case 'troubleshoot':
+        message = 'I can help you troubleshoot issues with your documents or analysis. What specific problem are you experiencing?';
+        break;
+      case 'analyze':
+        message = 'I\'m ready to analyze your documents. What would you like me to focus on?';
+        break;
+      case 'local':
+        message = 'I\'m running locally on your machine for privacy. What would you like to know about your local setup?';
+        break;
+      case 'finance':
+        message = 'I can help analyze financial transcripts and documents. What financial content would you like me to examine?';
+        break;
+      case 'shopping':
+        message = 'I can help with shopping-related transcripts and analysis. What shopping content do you have?';
+        break;
+      default:
+        message = `I can help with ${action}. What would you like to know?`;
+    }
+    
+    setInputValue(message);
+    inputRef.current?.focus();
+  };
+
+  // Handle key press
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e as any);
+      handleSendMessage();
     }
   };
 
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const renderMessage = (message: ChatMessage) => {
-    const isUser = message.role === 'user';
-    
-    return (
-      <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
-        <div className={`max-w-[80%] ${isUser ? 'order-1' : 'order-2'}`}>
-          <div
-            className={`glass-panel p-4 ${
-              isUser 
-                ? 'bg-blue-500 bg-opacity-20 ml-4' 
-                : 'bg-white bg-opacity-10 mr-4'
-            }`}
-          >
-            <div className="flex items-start justify-between mb-2">
-              <span className={`font-medium text-sm ${
-                isUser ? 'text-blue-300' : 'text-green-300'
-              }`}>
-                {isUser ? 'You' : 'Assistant'}
-              </span>
-              <span className="text-xs text-gray-400 ml-2">
-                {formatTimestamp(message.timestamp)}
-              </span>
-            </div>
-            
-            <div className="text-gray-200 whitespace-pre-wrap">
-              {message.content}
-            </div>
-            
-            {/* Show sources for assistant messages */}
-            {!isUser && message.sources && message.sources.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-white/20">
-                <p className="text-xs text-gray-400 mb-2">Sources ({message.sources.length}):</p>
-                <div className="space-y-1">
-                  {message.sources.slice(0, 3).map((source, index) => (
-                    <div key={source.chunk.id} className="text-xs">
-                      <span className="text-gray-400">
-                        Source {index + 1} ({(source.similarity * 100).toFixed(1)}% match):
-                      </span>
-                      <p className="text-gray-300 truncate ml-2">
-                        {source.chunk.text.substring(0, 100)}...
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-          isUser ? 'bg-blue-500 bg-opacity-20 order-2' : 'bg-green-500 bg-opacity-20 order-1'
-        }`}>
-          <span className="text-sm">
-            {isUser ? '👤' : '🤖'}
-          </span>
-        </div>
-      </div>
-    );
-  };
-
-  const renderWelcomeMessage = () => (
-    <div className="text-center py-8">
-      <div className="glass-panel p-6 max-w-md mx-auto">
-        <div className="text-4xl mb-4">💬</div>
-        <h3 className="text-white font-semibold mb-2">Welcome to AI Chat</h3>
-        <p className="text-gray-300 text-sm mb-4">
-          Ask questions about your uploaded documents. I'll search through them to provide grounded answers.
-        </p>
-        
-        {!hasEmbeddings ? (
-          <div className="bg-yellow-500 bg-opacity-20 border border-yellow-400 rounded-lg p-3 mb-4">
-            <p className="text-yellow-300 text-sm">
-              ⚠️ No document embeddings found. Upload documents and generate embeddings first.
-            </p>
-          </div>
-        ) : (
-          <div className="bg-green-500 bg-opacity-20 border border-green-400 rounded-lg p-3 mb-4">
-            <p className="text-green-300 text-sm">
-              ✅ Ready to chat! I have access to {allEmbeddings.length} chunks from your documents.
-            </p>
-          </div>
-        )}
-
-        {ollamaAvailable === false && (
-          <div className="bg-red-500 bg-opacity-20 border border-red-400 rounded-lg p-3">
-            <p className="text-red-300 text-sm">
-              ❌ Ollama not available. Please ensure Ollama is running.
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="glass-panel p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-white">AI Chat</h2>
-            <p className="text-gray-400 text-sm">
-              Ask questions about your documents for grounded responses
-            </p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-sm text-gray-400">
-              {ollamaAvailable === null ? (
-                '⏳ Checking Ollama...'
-              ) : ollamaAvailable ? (
-                '✅ Connected'
-              ) : (
-                '❌ Ollama Unavailable'
-              )}
-            </div>
-            {chatMessages.length > 0 && (
-              <button
-                onClick={clearChat}
-                className="glass-button text-white text-sm hover:bg-red-500 hover:bg-opacity-20"
-              >
-                🗑️ Clear Chat
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto mb-4">
-        <div className="space-y-4">
-          {chatMessages.length === 0 ? (
-            renderWelcomeMessage()
-          ) : (
-            <>
-              {chatMessages.map(renderMessage)}
-              {isProcessing && (
-                <div className="flex justify-start mb-4">
-                  <div className="max-w-[80%] order-2">
-                    <div className="glass-panel p-4 bg-white bg-opacity-10 mr-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="animate-spin w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
-                        <span className="text-gray-300 text-sm">Thinking...</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-green-500 bg-opacity-20 flex items-center justify-center order-1">
-                    <span className="text-sm">🤖</span>
-                  </div>
+    <div className={`flex flex-col h-full ${className}`}>
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+          >
+            <div
+              className={`max-w-3xl rounded-2xl px-4 py-3 ${
+                message.role === 'user'
+                  ? 'bg-blue-500 text-white'
+                  : message.role === 'system'
+                  ? 'bg-gray-100 text-gray-800'
+                  : 'bg-gray-50 text-gray-800 border border-gray-200'
+              }`}
+            >
+              {message.type === 'document' && (
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="w-4 h-4" />
+                  <span className="text-sm opacity-80">Document Upload</span>
                 </div>
               )}
-            </>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+              
+              <div className="whitespace-pre-wrap">{message.content}</div>
+              
+              <div className="text-xs opacity-60 mt-2">
+                {new Date(message.timestamp).toLocaleTimeString()}
+              </div>
+            </div>
+          </div>
+        ))}
+        
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3">
+              <div className="flex items-center gap-2">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+                <span className="text-gray-600">Elira is typing...</span>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className="glass-panel p-4">
-        <form onSubmit={handleSubmit} className="flex space-x-3">
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={
-              !hasEmbeddings 
-                ? "Upload documents and generate embeddings first..."
-                : !ollamaAvailable 
-                ? "Ollama not available..."
-                : "Ask a question about your documents..."
-            }
-            className="glass-input flex-1"
-            disabled={isProcessing || !hasEmbeddings || !ollamaAvailable}
-          />
-          <button
-            type="submit"
-            disabled={!inputValue.trim() || isProcessing || !hasEmbeddings || !ollamaAvailable}
-            className="glass-button text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-500 hover:bg-opacity-20"
-          >
-            {isProcessing ? '⏳' : '📤'}
-          </button>
-        </form>
-        
-        {hasEmbeddings && (
-          <p className="text-xs text-gray-400 mt-2">
-            Press Enter to send • Shift+Enter for new line • I'll search {allEmbeddings.length} chunks for answers
-          </p>
-        )}
+      {/* Action Chips */}
+      {showActionChips && (
+        <div className="px-6 pb-4">
+          <div className="flex flex-wrap gap-2">
+            {['troubleshoot', 'analyze', 'local', 'finance', 'shopping'].map((action) => (
+              <button
+                key={action}
+                onClick={() => handleActionChip(action)}
+                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-sm font-medium transition-colors capitalize"
+              >
+                {action}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Input Area */}
+      <div className="border-t border-gray-200 p-6">
+        <div className="flex items-end gap-3">
+          {/* Left Action Icons */}
+          <div className="flex items-center gap-2">
+            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+              <Search className="w-5 h-5" />
+            </button>
+            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+              <Grid className="w-5 h-5" />
+            </button>
+            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+              <Paperclip className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Main Input Field */}
+          <div className="flex-1 relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask anything or @mention a document..."
+              className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              
+            />
+          </div>
+
+          {/* Right Action Icons */}
+          <div className="flex items-center gap-2">
+            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+              <Calendar className="w-5 h-5" />
+            </button>
+            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+              <Globe className="w-5 h-5" />
+            </button>
+            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
+              <Mic className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim() || isTyping}
+              className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Upload Area */}
+        <div className="mt-4">
+          <FileUpload onUploadComplete={handleDocumentUpload} />
+        </div>
       </div>
     </div>
   );
-}
+};
