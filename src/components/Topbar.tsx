@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Settings, Sun, Moon, Archive, Trash2 } from 'lucide-react';
+import { Search, Settings, Sun, Moon, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
 
@@ -77,11 +77,12 @@ export const Topbar: React.FC<TopbarProps> = () => {
         <div className="flex items-center justify-between">
           {/* Left side - App branding */}
           <div className="flex items-center gap-3">
-            <div 
-              className="w-8 h-8 rounded-lg flex items-center justify-center" 
-              style={{ backgroundColor: '#7C8CFF' }}
-            >
-              <Archive size={18} className="text-white" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+              <img 
+                src="/src/assets/icons/elira_leaf_128.png" 
+                alt="Elira Leaf Icon" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h1 className="text-lg font-semibold text-white">

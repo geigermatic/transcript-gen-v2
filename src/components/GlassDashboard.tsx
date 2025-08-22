@@ -416,12 +416,19 @@ export const GlassDashboard: React.FC = () => {
         {/* Hero Section */}
         <div className="text-center space-y-6">
           <div>
-            <h1 className="text-6xl font-bold text-white mb-6 tracking-tight">
-              Elira
-              <span className="ml-4 inline-block bg-blue-500 text-white text-lg px-4 py-2 rounded-full font-medium">
-                BETA
-              </span>
-            </h1>
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <img 
+                src="/src/assets/icons/elira_leaf_128.png" 
+                alt="Elira Leaf Icon" 
+                className="w-16 h-16 object-contain"
+              />
+              <h1 className="text-6xl font-bold text-white tracking-tight">
+                Elira
+                <span className="ml-4 inline-block bg-blue-500 text-white text-lg px-4 py-2 rounded-full font-medium">
+                  BETA
+                </span>
+              </h1>
+            </div>
             <p className="text-xl text-white text-opacity-80 max-w-3xl mx-auto font-medium">
               Transform your transcripts into powerful insights with AI-powered summarization, 
               analysis, and conversational Q&A using your local AI instance.
