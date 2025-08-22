@@ -417,10 +417,14 @@ export const GlassDashboard: React.FC = () => {
         <div className="text-center space-y-6">
           <div>
             <div className="flex items-center justify-center gap-4 mb-6">
-              <img 
-                src="/src/assets/icons/elira_leaf_128.png" 
-                alt="Elira Leaf Icon" 
-                className="w-16 h-16 object-contain"
+              <div 
+                className="w-16 h-16 flex items-center justify-center"
+                style={{
+                  backgroundImage: 'url(/elira_leaf_128.png)',
+                  backgroundSize: 'contain',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center'
+                }}
               />
               <h1 className="text-6xl font-bold text-white tracking-tight">
                 Elira

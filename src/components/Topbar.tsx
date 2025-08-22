@@ -77,13 +77,15 @@ export const Topbar: React.FC<TopbarProps> = () => {
         <div className="flex items-center justify-between">
           {/* Left side - App branding */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
-              <img 
-                src="/src/assets/icons/elira_leaf_128.png" 
-                alt="Elira Leaf Icon" 
-                className="w-full h-full object-contain"
-              />
-            </div>
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-blue-500"
+              style={{
+                backgroundImage: 'url(/elira_leaf_128.png)',
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center'
+              }}
+            />
             <div>
               <h1 className="text-lg font-semibold text-white">
                 Elira
