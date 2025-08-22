@@ -31,6 +31,10 @@ export const ChatCentricLayout: React.FC = () => {
   }>>([]);
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Progress tracking state
+  const [progress, setProgress] = useState({ current: 0, total: 0, status: '' });
+  const [showProgress, setShowProgress] = useState(false);
 
   // Format file size
   const formatFileSize = (bytes: number) => {
@@ -86,10 +90,22 @@ export const ChatCentricLayout: React.FC = () => {
           details: { documentId: document.id, filename: document.filename }
         });
 
-        // Process document with AI summarization
-        const summaryResult = await SummarizationEngine.summarizeDocument(document, styleGuide);
+        // Show progress indicator
+        setShowProgress(true);
+        setProgress({ current: 0, total: 0, status: 'Initializing document processing...' });
+
+        // Process document with AI summarization with progress tracking
+        const summaryResult = await SummarizationEngine.summarizeDocument(
+          document, 
+          styleGuide,
+          (current: number, total: number, status?: string) => {
+            setProgress({ current, total, status: status || 'Processing...' });
+          }
+        );
         
-        // Remove processing message and add success message
+        // Hide progress and remove processing message
+        setShowProgress(false);
+        setProgress({ current: 0, total: 0, status: '' });
         setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id));
         
         const successMessage = {
@@ -118,7 +134,9 @@ export const ChatCentricLayout: React.FC = () => {
       } catch (error) {
         console.error('Document processing failed:', error);
         
-        // Remove processing message and add error message
+        // Hide progress and remove processing message
+        setShowProgress(false);
+        setProgress({ current: 0, total: 0, status: '' });
         setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id));
         
         const errorMessage = {
@@ -433,6 +451,41 @@ export const ChatCentricLayout: React.FC = () => {
               <div className="text-center">
                 <FileUpload onUploadComplete={handleDocumentUpload} />
               </div>
+
+              {/* Progress Display Area */}
+              {showProgress && (
+                <div className="w-full max-w-4xl mx-auto mb-6">
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-medium text-gray-800">Processing Document</h3>
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                        <span className="text-sm text-gray-600">
+                          {progress.total > 0 ? `${Math.round((progress.current / progress.total) * 100)}%` : '...'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {progress.total > 0 && (
+                      <div className="mb-3">
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
+                            style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>{progress.status || 'Processing...'}</span>
+                      {progress.total > 0 && (
+                        <span>Chunk {Math.round(progress.current)} of {progress.total}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Messages Display Area */}
               {messages.length > 0 && (
