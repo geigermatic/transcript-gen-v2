@@ -8,10 +8,10 @@ import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
 
 interface TopbarProps {
-  sidebarCollapsed?: boolean;
+  // sidebarCollapsed prop removed for beta version
 }
 
-export const Topbar: React.FC<TopbarProps> = ({ sidebarCollapsed = false }) => {
+export const Topbar: React.FC<TopbarProps> = () => {
   const { isDarkMode, toggleDarkMode, clearAllData, documents } = useAppStore();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isVisible, setIsVisible] = useState(true);
@@ -69,9 +69,9 @@ export const Topbar: React.FC<TopbarProps> = ({ sidebarCollapsed = false }) => {
 
   return (
     <header 
-      className={`fixed right-0 z-50 p-6 transition-all duration-300 ease-out ${
-        sidebarCollapsed ? 'left-24' : 'left-84'
-      } ${isVisible ? 'top-0' : '-top-32'}`}
+      className={`fixed left-0 right-0 z-50 p-6 transition-all duration-300 ease-out ${
+        isVisible ? 'top-0' : '-top-32'
+      }`}
     >
       <div className={`glass-header px-6 py-4 ${isVisible ? 'shadow-lg' : ''}`}>
         <div className="flex items-center justify-between">

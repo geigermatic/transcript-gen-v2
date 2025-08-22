@@ -2,16 +2,15 @@
  * AppShell - Main layout wrapper with glassmorphic design
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Topbar } from './Topbar';
-import { Sidebar } from './Sidebar';
 
 interface AppShellProps {
   children: React.ReactNode;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // sidebarCollapsed state removed for beta version
 
   return (
     <div className="min-h-screen font-sans text-white" style={{
@@ -20,19 +19,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       backgroundAttachment: 'fixed'
     }}>
       {/* Topbar */}
-      <Topbar sidebarCollapsed={sidebarCollapsed} />
+      <Topbar />
       
-      {/* Sidebar */}
-      <Sidebar 
+      {/* Sidebar - Hidden for beta version */}
+      {/* <Sidebar 
         collapsed={sidebarCollapsed} 
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-      />
+      /> */}
       
-      {/* Main Content */}
+      {/* Main Content - Full width for beta version */}
       <main 
-        className={`transition-all duration-300 ease-out ${
-          sidebarCollapsed ? 'ml-24' : 'ml-84'
-        }`}
+        className="transition-all duration-300 ease-out ml-0"
         style={{ paddingTop: '6rem' }} /* Fixed padding so content doesn't jump */
       >
         <div className="px-6 lg:px-8">
