@@ -481,32 +481,29 @@ export const GlassDashboard: React.FC = () => {
 
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Row 1: Upload (Centered, Constrained Width) */}
-          <div className="lg:col-span-3 flex justify-center">
-            <div className="w-full max-w-2xl">
-              <UploadCard 
-                onUploadComplete={handleUploadComplete}
-                onProgress={(current, total, status) => {
-                  setProgressPercent(current);
-                  setProgressStatus(status || '');
-                  setIsUploading(current < 100); // Use separate upload state
-                  
-                  // Also set chunk info for backward compatibility
-                  const estimatedTotalChunks = 7;
-                  const estimatedProcessedChunks = Math.floor((current / 100) * estimatedTotalChunks);
-                  setChunksProcessed(estimatedProcessedChunks);
-                  setTotalChunks(estimatedTotalChunks);
-                  
-                  if (current === 0) {
-                    setProcessingStartTime(new Date());
-                  }
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Row 2: Summary + Chat (Side by Side) */}
-          <div className="lg:col-span-2">
+          {/* Left Column: Upload + Summary (Cohesive Document Processing Section) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Upload Card */}
+            <UploadCard 
+              onUploadComplete={handleUploadComplete}
+              onProgress={(current, total, status) => {
+                setProgressPercent(current);
+                setProgressStatus(status || '');
+                setIsUploading(current < 100); // Use separate upload state
+                
+                // Also set chunk info for backward compatibility
+                const estimatedTotalChunks = 7;
+                const estimatedProcessedChunks = Math.floor((current / 100) * estimatedTotalChunks);
+                setChunksProcessed(estimatedProcessedChunks);
+                setTotalChunks(estimatedTotalChunks);
+                
+                if (current === 0) {
+                  setProcessingStartTime(new Date());
+                }
+              }}
+            />
+            
+            {/* Summary Card */}
             <SummaryPreviewCard 
               key={`summary-${selectedDocument?.id}-${regenerationCount}`}
               summary={getSelectedDocumentSummary()} // backward compatibility
@@ -523,8 +520,9 @@ export const GlassDashboard: React.FC = () => {
             />
           </div>
 
-          {/* Right Column - Chat (adjacent to summary) */}
-          <div className="lg:col-span-1">
+          {/* Right Column: Chat + Recent Documents */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Chat Card */}
             <div className="h-96">
               <ChatCard 
                 selectedDocument={selectedDocument}
@@ -533,10 +531,8 @@ export const GlassDashboard: React.FC = () => {
                 }}
               />
             </div>
-          </div>
-
-          {/* Row 3: Recent Documents (below chat, right-aligned) */}
-          <div className="lg:col-span-1 lg:col-start-3">
+            
+            {/* Recent Documents Card */}
             <RecentDocsCard 
               key={`recent-docs-${documents.length}`} 
               onDocumentSelect={handleDocumentSelect} 
