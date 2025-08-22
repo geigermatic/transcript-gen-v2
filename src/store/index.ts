@@ -457,18 +457,7 @@ This style guide captures the distinctive voice and approach for creating engagi
     }),
     {
       name: 'transcript-summarizer-storage',
-      partialize: (state) => ({
-        documents: state.documents,
-        styleGuide: state.styleGuide,
-        settings: state.settings,
-        preferences: state.preferences,
-        abSummaryPairs: state.abSummaryPairs,
-        isDarkMode: state.isDarkMode,
-        isUserTestingMode: state.isUserTestingMode,
-        hasCompletedOnboarding: state.hasCompletedOnboarding,
-        // Convert Maps to objects for storage
-        embeddings: Object.fromEntries(state.embeddings),
-      }),
+      // Remove partialize - let custom storage handle Map serialization
       onRehydrateStorage: () => (state) => {
         // Mark store as hydrated when persistence is complete
         if (state) {
