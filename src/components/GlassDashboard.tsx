@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Settings, Trash2 } from 'lucide-react';
 import { AppShell } from './AppShell';
 import eliraIcon from '../assets/icons/elira_leaf.svg';
 import { UploadCard } from './UploadCard';
@@ -417,7 +417,45 @@ export const GlassDashboard: React.FC = () => {
     <AppShell>
       <div className="py-8 space-y-8">
         {/* Hero Section */}
-        <div className="text-center space-y-6">
+        <div className="text-center space-y-6 relative">
+          {/* Floating Action Buttons */}
+          <div className="absolute left-4 top-8 z-10">
+            {documents.length > 0 && (
+              <button
+                onClick={() => {
+                  if (confirm('Are you sure you want to clear all documents?')) {
+                    // Clear all documents from store
+                    useAppStore.getState().clearAllData();
+                    setSelectedDocument(null);
+                    setIsSummarizing(false);
+                    setChunksProcessed(0);
+                    setTotalChunks(0);
+                    setProgressPercent(0);
+                    setProgressStatus('');
+                    setRegenerationCount(1);
+                    setRegenerationSuccess(false);
+                    setRegenerationInProgress(false);
+                    localStorage.removeItem('regenerationInProgress');
+                  }
+                }}
+                className="glass-panel p-3 hover:bg-white hover:bg-opacity-10 transition-all duration-200"
+                title="Clear all documents"
+              >
+                <Trash2 className="w-5 h-5 text-white" />
+              </button>
+            )}
+          </div>
+          
+          <div className="absolute right-4 top-8 z-10">
+            <button
+              onClick={() => navigate('/settings')}
+              className="glass-panel p-3 hover:bg-white hover:bg-opacity-10 transition-all duration-200"
+              title="Settings"
+            >
+              <Settings className="w-5 h-5 text-white" />
+            </button>
+          </div>
+          
           <div>
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="w-16 h-16 flex items-center justify-center">
