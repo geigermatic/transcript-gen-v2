@@ -15,8 +15,7 @@ export const SummaryResultsView: React.FC = () => {
   const location = useLocation();
   const { documents, styleGuide } = useAppStore();
   
-  console.log('SummaryResultsView render - documents:', documents);
-  console.log('SummaryResultsView render - styleGuide:', styleGuide);
+
   
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
   const [followUpQuery, setFollowUpQuery] = useState('');
@@ -53,11 +52,6 @@ export const SummaryResultsView: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log('SummaryResultsView useEffect - location.state:', location.state);
-    console.log('Available documents:', documents);
-    console.log('Documents length:', documents.length);
-    console.log('Documents array:', documents);
-    
     // Get document and summary data from navigation state
     if (location.state?.document) {
       setDocument(location.state.document);
@@ -151,9 +145,7 @@ export const SummaryResultsView: React.FC = () => {
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                 Documents ({documents.length})
               </h3>
-              <div className="text-xs text-gray-400 mb-2">
-                Debug: {documents.length} documents available
-              </div>
+
               {documents.length === 0 ? (
                 <div className="text-center py-4">
                   <div className="w-8 h-8 mx-auto mb-2 text-gray-400">
@@ -163,9 +155,6 @@ export const SummaryResultsView: React.FC = () => {
                   <p className="text-gray-400 text-xs mt-1">
                     Upload documents to get started
                   </p>
-                  <div className="text-xs text-gray-400 mt-2">
-                    Debug: documents array is empty
-                  </div>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -178,16 +167,11 @@ export const SummaryResultsView: React.FC = () => {
                           : 'hover:bg-gray-100 text-gray-700'
                       }`}
                                                                    onClick={() => {
-                        console.log('Document clicked:', doc);
-                        console.log('Current document:', document);
                         if (doc.id !== document?.id) {
-                          console.log('Switching to document:', doc.id);
                           // Update current document and fetch its summary
                           setDocument(doc);
                           setSummary(null); // Clear current summary
                           fetchDocumentSummary(doc);
-                        } else {
-                          console.log('Document already selected');
                         }
                       }}
                     >
@@ -233,7 +217,7 @@ export const SummaryResultsView: React.FC = () => {
           {/* Document Title */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {document.title || document.filename || 'Document Summary'}
+              {document?.title || document?.filename || 'Document Summary'}
             </h1>
           </div>
 
