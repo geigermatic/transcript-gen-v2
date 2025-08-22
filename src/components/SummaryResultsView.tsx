@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Search, Grid3X3, HelpCircle, Globe, Paperclip, Mic, Send, Settings, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Search, Grid3X3, HelpCircle, Globe, Paperclip, Mic, Send, Settings, Plus, Trash2, Copy, Check } from 'lucide-react';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
@@ -23,6 +23,7 @@ export const SummaryResultsView: React.FC = () => {
   const [summary, setSummary] = useState<any>(null);
   const [isNavExpanded, setIsNavExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Handle navigation hover
   const handleNavMouseEnter = () => setIsNavExpanded(true);
@@ -84,6 +85,19 @@ export const SummaryResultsView: React.FC = () => {
 
   const handleBack = () => {
     navigate('/');
+  };
+
+  const handleCopy = async () => {
+    const content = renderSummaryContent();
+    if (!content) return;
+    
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy summary:', error);
+    }
   };
 
   const renderSummaryContent = () => {
@@ -252,8 +266,8 @@ export const SummaryResultsView: React.FC = () => {
             {/* Summary Tabs and Content - Only show when not loading and summary exists */}
             {!isLoading && summary && (
               <>
-                {/* Summary Tabs */}
-                <div className="flex justify-center mb-8">
+                {/* Summary Tabs with Copy Button */}
+                <div className="flex items-center justify-between mb-8">
                   <div className="flex bg-gray-100 rounded-lg p-1">
                     <button
                       onClick={() => setActiveTab('stylized')}
@@ -276,6 +290,25 @@ export const SummaryResultsView: React.FC = () => {
                       Raw Summary
                     </button>
                   </div>
+                  
+                  {/* Copy Button */}
+                  <button
+                    onClick={handleCopy}
+                    disabled={!summary}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {copied ? (
+                      <>
+                        <Check size={16} className="text-green-600" />
+                        <span className="text-green-600">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={16} />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 {/* Summary Content */}
