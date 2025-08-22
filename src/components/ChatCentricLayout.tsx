@@ -17,6 +17,18 @@ export const ChatCentricLayout: React.FC = () => {
   
   // Navigation state
   const [isNavExpanded, setIsNavExpanded] = useState(false);
+  
+  // Chat state
+  const [messages, setMessages] = useState<Array<{
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: string;
+    type?: 'text' | 'document' | 'summary';
+    metadata?: any;
+  }>>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Format file size
   const formatFileSize = (bytes: number) => {
@@ -36,6 +48,79 @@ export const ChatCentricLayout: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
+
+  // Handle document upload and add to chat
+  const handleDocumentUpload = (success: boolean, message: string, document?: any) => {
+    if (success && document) {
+      // Add upload message to chat
+      const uploadMessage = {
+        id: `upload-${Date.now()}`,
+        role: 'user' as const,
+        content: `📄 Uploaded: ${document.title || document.filename}`,
+        timestamp: new Date().toISOString(),
+        type: 'document' as const,
+        metadata: { documentId: document.id, filename: document.filename }
+      };
+      
+      setMessages(prev => [...prev, uploadMessage]);
+      
+      // Add processing message
+      const processingMessage = {
+        id: `processing-${Date.now()}`,
+        role: 'assistant' as const,
+        content: '🔄 Processing your document... This may take a moment.',
+        timestamp: new Date().toISOString(),
+        type: 'text' as const
+      };
+      
+      setMessages(prev => [...prev, processingMessage]);
+      
+      // TODO: Trigger actual document processing
+      console.log('Document upload initiated:', document);
+    } else {
+      console.error('Upload failed:', message);
+    }
+  };
+
+  // Handle chat input submission
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isProcessing) return;
+    
+    const userMessage = {
+      id: `user-${Date.now()}`,
+      role: 'user' as const,
+      content: inputValue.trim(),
+      timestamp: new Date().toISOString(),
+      type: 'text' as const
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsProcessing(true);
+    
+    // TODO: Process with AI and get response
+    // For now, add a placeholder response
+    setTimeout(() => {
+      const aiResponse = {
+        id: `ai-${Date.now()}`,
+        role: 'assistant' as const,
+        content: 'I understand your message. Document processing integration is coming soon!',
+        timestamp: new Date().toISOString(),
+        type: 'text' as const
+      };
+      
+      setMessages(prev => [...prev, aiResponse]);
+      setIsProcessing(false);
+    }, 1000);
+  };
+
+  // Handle key press in input
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   return (
     <AppShell>
@@ -186,24 +271,64 @@ export const ChatCentricLayout: React.FC = () => {
 
               {/* Drop Zone */}
               <div className="text-center">
-                <FileUpload onUploadComplete={(success, message, document) => {
-                  if (success) {
-                    console.log('Document uploaded successfully:', document);
-                  } else {
-                    console.error('Upload failed:', message);
-                  }
-                }} />
+                <FileUpload onUploadComplete={handleDocumentUpload} />
               </div>
 
-              {/* Chat Input Field - Only the input, no messages area */}
+              {/* Messages Display Area */}
+              {messages.length > 0 && (
+                <div className="w-full max-w-4xl mx-auto">
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {messages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-3xl rounded-2xl px-4 py-3 ${
+                            message.role === 'user'
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-gray-50 text-gray-800 border border-gray-200'
+                          }`}
+                        >
+                          <div className="text-sm">{message.content}</div>
+                          <div className={`text-xs mt-2 ${
+                            message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                          }`}>
+                            {new Date(message.timestamp).toLocaleTimeString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {isProcessing && (
+                      <div className="flex justify-start">
+                        <div className="bg-gray-50 text-gray-800 border border-gray-200 rounded-2xl px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                            <span className="text-sm">Processing...</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Chat Input Field */}
               <div className="w-full max-w-2xl mx-auto">
                 <div className="flex items-center gap-3 p-4 border border-gray-300 rounded-2xl bg-white">
                   <input
                     type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyPress={handleKeyPress}
                     placeholder="Add a document to get started..."
                     className="flex-1 px-4 py-3 border-none outline-none focus:ring-0 text-gray-800 placeholder-gray-500"
                   />
-                  <button className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={!inputValue.trim() || isProcessing}
+                    className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
