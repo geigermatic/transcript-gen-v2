@@ -16,6 +16,7 @@ import { ChatCard } from './ChatCard';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
 import { SummarizationEngine } from '../lib/summarizationEngine';
+import type { Document } from '../types';
 
 // Calculate similarity between two texts (0 = completely different, 1 = identical)
 const calculateSimilarity = (text1: string, text2: string): number => {
@@ -39,7 +40,7 @@ export const GlassDashboard: React.FC = () => {
   const { documents, abSummaryPairs, logs, styleGuide, updateABSummaryPair } = useAppStore();
   
 
-  const [selectedDocument, setSelectedDocument] = useState<any>(null);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [chunksProcessed, setChunksProcessed] = useState(0);
   const [totalChunks, setTotalChunks] = useState(0);
@@ -77,7 +78,7 @@ export const GlassDashboard: React.FC = () => {
     setIsSummarizing(value);
   }, [regenerationInProgress]);
 
-  const handleUploadComplete = (success: boolean, message: string, document?: any) => {
+  const handleUploadComplete = (success: boolean, message: string, document?: Document) => {
     if (success && document) {
       setSelectedDocument(document);
       setIsSummarizing(true);
@@ -98,7 +99,7 @@ export const GlassDashboard: React.FC = () => {
     }
   };
 
-  const handleDocumentSelect = (doc: any) => {
+  const handleDocumentSelect = (doc: Document) => {
     setSelectedDocument(doc);
     logInfo('UI', 'Document selected from recent list', { docId: doc.id });
   };
@@ -361,7 +362,7 @@ export const GlassDashboard: React.FC = () => {
 
       // Force a UI refresh by updating local state
       // This ensures the component re-renders with the new summary
-      setSelectedDocument((prev: any) => prev ? { ...prev } : null);
+      setSelectedDocument((prev: Document | null) => prev ? { ...prev } : null);
       
       // Show success message
       setRegenerationSuccess(true);
