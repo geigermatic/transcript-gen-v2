@@ -9,7 +9,8 @@ import type {
   UserPreference,
   EmbeddedChunk,
   EmbeddingProgress,
-  ABSummaryPair
+  ABSummaryPair,
+  SummarizationResult
 } from '../types';
 
 interface AppState {
@@ -54,6 +55,7 @@ interface AppState {
   updateABSummaryPair: (pair: ABSummaryPair) => void;
   updateABSummaryFeedback: (pairId: string, feedback: UserPreference) => void;
   getABSummaryPair: (pairId: string) => ABSummaryPair | undefined;
+  getDocumentSummary: (documentId: string) => SummarizationResult | undefined;
   
   // Developer Console
   logs: LogEntry[];
@@ -381,6 +383,17 @@ This style guide captures the distinctive voice and approach for creating engagi
       getABSummaryPair: (pairId) => {
         const state = get();
         return state.abSummaryPairs.find((pair) => pair.id === pairId);
+      },
+      
+      // Get summary for a specific document (from AB pairs)
+      getDocumentSummary: (documentId: string) => {
+        const state = get();
+        const pair = state.abSummaryPairs.find((pair) => pair.documentId === documentId);
+        if (pair) {
+          // Return the primary summary (summaryA) which contains both styled and raw summaries
+          return pair.summaryA;
+        }
+        return undefined;
       },
 
       // Developer Console

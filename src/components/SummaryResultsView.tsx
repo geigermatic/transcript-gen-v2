@@ -13,7 +13,7 @@ import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 export const SummaryResultsView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { documents, styleGuide } = useAppStore();
+  const { documents, styleGuide, getDocumentSummary } = useAppStore();
   
 
   
@@ -32,6 +32,16 @@ export const SummaryResultsView: React.FC = () => {
   const fetchDocumentSummary = async (doc: any) => {
     if (!doc) return;
     
+    // First check if we already have a summary for this document
+    const existingSummary = getDocumentSummary(doc.id);
+    if (existingSummary) {
+      console.log('Found existing summary for document:', doc.id);
+      setSummary(existingSummary);
+      return;
+    }
+    
+    // If no existing summary, generate a new one
+    console.log('No existing summary found, generating new one for document:', doc.id);
     setIsLoading(true);
     try {
       const summaryResult = await SummarizationEngine.summarizeDocument(
@@ -60,14 +70,21 @@ export const SummaryResultsView: React.FC = () => {
         // We have both document and summary
         setSummary(location.state.summary);
       } else {
-        // We have document but no summary - fetch it
-        fetchDocumentSummary(location.state.document);
+        // We have document but no summary - check if we have it stored, otherwise fetch it
+        const existingSummary = getDocumentSummary(location.state.document.id);
+        if (existingSummary) {
+          console.log('Found existing summary in store for document:', location.state.document.id);
+          setSummary(existingSummary);
+        } else {
+          console.log('No existing summary found, fetching new one for document:', location.state.document.id);
+          fetchDocumentSummary(location.state.document);
+        }
       }
     } else {
       // Fallback: redirect back to chat if no document data
       navigate('/');
     }
-  }, [location.state, navigate, documents]);
+  }, [location.state, navigate, documents, getDocumentSummary]);
 
   const handleBack = () => {
     navigate('/');
