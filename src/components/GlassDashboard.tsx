@@ -472,6 +472,9 @@ export const GlassDashboard: React.FC = () => {
                 </span>
               </h1>
             </div>
+            <p className="text-lg text-white text-opacity-90 max-w-2xl mx-auto font-medium mb-4">
+              Elira — Private Summaries, Authentically Yours. Built by Ngentix Labs.
+            </p>
             <p className="text-xl text-white text-opacity-80 max-w-3xl mx-auto font-medium">
               Transform your transcripts into powerful insights with AI-powered summarization, 
               analysis, and conversational Q&A using your local AI instance.
