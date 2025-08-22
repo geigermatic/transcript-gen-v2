@@ -5,10 +5,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Plus, User, ChevronUp, Download, Clock, Trash2 } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { AppShell } from './AppShell';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 import { FileUpload } from './FileUpload';
 import { useAppStore } from '../store';
@@ -16,12 +15,13 @@ import { SummarizationEngine } from '../lib/summarizationEngine';
 import { ChatEngine } from '../lib/chatEngine';
 import { EmbeddingEngine } from '../lib/embeddingEngine';
 import type { ABSummaryPair } from '../types';
+import { LeftNavigation } from './LeftNavigation';
 
 
 
 export const ChatCentricLayout: React.FC = () => {
   const navigate = useNavigate();
-  const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, clearAllData, embeddings, isHydrated } = useAppStore();
+  const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, embeddings, isHydrated } = useAppStore();
   
   // Navigation state
   const [isNavExpanded, setIsNavExpanded] = useState(false);
@@ -44,14 +44,7 @@ export const ChatCentricLayout: React.FC = () => {
   const [processingStartTime, setProcessingStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
 
-  // Format file size
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+
 
   // Format elapsed time as MM:SS
   const formatTime = (seconds: number): string => {
@@ -428,143 +421,17 @@ export const ChatCentricLayout: React.FC = () => {
   };
 
   return (
-    <AppShell>
-      <div className="flex h-screen">
-        {/* Left Navigation Panel - Collapsible on Hover */}
-        <div 
-          className={`relative transition-all duration-300 ease-in-out ${
-            isNavExpanded ? 'w-80' : 'w-16'
-          } bg-gray-50 border-r border-gray-200`}
-          onMouseEnter={handleNavMouseEnter}
-          onMouseLeave={handleNavMouseLeave}
-        >
-          {/* Navigation Content */}
-          <div className="h-full flex flex-col">
-            {/* Top Section */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <img 
-                    src={eliraIcon} 
-                    alt="Elira" 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                {isNavExpanded && (
-                  <span className="text-lg font-semibold text-gray-800">Elira</span>
-                )}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="p-4 space-y-3">
-              <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <Plus className="w-5 h-5 text-gray-600" />
-                {isNavExpanded && <span className="text-gray-700">New Chat</span>}
-              </button>
-              
-              <button 
-                onClick={() => navigate('/settings')}
-                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <Settings className="w-5 h-5 text-gray-600" />
-                {isNavExpanded && <span className="text-gray-700">Settings</span>}
-              </button>
-              
-              {/* Clear All Documents Button */}
-              <button 
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to delete all documents? This action cannot be undone.')) {
-                    clearAllData();
-                    // Refresh the page to show clean interface
-                    window.location.reload();
-                  }
-                }}
-                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors"
-              >
-                <Trash2 className="w-5 h-5" />
-                {isNavExpanded && <span>Clear All Documents</span>}
-              </button>
-            </div>
-
-
-
-            {/* Documents Section - Only show when expanded */}
-            {isNavExpanded && (
-              <div className="px-4 py-2 flex-1">
-                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-                  Documents ({documents.length})
-                </h3>
-                {documents.length === 0 ? (
-                  <div className="text-center py-4">
-                    <div className="w-8 h-8 mx-auto mb-2 text-gray-400">
-                      📄
-                    </div>
-                    <p className="text-gray-500 text-sm">No documents yet</p>
-                    <p className="text-gray-400 text-xs mt-1">
-                      Upload documents to get started
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {documents.map((doc) => (
-                      <div 
-                        key={doc.id}
-                        className="p-3 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition-colors"
-                        onClick={() => {
-                          // Navigate to summary view with document data
-                          navigate('/summary/' + doc.id, { 
-                            state: { document: doc }
-                          });
-                        }}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-gray-800 text-sm truncate mb-1">
-                              {doc.title || doc.filename}
-                            </h4>
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {new Date(doc.uploadedAt).toLocaleDateString()}
-                              </span>
-                              <span>{formatFileSize(doc.metadata.fileSize)}</span>
-                            </div>
-                            {doc.metadata.wordCount && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                {doc.metadata.wordCount} words
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Bottom Section */}
-            <div className="mt-auto p-4 border-t border-gray-200 space-y-2">
-              <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <User className="w-5 h-5 text-gray-600" />
-                {isNavExpanded && <span className="text-gray-700">Account</span>}
-              </button>
-              
-              <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <ChevronUp className="w-5 h-5 text-gray-600" />
-                {isNavExpanded && <span className="text-gray-700">Upgrade</span>}
-              </button>
-              
-              <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <Download className="w-5 h-5 text-gray-600" />
-                {isNavExpanded && <span className="text-gray-700">Install</span>}
-              </button>
-            </div>
-          </div>
-        </div>
-
+    <div className="flex h-screen bg-white">
+      {/* Left Navigation Panel - Collapsible on Hover */}
+      <LeftNavigation
+        isNavExpanded={isNavExpanded}
+        onNavMouseEnter={handleNavMouseEnter}
+        onNavMouseLeave={handleNavMouseLeave}
+        currentDocumentId={undefined}
+        showNewChatButton={true}
+      />
         {/* Main Content Area */}
+        <div className="flex-1 flex flex-col bg-white">
         <div className="flex-1 flex flex-col bg-white">
           {/* Centered Content Layout */}
           <div className="flex-1 flex flex-col items-center justify-center px-8 py-12">
@@ -720,6 +587,6 @@ export const ChatCentricLayout: React.FC = () => {
           </div>
         </div>
       </div>
-    </AppShell>
+    </div>
   );
 };
