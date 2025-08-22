@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Settings, Sun, Moon, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
-import eliraLeafIcon from '../assets/icons/elira_leaf_512.png?url';
+import eliraIcon from '../assets/icons/elira_leaf.svg';
 
 interface TopbarProps {
   // sidebarCollapsed prop removed for beta version
@@ -18,8 +18,7 @@ export const Topbar: React.FC<TopbarProps> = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   
-  // Debug icon import
-  console.log('Topbar - eliraLeafIcon:', eliraLeafIcon);
+
 
   const handleClearAllData = () => {
     const confirmClear = window.confirm(
@@ -83,13 +82,13 @@ export const Topbar: React.FC<TopbarProps> = () => {
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
               <img 
-                src={eliraLeafIcon} 
-                alt="Elira Leaf Icon" 
+                src={eliraIcon} 
+                alt="Elira Icon" 
                 className="w-full h-full object-contain"
               />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-white">
+              <h1 className="text-lg font-semibold text-white" style={{ fontFamily: 'Lora, serif' }}>
                 Elira
               </h1>
               <p className="text-xs text-white text-opacity-60">

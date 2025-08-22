@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import { AppShell } from './AppShell';
-import eliraLeafIcon from '../assets/icons/elira_leaf_512.png?url';
+import eliraIcon from '../assets/icons/elira_leaf.svg';
 import { UploadCard } from './UploadCard';
 import { RecentDocsCard } from './RecentDocsCard';
 import { SummaryPreviewCard } from './SummaryPreviewCard';
@@ -38,8 +38,7 @@ export const GlassDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { documents, abSummaryPairs, logs, styleGuide, updateABSummaryPair } = useAppStore();
   
-  // Debug icon import
-  console.log('GlassDashboard - eliraLeafIcon:', eliraLeafIcon);
+
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [chunksProcessed, setChunksProcessed] = useState(0);
@@ -423,12 +422,12 @@ export const GlassDashboard: React.FC = () => {
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="w-16 h-16 flex items-center justify-center">
                 <img 
-                  src={eliraLeafIcon} 
-                  alt="Elira Leaf Icon" 
+                  src={eliraIcon} 
+                  alt="Elira Icon" 
                   className="w-full h-full object-contain"
                 />
               </div>
-              <h1 className="text-6xl font-bold text-white tracking-tight">
+              <h1 className="text-6xl font-semibold text-white tracking-tight" style={{ fontFamily: 'Lora, serif' }}>
                 Elira
                 <span className="ml-4 inline-block bg-blue-500 text-white text-lg px-4 py-2 rounded-full font-medium">
                   BETA

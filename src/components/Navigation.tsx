@@ -26,7 +26,7 @@ export function Navigation() {
       <div className="container mx-auto">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-hierarchy-h3">
+            <h1 className="text-hierarchy-h3" style={{ fontFamily: 'Lora, serif', fontWeight: '600' }}>
               Elira
               <span className="ml-2 inline-block bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
                 BETA
