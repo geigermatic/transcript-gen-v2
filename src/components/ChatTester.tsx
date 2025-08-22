@@ -4,7 +4,7 @@ import { ChatEngine } from '../lib/chatEngine';
 import type { ChatContext, ChatResponse } from '../types';
 
 export function ChatTester() {
-  const { styleGuide, getAllEmbeddings } = useAppStore();
+  const { getAllEmbeddings } = useAppStore();
   const [query, setQuery] = useState('');
   const [isTesting, setIsTesting] = useState(false);
   const [result, setResult] = useState<ChatResponse | null>(null);
@@ -25,7 +25,7 @@ export function ChatTester() {
         maxContextLength: 4000,
       };
 
-      const response = await ChatEngine.processQuery(query, context, styleGuide);
+      const response = await ChatEngine.processQuery(query, context);
       setResult(response);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Test failed');

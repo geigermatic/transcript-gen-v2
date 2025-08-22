@@ -6,7 +6,7 @@ import { ollama } from './ollama';
 import { EmbeddingEngine } from './embeddingEngine';
 import { PromptService } from './promptService';
 import { useAppStore } from '../store';
-import type { ChatMessage, ChatContext, ChatResponse, EmbeddedChunk, SearchResult, StyleGuide } from '../types';
+import type { ChatMessage, ChatContext, ChatResponse, EmbeddedChunk, SearchResult } from '../types';
 
 export interface RetrievalContext {
   query: string;
@@ -26,15 +26,12 @@ export class ChatEngine {
    */
   static async processQuery(
     query: string,
-    context: ChatContext,
-    styleGuide: StyleGuide
+    context: ChatContext
   ): Promise<ChatResponse> {
     const { addLog, getAllEmbeddings } = useAppStore.getState();
     const startTime = Date.now();
     
-    // Check for format requirements
-    const formatRequirements = this.detectFormatRequirements(query);
-    const hasFormatRequirements = formatRequirements.length > 0;
+
 
     addLog({
       level: 'info',
@@ -44,9 +41,7 @@ export class ChatEngine {
         queryLength: query.length,
         contextMessages: context.messages.length,
         hasSummaryContext: !!context.selectedDocumentSummary,
-        summaryLength: context.selectedDocumentSummary?.length || 0,
-        hasFormatRequirements,
-        formatRequirements: hasFormatRequirements ? formatRequirements.trim() : null
+        summaryLength: context.selectedDocumentSummary?.length || 0
       }
     });
 
@@ -83,7 +78,7 @@ export class ChatEngine {
 
       // Generate response based on retrieval results
       const response = retrievalContext.hasRelevantContent
-        ? await this.generateGroundedResponse(query, context, retrievalContext, styleGuide)
+        ? await this.generateGroundedResponse(query, context, retrievalContext)
         : this.createNoGroundingResponse(query, startTime);
 
       const processingTime = Date.now() - startTime;
@@ -161,10 +156,9 @@ export class ChatEngine {
   private static async generateGroundedResponse(
     query: string,
     context: ChatContext,
-    retrievalContext: RetrievalContext,
-    styleGuide: StyleGuide
+    retrievalContext: RetrievalContext
   ): Promise<ChatResponse> {
-    const prompt = this.buildGroundedPrompt(query, context, retrievalContext, styleGuide);
+    const prompt = this.buildGroundedPrompt(query, context, retrievalContext);
     
     try {
       const response = await ollama.chat([{
@@ -284,90 +278,18 @@ export class ChatEngine {
     return false;
   }
 
-  /**
-   * Build example phrases section for prompts
-   */
-  private static buildExamplePhrasesSection(styleGuide: StyleGuide): string {
-    const phrases = styleGuide.example_phrases;
-    if (!phrases) return '';
-    
-    let section = '';
-    
-    if (phrases.preferred_openings?.length > 0) {
-      section += `Preferred Opening Phrases:\n- ${phrases.preferred_openings.join('\n- ')}\n\n`;
-    }
-    
-    if (phrases.preferred_transitions?.length > 0) {
-      section += `Preferred Transition Phrases:\n- ${phrases.preferred_transitions.join('\n- ')}\n\n`;
-    }
-    
-    if (phrases.preferred_conclusions?.length > 0) {
-      section += `Preferred Conclusion Phrases:\n- ${phrases.preferred_conclusions.join('\n- ')}\n\n`;
-    }
-    
-    if (phrases.avoid_phrases?.length > 0) {
-      section += `Phrases to Avoid:\n- ${phrases.avoid_phrases.join('\n- ')}\n\n`;
-    }
-    
-    return section.trim() ? `EXAMPLE PHRASES:\n${section}` : '';
-  }
+
 
   /**
    * Build the grounded prompt with context and sources
    */
-  /**
-   * Detect specific format requirements in user query
-   */
-  private static detectFormatRequirements(query: string): string {
-    const requirements = [];
-    
-    // Detect sentence count requirements
-    const sentenceMatch = query.match(/(\d+)\s+sentences?/i);
-    if (sentenceMatch) {
-      const count = sentenceMatch[1];
-      requirements.push(`- You MUST write exactly ${count} sentences. Count each sentence carefully.`);
-      requirements.push(`- End each sentence with a period. Do not exceed ${count} sentences.`);
-    }
-    
-    // Detect bullet point requirements
-    if (/bullet\s+points?|bulleted?\s+list/i.test(query)) {
-      requirements.push(`- Format as bullet points using "•" symbols`);
-      requirements.push(`- One main idea per bullet point`);
-    }
-    
-    // Detect paragraph requirements
-    const paragraphMatch = query.match(/(\d+)\s+paragraphs?/i);
-    if (paragraphMatch) {
-      const count = paragraphMatch[1];
-      requirements.push(`- Write exactly ${count} paragraphs separated by blank lines`);
-    }
-    
-    // Detect word count requirements
-    const wordMatch = query.match(/(\d+)\s+words?/i);
-    if (wordMatch) {
-      const count = wordMatch[1];
-      requirements.push(`- Write approximately ${count} words. Be concise and precise.`);
-    }
-    
-    // Detect synopsis/summary length requirements
-    if (/synopsis|brief|concise|short/i.test(query)) {
-      requirements.push(`- Be concise and direct. Avoid unnecessary elaboration.`);
-    }
-    
-    return requirements.length > 0 
-      ? `CRITICAL FORMAT REQUIREMENTS:\n${requirements.join('\n')}\n\n`
-      : '';
-  }
+
 
   private static buildGroundedPrompt(
     query: string,
     context: ChatContext,
-    retrievalContext: RetrievalContext,
-    styleGuide: StyleGuide
+    retrievalContext: RetrievalContext
   ): string {
-    const styleInstructions = styleGuide.instructions_md || 'Use a helpful, professional tone.';
-    const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
-    
     // Format conversation context
     const contextMessages = context.messages
       .slice(-this.MAX_CONTEXT_MESSAGES)
@@ -396,18 +318,8 @@ NOTE: When the user refers to "the summary", "the generated summary", or "this s
 `
       : '';
 
-    // Detect format requirements in the user's query
-    const formatRequirements = this.detectFormatRequirements(query);
-
     return PromptService.buildPrompt('chat-response', {
       summarySection,
-      formatRequirements,
-      styleInstructions,
-      formalityLevel: styleGuide.tone_settings.formality.toString(),
-      enthusiasmLevel: styleGuide.tone_settings.enthusiasm.toString(),
-      technicalityLevel: styleGuide.tone_settings.technicality.toString(),
-      keywords: styleGuide.keywords.join(', ') || 'None specified',
-      examplePhrasesSection,
       contextMessages,
       sourceChunks,
       userQuery: query

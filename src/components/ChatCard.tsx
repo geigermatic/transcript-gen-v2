@@ -22,7 +22,7 @@ interface ChatCardProps {
 }
 
 export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMessage }) => {
-  const { embeddings, styleGuide, documents, abSummaryPairs } = useAppStore();
+  const { embeddings, documents, abSummaryPairs } = useAppStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -126,7 +126,7 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
       const response = await ChatEngine.processQuery(
         userMessage.content,
         context,
-        styleGuide
+
       );
 
       const assistantMessage: ChatMessage = {

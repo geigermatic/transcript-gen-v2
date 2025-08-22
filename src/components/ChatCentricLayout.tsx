@@ -362,7 +362,7 @@ export const ChatCentricLayout: React.FC = () => {
       };
 
       // Process with ChatEngine
-      const aiResponse = await ChatEngine.processQuery(inputValue.trim(), chatContext, styleGuide);
+      const aiResponse = await ChatEngine.processQuery(inputValue.trim(), chatContext);
       
       const responseMessage = {
         id: `ai-${Date.now()}`,
