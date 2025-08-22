@@ -481,39 +481,8 @@ export const GlassDashboard: React.FC = () => {
 
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Summary */}
-          <div className="lg:col-span-1">
-            <SummaryPreviewCard 
-              key={`summary-${selectedDocument?.id}-${regenerationCount}`}
-              summary={getSelectedDocumentSummary()} // backward compatibility
-              rawSummary={getSelectedDocumentSummaries().raw}
-              styledSummary={getSelectedDocumentSummaries().styled}
-              isLoading={isSummarizing}
-              chunksProcessed={chunksProcessed}
-              totalChunks={totalChunks}
-              processingStartTime={processingStartTime}
-              progressPercent={progressPercent}
-              progressStatus={progressStatus}
-              onRegenerateStyled={handleRegenerateStyled}
-              regenerationSuccess={regenerationSuccess}
-            />
-          </div>
-
-          {/* Center Column - Chat (adjacent to summary) */}
-          <div className="lg:col-span-1">
-            <div className="h-96">
-              <ChatCard 
-                selectedDocument={selectedDocument}
-                onSendMessage={(message) => {
-                  logInfo('CHAT', 'Message sent from dashboard', { message });
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Right Column - Upload & Recent Documents */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Upload Card */}
+          {/* Row 1: Upload (Full Width - Prominent) */}
+          <div className="lg:col-span-3">
             <UploadCard 
               onUploadComplete={handleUploadComplete}
               onProgress={(current, total, status) => {
@@ -532,15 +501,45 @@ export const GlassDashboard: React.FC = () => {
                 }
               }}
             />
-            
-            {/* Recent Documents Card - below Upload */}
+          </div>
+
+          {/* Row 2: Summary + Chat (Side by Side) */}
+          <div className="lg:col-span-2">
+            <SummaryPreviewCard 
+              key={`summary-${selectedDocument?.id}-${regenerationCount}`}
+              summary={getSelectedDocumentSummary()} // backward compatibility
+              rawSummary={getSelectedDocumentSummaries().raw}
+              styledSummary={getSelectedDocumentSummaries().styled}
+              isLoading={isSummarizing}
+              chunksProcessed={chunksProcessed}
+              totalChunks={totalChunks}
+              processingStartTime={processingStartTime}
+              progressPercent={progressPercent}
+              progressStatus={progressStatus}
+              onRegenerateStyled={handleRegenerateStyled}
+              regenerationSuccess={regenerationSuccess}
+            />
+          </div>
+
+          {/* Right Column - Chat (adjacent to summary) */}
+          <div className="lg:col-span-1">
+            <div className="h-96">
+              <ChatCard 
+                selectedDocument={selectedDocument}
+                onSendMessage={(message) => {
+                  logInfo('CHAT', 'Message sent from dashboard', { message });
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Row 3: Recent Documents (below chat, right-aligned) */}
+          <div className="lg:col-span-1 lg:col-start-3">
             <RecentDocsCard 
               key={`recent-docs-${documents.length}`} 
               onDocumentSelect={handleDocumentSelect} 
             />
           </div>
-
-
 
           {/* Status Card - hidden for beta version */}
           {/* <div className="lg:col-span-1">
