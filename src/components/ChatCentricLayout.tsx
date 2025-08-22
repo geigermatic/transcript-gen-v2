@@ -5,13 +5,93 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Plus, User, ChevronUp, Download, Clock } from 'lucide-react';
+import { Settings, Plus, User, ChevronUp, Download, Clock, FileText, Database } from 'lucide-react';
 import { AppShell } from './AppShell';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 import { FileUpload } from './FileUpload';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import { ChatEngine } from '../lib/chatEngine';
+
+// Summary Display Component for Chat Interface
+const SummaryDisplay: React.FC<{ summary: any; document: any }> = ({ summary, document }) => {
+  const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
+
+  // Parse the summary content if it's a JSON string
+  let summaryData;
+  try {
+    summaryData = typeof summary === 'string' ? JSON.parse(summary) : summary;
+  } catch (e) {
+    summaryData = null;
+  }
+
+  if (!summaryData) {
+    return (
+      <div className="max-w-4xl bg-gray-50 text-gray-800 border border-gray-200 rounded-2xl px-4 py-3">
+        <div className="text-sm">No summary available</div>
+      </div>
+    );
+  }
+
+  const hasBothSummaries = summaryData.styledSummary && summaryData.rawSummary;
+
+  return (
+    <div className="max-w-4xl bg-gray-50 text-gray-800 border border-gray-200 rounded-2xl p-4">
+      {/* Document Info */}
+      <div className="mb-4 p-3 bg-white rounded-lg border border-gray-200">
+        <div className="flex items-center gap-2 mb-2">
+          <FileText className="w-4 h-4 text-gray-500" />
+          <h4 className="font-medium text-gray-800 text-sm">
+            {document.title || document.filename}
+          </h4>
+        </div>
+        <div className="text-xs text-gray-500">
+          Document processed successfully
+        </div>
+      </div>
+
+      {/* Tabs for dual summaries */}
+      {hasBothSummaries && (
+        <div className="flex bg-white rounded-lg p-1 mb-4">
+          <button
+            onClick={() => setActiveTab('stylized')}
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+              activeTab === 'stylized'
+                ? 'bg-blue-500 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+            }`}
+          >
+            <FileText size={16} className="inline mr-2" />
+            Stylized Summary
+          </button>
+          <button
+            onClick={() => setActiveTab('raw')}
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+              activeTab === 'raw'
+                ? 'bg-blue-500 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+            }`}
+          >
+            <Database size={16} className="inline mr-2" />
+            Raw Summary
+          </button>
+        </div>
+      )}
+
+      {/* Summary Content */}
+      <div className="prose prose-sm max-w-none">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-gray-800">
+            {activeTab === 'stylized' 
+              ? (summaryData.styledSummary || 'No stylized summary available')
+              : (summaryData.rawSummary || 'No raw summary available')
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const ChatCentricLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -147,8 +227,18 @@ export const ChatCentricLayout: React.FC = () => {
           timestamp: new Date().toISOString(),
           type: 'text' as const
         };
+
+        // Add summary message with tabbed interface
+        const summaryMessage = {
+          id: `summary-${Date.now()}`,
+          role: 'assistant' as const,
+          content: JSON.stringify(summaryResult), // Convert to string for storage
+          timestamp: new Date().toISOString(),
+          type: 'summary' as const,
+          document: document
+        };
         
-        setMessages(prev => [...prev, successMessage]);
+        setMessages(prev => [...prev, successMessage, summaryMessage]);
         
         // Log successful processing
         addLog({
@@ -531,20 +621,27 @@ export const ChatCentricLayout: React.FC = () => {
                         key={message.id}
                         className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div
-                          className={`max-w-3xl rounded-2xl px-4 py-3 ${
-                            message.role === 'user'
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-50 text-gray-800 border border-gray-200'
-                          }`}
-                        >
-                          <div className="text-sm">{message.content}</div>
-                          <div className={`text-xs mt-2 ${
-                            message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
-                          }`}>
-                            {new Date(message.timestamp).toLocaleTimeString()}
+                        {message.type === 'summary' ? (
+                          <SummaryDisplay 
+                            summary={message.content} 
+                            document={(message as any).document}
+                          />
+                        ) : (
+                          <div
+                            className={`max-w-3xl rounded-2xl px-4 py-3 ${
+                              message.role === 'user'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-50 text-gray-800 border border-gray-200'
+                            }`}
+                          >
+                            <div className="text-sm">{message.content}</div>
+                            <div className={`text-xs mt-2 ${
+                              message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                            }`}>
+                              {new Date(message.timestamp).toLocaleTimeString()}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     ))}
                     {isProcessing && (
