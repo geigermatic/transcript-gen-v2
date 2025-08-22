@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Grid3X3, HelpCircle, Globe, Paperclip, Mic, Send, Settings, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Search, Grid3X3, HelpCircle, Globe, Paperclip, Mic, Send, Settings, Plus, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
@@ -82,7 +82,9 @@ export const SummaryResultsView: React.FC = () => {
     }
   }, [location.state, navigate, documents, getDocumentSummary]);
 
-
+  const handleBack = () => {
+    navigate('/');
+  };
 
   const renderSummaryContent = () => {
     if (activeTab === 'stylized') {
@@ -219,6 +221,17 @@ export const SummaryResultsView: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 px-6 py-8 overflow-y-auto">
           <div className="max-w-4xl mx-auto">
+            {/* Back Button */}
+            <div className="mb-6">
+              <button
+                onClick={handleBack}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft size={20} />
+                <span>Back to Chat</span>
+              </button>
+            </div>
+            
             {/* Document Title */}
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
