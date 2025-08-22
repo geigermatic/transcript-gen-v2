@@ -481,26 +481,28 @@ export const GlassDashboard: React.FC = () => {
 
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Row 1: Upload (Full Width - Prominent) */}
-          <div className="lg:col-span-3">
-            <UploadCard 
-              onUploadComplete={handleUploadComplete}
-              onProgress={(current, total, status) => {
-                setProgressPercent(current);
-                setProgressStatus(status || '');
-                setIsUploading(current < 100); // Use separate upload state
-                
-                // Also set chunk info for backward compatibility
-                const estimatedTotalChunks = 7;
-                const estimatedProcessedChunks = Math.floor((current / 100) * estimatedTotalChunks);
-                setChunksProcessed(estimatedProcessedChunks);
-                setTotalChunks(estimatedTotalChunks);
-                
-                if (current === 0) {
-                  setProcessingStartTime(new Date());
-                }
-              }}
-            />
+          {/* Row 1: Upload (Centered, Constrained Width) */}
+          <div className="lg:col-span-3 flex justify-center">
+            <div className="w-full max-w-2xl">
+              <UploadCard 
+                onUploadComplete={handleUploadComplete}
+                onProgress={(current, total, status) => {
+                  setProgressPercent(current);
+                  setProgressStatus(status || '');
+                  setIsUploading(current < 100); // Use separate upload state
+                  
+                  // Also set chunk info for backward compatibility
+                  const estimatedTotalChunks = 7;
+                  const estimatedProcessedChunks = Math.floor((current / 100) * estimatedTotalChunks);
+                  setChunksProcessed(estimatedProcessedChunks);
+                  setTotalChunks(estimatedTotalChunks);
+                  
+                  if (current === 0) {
+                    setProcessingStartTime(new Date());
+                  }
+                }}
+              />
+            </div>
           </div>
 
           {/* Row 2: Summary + Chat (Side by Side) */}
