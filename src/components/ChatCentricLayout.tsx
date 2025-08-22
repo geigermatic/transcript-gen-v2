@@ -12,13 +12,14 @@ import { FileUpload } from './FileUpload';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import { ChatEngine } from '../lib/chatEngine';
+import { EmbeddingEngine } from '../lib/embeddingEngine';
 import type { ABSummaryPair } from '../types';
 
 
 
 export const ChatCentricLayout: React.FC = () => {
   const navigate = useNavigate();
-  const { documents, styleGuide, addLog, addABSummaryPair, clearAllData } = useAppStore();
+  const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, clearAllData } = useAppStore();
   
   // Navigation state
   const [isNavExpanded, setIsNavExpanded] = useState(false);
@@ -126,6 +127,24 @@ export const ChatCentricLayout: React.FC = () => {
         setElapsedTime(0);
         setProgress({ current: 0, total: 0, status: 'Initializing document processing...' });
 
+        // Generate embeddings first (needed for chat functionality)
+        const embeddedChunks = await EmbeddingEngine.generateDocumentEmbeddings(
+          document.id,
+          document.text,
+          (progress) => {
+            // Log embedding progress
+            addLog({
+              level: 'info',
+              category: 'embeddings',
+              message: `Embedding progress: ${progress.current}/${progress.total} chunks (${progress.percentage}%)`,
+              details: { documentId: document.id, filename: document.filename }
+            });
+          }
+        );
+        
+        // Store embeddings in the store for chat functionality
+        addEmbeddings(document.id, embeddedChunks);
+        
         // Process document with AI summarization with progress tracking
         const summaryResult = await SummarizationEngine.summarizeDocument(
           document, 
