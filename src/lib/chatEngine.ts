@@ -286,11 +286,16 @@ export class ChatEngine {
       .map(msg => `${msg.role === 'user' ? 'Human' : 'Assistant'}: ${msg.content}`)
       .join('\n');
 
-    // Format retrieved chunks
+    // Format retrieved chunks with document filenames
     const sourceChunks = retrievalContext.retrievedChunks
-      .map((result, index) => 
-        `[Source ${index + 1}] (Similarity: ${(result.similarity * 100).toFixed(1)}%)\n${result.chunk.text}`
-      )
+      .map((result) => {
+        // Get document filename from the store
+        const { documents } = useAppStore.getState();
+        const document = documents.find(doc => doc.id === result.chunk.documentId);
+        const filename = document?.title || document?.filename || `Document ${result.chunk.documentId}`;
+        
+        return `[${filename}] (Similarity: ${(result.similarity * 100).toFixed(1)}%)\n${result.chunk.text}`;
+      })
       .join('\n\n');
 
     // Add summary context if available
