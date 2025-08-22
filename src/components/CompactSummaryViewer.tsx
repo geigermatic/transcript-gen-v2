@@ -7,10 +7,11 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { FileText, Clock, User } from 'lucide-react';
+import type { Document, SummarizationResult } from '../types';
 
 interface CompactSummaryViewerProps {
-  document: any;
-  summary: any;
+  document: Document;
+  summary: SummarizationResult;
   activeTab: 'stylized' | 'raw';
   compact?: boolean;
 }

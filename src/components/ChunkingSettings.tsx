@@ -18,7 +18,11 @@ export const ChunkingSettings: React.FC<ChunkingSettingsProps> = ({
   documentWordCount = 1000
 }) => {
   const [selectedPreset, setSelectedPreset] = useState<string>('balanced');
-  const [estimation, setEstimation] = useState<any>(null);
+  const [estimation, setEstimation] = useState<{
+    estimatedChunks: number;
+    estimatedTimeMinutes: number;
+    description: string;
+  } | null>(null);
 
   useEffect(() => {
     if (isOpen) {

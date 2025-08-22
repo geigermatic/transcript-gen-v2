@@ -15,7 +15,13 @@ interface ChatMessage {
   content: string;
   timestamp: string;
   type?: 'text' | 'document' | 'summary';
-  metadata?: any;
+  metadata?: {
+    documentId?: string;
+    filename?: string;
+    processingTime?: number;
+    retrievalCount?: number;
+    topSimilarity?: number;
+  };
 }
 
 interface ChatInterfaceProps {

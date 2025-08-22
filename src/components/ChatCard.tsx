@@ -7,6 +7,7 @@ import { Send, MessageCircle, Bot, User } from 'lucide-react';
 import { ChatEngine } from '../lib/chatEngine';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
+import type { Document } from '../types';
 import type { ChatContext } from '../types';
 
 interface ChatMessage {
@@ -17,7 +18,7 @@ interface ChatMessage {
 }
 
 interface ChatCardProps {
-  selectedDocument?: any;
+  selectedDocument?: Document;
   onSendMessage?: (message: string) => void;
 }
 
