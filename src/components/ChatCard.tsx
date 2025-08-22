@@ -113,12 +113,14 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
       // Create chat context from previous messages
       const context: ChatContext = {
         messages: messages.map(msg => ({
+          id: msg.id,
           role: msg.role,
-          content: msg.content
+          content: msg.content,
+          timestamp: msg.timestamp
         })),
         documentIds: selectedDocument ? [selectedDocument.id] : documents.map(d => d.id),
         activeDocument: selectedDocument || null,
-        selectedDocumentSummary: getSelectedDocumentSummary(),
+        selectedDocumentSummary: getSelectedDocumentSummary() || undefined,
         availableSummaries: getAvailableSummaries(),
         maxContextLength: 4000
       };

@@ -45,6 +45,11 @@ export const Toast: React.FC<ToastProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
+  const handleDismiss = useCallback(() => {
+    setIsVisible(false);
+    setTimeout(() => onDismiss(id), 300); // Wait for exit animation
+  }, [onDismiss, id]);
+
   useEffect(() => {
     if (duration > 0) {
       const timer = setTimeout(() => {
@@ -53,11 +58,6 @@ export const Toast: React.FC<ToastProps> = ({
       return () => clearTimeout(timer);
     }
   }, [duration, handleDismiss]);
-
-  const handleDismiss = useCallback(() => {
-    setIsVisible(false);
-    setTimeout(() => onDismiss(id), 300); // Wait for exit animation
-  }, [onDismiss, id]);
 
   const Icon = toastIcons[type];
 

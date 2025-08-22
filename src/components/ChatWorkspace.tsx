@@ -40,6 +40,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
       
       // Add welcome message
       setMessages([{
+        id: Date.now().toString(),
         role: 'assistant',
         content: `Hi! I'm ready to answer questions about "${selectedDocument.metadata.filename}". What would you like to know?`,
         timestamp: new Date().toISOString()
@@ -69,6 +70,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
     if (!inputValue.trim() || !selectedDocument || isTyping) return;
 
     const userMessage: ChatMessage = {
+      id: Date.now().toString(),
       role: 'user',
       content: inputValue.trim(),
       timestamp: new Date().toISOString()
@@ -87,6 +89,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
       );
 
       const assistantMessage: ChatMessage = {
+        id: Date.now().toString(),
         role: 'assistant',
         content: response.answer,
         timestamp: new Date().toISOString(),
@@ -105,6 +108,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
     } catch (error) {
       console.error('Chat error:', error);
       const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
         role: 'assistant',
         content: "I'm sorry, I encountered an error processing your question. Please try again.",
         timestamp: new Date().toISOString()

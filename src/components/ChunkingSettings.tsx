@@ -36,13 +36,13 @@ export const ChunkingSettings: React.FC<ChunkingSettingsProps> = ({
       }
       updateEstimation(preset?.[0] || 'balanced');
     }
-  }, [isOpen, updateEstimation]);
-
   const updateEstimation = useCallback((presetKey: string) => {
     ChunkingConfigManager.setConfig(presetKey as keyof typeof PROCESSING_PRESETS);
     const est = ChunkingConfigManager.getEstimatedProcessingTime(documentWordCount);
     setEstimation(est);
   }, [documentWordCount]);
+
+  }, [isOpen, updateEstimation]);
 
   const handlePresetChange = (presetKey: string) => {
     setSelectedPreset(presetKey);

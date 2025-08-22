@@ -106,27 +106,6 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete, onProg
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      handleFiles(files);
-    }
-  }, [handleFiles]);
-
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    logInfo('UI', `File selection detected: ${files.length} files`, { 
-      filenames: files.map(f => f.name) 
-    });
-    
-    if (files.length > 0) {
-      handleFiles(files);
-    }
-  }, [handleFiles]);
-
   const handleFiles = useCallback(async (files: File[]) => {
     setIsProcessing(true);
     logInfo('INGEST', `Starting upload of ${files.length} file(s)`, { 
@@ -172,6 +151,27 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete, onProg
       }
     }
   }, [addDocument, onUploadComplete, triggerSummarization]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFiles(files);
+    }
+  }, [handleFiles]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    logInfo('UI', `File selection detected: ${files.length} files`, { 
+      filenames: files.map(f => f.name) 
+    });
+    
+    if (files.length > 0) {
+      handleFiles(files);
+    }
+  }, [handleFiles]);
 
   const handleClick = () => {
     console.log('Upload area clicked');
