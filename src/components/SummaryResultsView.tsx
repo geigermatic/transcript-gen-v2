@@ -5,16 +5,24 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Search, Grid3X3, HelpCircle, Globe, Paperclip, Mic, Send } from 'lucide-react';
+import { ArrowLeft, Search, Grid3X3, HelpCircle, Globe, Paperclip, Mic, Send, Settings, Plus } from 'lucide-react';
+import { useAppStore } from '../store';
+import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 
 export const SummaryResultsView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { documents } = useAppStore();
   
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
   const [followUpQuery, setFollowUpQuery] = useState('');
   const [document, setDocument] = useState<any>(null);
   const [summary, setSummary] = useState<any>(null);
+  const [isNavExpanded, setIsNavExpanded] = useState(false);
+
+  // Handle navigation hover
+  const handleNavMouseEnter = () => setIsNavExpanded(true);
+  const handleNavMouseLeave = () => setIsNavExpanded(false);
 
   useEffect(() => {
     // Get document and summary data from navigation state
@@ -67,29 +75,128 @@ export const SummaryResultsView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              <ArrowLeft size={20} />
-              <span>Back to Chat</span>
-            </button>
+    <div className="flex h-screen bg-white">
+      {/* Left Navigation Panel - Collapsible on Hover */}
+      <div 
+        className={`relative transition-all duration-300 ease-in-out ${
+          isNavExpanded ? 'w-80' : 'w-16'
+        } bg-gray-50 border-r border-gray-200`}
+        onMouseEnter={handleNavMouseEnter}
+        onMouseLeave={handleNavMouseLeave}
+      >
+        {/* Navigation Content */}
+        <div className="h-full flex flex-col">
+          {/* Top Section */}
+          <div className="p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              {/* Placeholder icons as shown in the layout */}
-              <div className="w-6 h-6 bg-gray-200 rounded"></div>
-              <div className="w-6 h-6 bg-gray-200 rounded"></div>
+              <div className="w-8 h-8 flex items-center justify-center">
+                <img 
+                  src={eliraIcon} 
+                  alt="Elira" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              {isNavExpanded && (
+                <span className="text-lg font-semibold text-gray-800">Elira</span>
+              )}
             </div>
           </div>
+
+          {/* Action Buttons */}
+          <div className="p-4 space-y-3">
+            <button 
+              onClick={() => navigate('/')}
+              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <Plus className="w-5 h-5 text-gray-600" />
+              {isNavExpanded && <span className="text-gray-700">New Chat</span>}
+            </button>
+            
+            <button 
+              onClick={() => navigate('/settings')}
+              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <Settings className="w-5 h-5 text-gray-600" />
+              {isNavExpanded && <span className="text-gray-700">Settings</span>}
+            </button>
+          </div>
+
+          {/* Documents Section - Only show when expanded */}
+          {isNavExpanded && (
+            <div className="px-4 py-2 flex-1">
+              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+                Documents ({documents.length})
+              </h3>
+              {documents.length === 0 ? (
+                <div className="text-center py-4">
+                  <div className="w-8 h-8 mx-auto mb-2 text-gray-400">
+                    📄
+                  </div>
+                  <p className="text-gray-500 text-sm">No documents yet</p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    Upload documents to get started
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {documents.map((doc) => (
+                    <div 
+                      key={doc.id}
+                      className={`p-2 rounded-lg cursor-pointer transition-colors ${
+                        doc.id === document?.id 
+                          ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+                          : 'hover:bg-gray-100 text-gray-700'
+                      }`}
+                      onClick={() => {
+                        if (doc.id !== document?.id) {
+                          navigate(`/summary/${doc.id}`, { 
+                            state: { 
+                              document: doc, 
+                              summary: null // Will need to fetch summary for other docs
+                            } 
+                          });
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                        <span className="text-sm truncate">
+                          {doc.title || doc.filename}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={handleBack}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft size={20} />
+                <span>Back to Chat</span>
+              </button>
+              <div className="flex items-center gap-3">
+                {/* Placeholder icons as shown in the layout */}
+                <div className="w-6 h-6 bg-gray-200 rounded"></div>
+                <div className="w-6 h-6 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 px-6 py-8 overflow-y-auto">
         {/* Document Title */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -179,6 +286,7 @@ export const SummaryResultsView: React.FC = () => {
               </div>
             </div>
           </form>
+        </div>
         </div>
       </div>
     </div>
