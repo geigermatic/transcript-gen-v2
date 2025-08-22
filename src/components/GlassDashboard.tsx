@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import { AppShell } from './AppShell';
-import eliraLeafIcon from '../assets/icons/elira_leaf_128.png';
+import eliraLeafIcon from '../assets/icons/elira_leaf_512.png';
 import { UploadCard } from './UploadCard';
 import { RecentDocsCard } from './RecentDocsCard';
 import { SummaryPreviewCard } from './SummaryPreviewCard';
@@ -37,6 +37,9 @@ const calculateSimilarity = (text1: string, text2: string): number => {
 export const GlassDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { documents, abSummaryPairs, logs, styleGuide, updateABSummaryPair } = useAppStore();
+  
+  // Debug icon import
+  console.log('GlassDashboard - eliraLeafIcon:', eliraLeafIcon);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [chunksProcessed, setChunksProcessed] = useState(0);

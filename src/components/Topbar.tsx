@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Settings, Sun, Moon, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
-import eliraLeafIcon from '../assets/icons/elira_leaf_128.png';
+import eliraLeafIcon from '../assets/icons/elira_leaf_512.png';
 
 interface TopbarProps {
   // sidebarCollapsed prop removed for beta version
@@ -17,6 +17,9 @@ export const Topbar: React.FC<TopbarProps> = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  
+  // Debug icon import
+  console.log('Topbar - eliraLeafIcon:', eliraLeafIcon);
 
   const handleClearAllData = () => {
     const confirmClear = window.confirm(
