@@ -172,10 +172,13 @@ export class ChatEngine {
         content: prompt
       }]);
 
+      // Format the response with proper paragraph breaks
+      const formattedResponse = this.formatResponseWithParagraphs(response.trim());
+
       const message: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: response.trim(),
+        content: formattedResponse,
         timestamp: new Date().toISOString(),
         sources: retrievalContext.retrievedChunks,
       };
@@ -187,13 +190,84 @@ export class ChatEngine {
         responseMetrics: {
           retrievalCount: retrievalContext.retrievedChunks.length,
           topSimilarity: retrievalContext.topScores[0] || 0,
-          responseLength: response.length,
+          responseLength: formattedResponse.length,
           processingTime: 0, // Will be set by caller
         }
       };
     } catch (error) {
       throw new Error(`Response generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  /**
+   * Format AI response with proper paragraph breaks for better readability
+   */
+  private static formatResponseWithParagraphs(response: string): string {
+    // Split the response into sentences
+    const sentences = response.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+    
+    if (sentences.length <= 3) {
+      // For short responses, just return as is
+      return response;
+    }
+
+    // Group sentences into logical paragraphs
+    const paragraphs: string[] = [];
+    let currentParagraph: string[] = [];
+    
+    sentences.forEach((sentence, index) => {
+      currentParagraph.push(sentence);
+      
+      // Start a new paragraph after 2-4 sentences, or at natural break points
+      const shouldStartNewParagraph = 
+        currentParagraph.length >= 3 || // After 3 sentences
+        (index < sentences.length - 1 && this.isNaturalParagraphBreak(sentence, sentences[index + 1])) || // Natural break
+        (index === sentences.length - 1); // End of response
+      
+      if (shouldStartNewParagraph) {
+        paragraphs.push(currentParagraph.join(' '));
+        currentParagraph = [];
+      }
+    });
+    
+    // Join paragraphs with double newlines for proper spacing
+    return paragraphs.join('\n\n');
+  }
+
+  /**
+   * Determine if there's a natural break point between two sentences
+   */
+  private static isNaturalParagraphBreak(sentence1: string, sentence2: string): boolean {
+    const sentence1Lower = sentence1.toLowerCase();
+    const sentence2Lower = sentence2.toLowerCase();
+    
+    // Break after introductory phrases
+    if (sentence1Lower.includes('first') || sentence1Lower.includes('initially') || 
+        sentence1Lower.includes('to begin') || sentence1Lower.includes('let me start')) {
+      return true;
+    }
+    
+    // Break before transition phrases
+    if (sentence2Lower.includes('however') || sentence2Lower.includes('on the other hand') ||
+        sentence2Lower.includes('meanwhile') || sentence2Lower.includes('additionally') ||
+        sentence2Lower.includes('furthermore') || sentence2Lower.includes('in addition') ||
+        sentence2Lower.includes('next') || sentence2Lower.includes('then') ||
+        sentence2Lower.includes('finally') || sentence2Lower.includes('in conclusion')) {
+      return true;
+    }
+    
+    // Break after questions
+    if (sentence1.includes('?') || sentence1.includes('?')) {
+      return true;
+    }
+    
+    // Break before examples or specific details
+    if (sentence2Lower.includes('for example') || sentence2Lower.includes('specifically') ||
+        sentence2Lower.includes('in particular') || sentence2Lower.includes('such as')) {
+      return true;
+    }
+    
+    return false;
   }
 
   /**

@@ -230,6 +230,9 @@ RULES:
 8. Always refer to the instructor as "Caren" throughout your responses
 9. Use lesson-appropriate language when discussing the content (e.g., "In this lesson", "Caren teaches", etc.)
 10. STRICTLY follow the CRITICAL FORMAT REQUIREMENTS above - count sentences, use exact formatting, respect word limits
+11. Structure your response with clear paragraph breaks for better readability
+12. Use logical grouping: introduction, main points, examples, and conclusion
+13. Start new paragraphs when transitioning between different ideas or topics
 
 HUMAN QUESTION: {{userQuery}}
 

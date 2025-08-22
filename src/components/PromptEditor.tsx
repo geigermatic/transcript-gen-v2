@@ -137,6 +137,9 @@ RULES:
 7. Be helpful and direct
 8. NEVER include individual names from the transcript - use generic terms like "the instructor", "the teacher", "the speaker", "a student", "a participant"
 9. STRICTLY follow the CRITICAL FORMAT REQUIREMENTS above - count sentences, use exact formatting, respect word limits
+10. Structure your response with clear paragraph breaks for better readability
+11. Use logical grouping: introduction, main points, examples, and conclusion
+12. Start new paragraphs when transitioning between different ideas or topics
 
 HUMAN QUESTION: {{userQuery}}
 
