@@ -465,9 +465,9 @@ export const GlassDashboard: React.FC = () => {
                   className="w-full h-full object-contain"
                 />
               </div>
-              <h1 className="text-6xl font-semibold text-white tracking-tight" style={{ fontFamily: 'Lora, serif' }}>
+              <h1 className="text-6xl font-semibold text-white tracking-tight flex items-center gap-3" style={{ fontFamily: 'Lora, serif' }}>
                 Elira
-                <span className="ml-4 inline-block bg-blue-500 text-white text-lg px-4 py-2 rounded-full font-medium">
+                <span className="bg-blue-500 text-white text-sm px-3 py-1 rounded-full font-medium">
                   BETA
                 </span>
               </h1>
