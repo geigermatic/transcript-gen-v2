@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { ollama } from '../lib/ollama';
 
@@ -16,10 +16,12 @@ export const OllamaStatusMonitor: React.FC = () => {
     responseTime: null
   });
   const [isChecking, setIsChecking] = useState(false);
+  const isCheckingRef = useRef(false);
 
   const checkOllamaStatus = useCallback(async () => {
-    if (isChecking) return;
+    if (isCheckingRef.current) return;
     
+    isCheckingRef.current = true;
     setIsChecking(true);
     const startTime = Date.now();
     
@@ -64,9 +66,10 @@ export const OllamaStatusMonitor: React.FC = () => {
         error: error instanceof Error ? error.message : 'Connection failed'
       });
     } finally {
+      isCheckingRef.current = false;
       setIsChecking(false);
     }
-  }, [isChecking]);
+  }, []);
 
   useEffect(() => {
     checkOllamaStatus();
@@ -75,7 +78,7 @@ export const OllamaStatusMonitor: React.FC = () => {
     const interval = setInterval(checkOllamaStatus, 30000);
     
     return () => clearInterval(interval);
-  }, [checkOllamaStatus]);
+  }, []); // Empty dependency array - only run on mount
 
   const getStatusIcon = () => {
     switch (ollamaStatus.status) {
