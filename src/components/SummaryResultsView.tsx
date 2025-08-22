@@ -15,6 +15,9 @@ export const SummaryResultsView: React.FC = () => {
   const location = useLocation();
   const { documents, styleGuide } = useAppStore();
   
+  console.log('SummaryResultsView render - documents:', documents);
+  console.log('SummaryResultsView render - styleGuide:', styleGuide);
+  
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
   const [followUpQuery, setFollowUpQuery] = useState('');
   const [document, setDocument] = useState<any>(null);
@@ -50,6 +53,11 @@ export const SummaryResultsView: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log('SummaryResultsView useEffect - location.state:', location.state);
+    console.log('Available documents:', documents);
+    console.log('Documents length:', documents.length);
+    console.log('Documents array:', documents);
+    
     // Get document and summary data from navigation state
     if (location.state?.document) {
       setDocument(location.state.document);
@@ -65,29 +73,13 @@ export const SummaryResultsView: React.FC = () => {
       // Fallback: redirect back to chat if no document data
       navigate('/');
     }
-  }, [location.state, navigate]);
+  }, [location.state, navigate, documents]);
 
   const handleBack = () => {
     navigate('/');
   };
 
-  if (!summary) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-gray-400 text-6xl mb-4">📄</div>
-          <h2 className="text-xl font-semibold text-gray-600 mb-2">No Summary Available</h2>
-          <p className="text-gray-500">The document summary could not be generated.</p>
-          <button
-            onClick={handleBack}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
+
 
   const renderSummaryContent = () => {
     if (activeTab === 'stylized') {
@@ -159,6 +151,9 @@ export const SummaryResultsView: React.FC = () => {
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                 Documents ({documents.length})
               </h3>
+              <div className="text-xs text-gray-400 mb-2">
+                Debug: {documents.length} documents available
+              </div>
               {documents.length === 0 ? (
                 <div className="text-center py-4">
                   <div className="w-8 h-8 mx-auto mb-2 text-gray-400">
@@ -168,6 +163,9 @@ export const SummaryResultsView: React.FC = () => {
                   <p className="text-gray-400 text-xs mt-1">
                     Upload documents to get started
                   </p>
+                  <div className="text-xs text-gray-400 mt-2">
+                    Debug: documents array is empty
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -179,14 +177,19 @@ export const SummaryResultsView: React.FC = () => {
                           ? 'bg-blue-100 text-blue-800 border border-blue-200' 
                           : 'hover:bg-gray-100 text-gray-700'
                       }`}
-                                             onClick={() => {
-                         if (doc.id !== document?.id) {
-                           // Update current document and fetch its summary
-                           setDocument(doc);
-                           setSummary(null); // Clear current summary
-                           fetchDocumentSummary(doc);
-                         }
-                       }}
+                                                                   onClick={() => {
+                        console.log('Document clicked:', doc);
+                        console.log('Current document:', document);
+                        if (doc.id !== document?.id) {
+                          console.log('Switching to document:', doc.id);
+                          // Update current document and fetch its summary
+                          setDocument(doc);
+                          setSummary(null); // Clear current summary
+                          fetchDocumentSummary(doc);
+                        } else {
+                          console.log('Document already selected');
+                        }
+                      }}
                     >
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
