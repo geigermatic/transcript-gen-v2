@@ -10,10 +10,12 @@ import { AppShell } from './AppShell';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 import { FileUpload } from './FileUpload';
 import { useAppStore } from '../store';
+import { SummarizationEngine } from '../lib/summarizationEngine';
+import { ChatEngine } from '../lib/chatEngine';
 
 export const ChatCentricLayout: React.FC = () => {
   const navigate = useNavigate();
-  const { documents } = useAppStore();
+  const { documents, styleGuide, addLog } = useAppStore();
   
   // Navigation state
   const [isNavExpanded, setIsNavExpanded] = useState(false);
@@ -50,7 +52,7 @@ export const ChatCentricLayout: React.FC = () => {
   }, []);
 
   // Handle document upload and add to chat
-  const handleDocumentUpload = (success: boolean, message: string, document?: any) => {
+  const handleDocumentUpload = async (success: boolean, message: string, document?: any) => {
     if (success && document) {
       // Add upload message to chat
       const uploadMessage = {
@@ -75,10 +77,84 @@ export const ChatCentricLayout: React.FC = () => {
       
       setMessages(prev => [...prev, processingMessage]);
       
-      // TODO: Trigger actual document processing
-      console.log('Document upload initiated:', document);
+      try {
+        // Log the processing start
+        addLog({
+          level: 'info',
+          category: 'chat',
+          message: `Starting AI processing for document: ${document.title || document.filename}`,
+          details: { documentId: document.id, filename: document.filename }
+        });
+
+        // Process document with AI summarization
+        const summaryResult = await SummarizationEngine.summarizeDocument(document, styleGuide);
+        
+        // Remove processing message and add success message
+        setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id));
+        
+        const successMessage = {
+          id: `success-${Date.now()}`,
+          role: 'assistant' as const,
+          content: `✅ Document processed successfully! I've analyzed "${document.title || document.filename}" and can now answer questions about it. Ask me anything about the content!`,
+          timestamp: new Date().toISOString(),
+          type: 'text' as const
+        };
+        
+        setMessages(prev => [...prev, successMessage]);
+        
+        // Log successful processing
+        addLog({
+          level: 'info',
+          category: 'chat',
+          message: `Document processing completed successfully`,
+          details: { 
+            documentId: document.id, 
+            filename: document.filename,
+            processingTime: summaryResult.processingStats.processingTime,
+            chunkCount: summaryResult.processingStats.totalChunks
+          }
+        });
+        
+      } catch (error) {
+        console.error('Document processing failed:', error);
+        
+        // Remove processing message and add error message
+        setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id));
+        
+        const errorMessage = {
+          id: `error-${Date.now()}`,
+          role: 'assistant' as const,
+          content: `❌ Sorry, I encountered an error while processing your document. Please try again or check if your AI instance is running.`,
+          timestamp: new Date().toISOString(),
+          type: 'text' as const
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
+        
+        // Log the error
+        addLog({
+          level: 'error',
+          category: 'chat',
+          message: `Document processing failed`,
+          details: { 
+            documentId: document.id, 
+            filename: document.filename,
+            error: error instanceof Error ? error.message : String(error)
+          }
+        });
+      }
     } else {
       console.error('Upload failed:', message);
+      
+      const errorMessage = {
+        id: `upload-error-${Date.now()}`,
+        role: 'assistant' as const,
+        content: `❌ Upload failed: ${message}`,
+        timestamp: new Date().toISOString(),
+        type: 'text' as const
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
     }
   };
 
@@ -98,20 +174,104 @@ export const ChatCentricLayout: React.FC = () => {
     setInputValue('');
     setIsProcessing(true);
     
-    // TODO: Process with AI and get response
-    // For now, add a placeholder response
-    setTimeout(() => {
-      const aiResponse = {
+    try {
+      // Log the chat request
+      addLog({
+        level: 'info',
+        category: 'chat',
+        message: `Processing chat message: "${inputValue.trim().substring(0, 100)}${inputValue.trim().length > 100 ? '...' : ''}"`,
+        details: { 
+          messageLength: inputValue.trim().length,
+          hasDocuments: documents.length > 0,
+          hasStyleGuide: !!styleGuide
+        }
+      });
+
+      // Check if we have documents to work with
+      if (documents.length === 0) {
+        const noDocsResponse = {
+          id: `ai-${Date.now()}`,
+          role: 'assistant' as const,
+          content: 'I don\'t have any documents to analyze yet. Please upload a document first, and then I\'ll be able to answer questions about it!',
+          timestamp: new Date().toISOString(),
+          type: 'text' as const
+        };
+        
+        setMessages(prev => [...prev, noDocsResponse]);
+        setIsProcessing(false);
+        return;
+      }
+
+      // Create chat context for the AI engine
+      const chatContext = {
+        messages: messages.map(msg => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp
+        })),
+        selectedDocument: documents[0], // Use the first document for now
+        selectedDocumentSummary: undefined, // We'll enhance this later
+        styleGuide: styleGuide
+      };
+
+      // Process with ChatEngine
+      const aiResponse = await ChatEngine.processQuery(inputValue.trim(), chatContext, styleGuide);
+      
+      const responseMessage = {
         id: `ai-${Date.now()}`,
         role: 'assistant' as const,
-        content: 'I understand your message. Document processing integration is coming soon!',
+        content: aiResponse.message.content,
+        timestamp: new Date().toISOString(),
+        type: 'text' as const,
+        metadata: {
+          processingTime: aiResponse.responseMetrics.processingTime,
+          retrievalCount: aiResponse.responseMetrics.retrievalCount,
+          topSimilarity: aiResponse.responseMetrics.topSimilarity
+        }
+        };
+      
+      setMessages(prev => [...prev, responseMessage]);
+      
+      // Log successful response
+      addLog({
+        level: 'info',
+        category: 'chat',
+        message: `Chat response generated successfully`,
+        details: { 
+          query: inputValue.trim(),
+          responseLength: aiResponse.message.content.length,
+          processingTime: aiResponse.responseMetrics.processingTime,
+          retrievalCount: aiResponse.responseMetrics.retrievalCount
+        }
+      });
+      
+    } catch (error) {
+      console.error('Chat processing failed:', error);
+      
+      const errorMessage = {
+        id: `ai-error-${Date.now()}`,
+        role: 'assistant' as const,
+        content: `❌ Sorry, I encountered an error while processing your message. Please check if your AI instance is running and try again.`,
         timestamp: new Date().toISOString(),
         type: 'text' as const
       };
       
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages(prev => [...prev, errorMessage]);
+      
+      // Log the error
+      addLog({
+        level: 'error',
+        category: 'chat',
+        message: `Chat processing failed`,
+        details: { 
+          query: inputValue.trim(),
+          error: error instanceof Error ? error.message : String(error)
+        }
+      });
+    } finally {
       setIsProcessing(false);
-    }, 1000);
+    }
   };
 
   // Handle key press in input
