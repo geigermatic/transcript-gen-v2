@@ -74,6 +74,10 @@ interface AppState {
   hasCompletedOnboarding: boolean;
   setOnboardingComplete: (completed: boolean) => void;
   
+  // Store Hydration State
+  isHydrated: boolean;
+  setHydrated: (hydrated: boolean) => void;
+  
   // Data Management
   clearAllData: () => void;
 }
@@ -425,6 +429,10 @@ This style guide captures the distinctive voice and approach for creating engagi
       setOnboardingComplete: (completed) =>
         set({ hasCompletedOnboarding: completed }),
       
+      // Store Hydration State
+      isHydrated: false,
+      setHydrated: (hydrated) => set({ isHydrated: hydrated }),
+      
       // Data Management
       clearAllData: () => 
         set(() => ({
@@ -461,6 +469,12 @@ This style guide captures the distinctive voice and approach for creating engagi
         // Convert Maps to objects for storage
         embeddings: Object.fromEntries(state.embeddings),
       }),
+      onRehydrateStorage: () => (state) => {
+        // Mark store as hydrated when persistence is complete
+        if (state) {
+          state.setHydrated(true);
+        }
+      },
       // Modern storage configuration with custom serialization for Maps
       storage: {
         getItem: (name) => {

@@ -19,7 +19,7 @@ import type { ABSummaryPair } from '../types';
 
 export const ChatCentricLayout: React.FC = () => {
   const navigate = useNavigate();
-  const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, clearAllData, embeddings } = useAppStore();
+  const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, clearAllData, embeddings, isHydrated } = useAppStore();
   
   // Navigation state
   const [isNavExpanded, setIsNavExpanded] = useState(false);
@@ -67,6 +67,17 @@ export const ChatCentricLayout: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
+
+  // Debug embeddings state on mount and when embeddings change
+  useEffect(() => {
+    console.log('🔍 Embeddings state changed:', {
+      embeddingsSize: embeddings.size,
+      documentCount: documents.length,
+      hasEmbeddings: embeddings.size > 0,
+      embeddingsKeys: Array.from(embeddings.keys()),
+      documents: documents.map(d => ({ id: d.id, title: d.title || d.filename }))
+    });
+  }, [embeddings, documents]);
 
   // Timer for elapsed time tracking
   useEffect(() => {
@@ -258,6 +269,21 @@ export const ChatCentricLayout: React.FC = () => {
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isProcessing) return;
     
+    // Wait for store to be hydrated before processing
+    if (!isHydrated) {
+      const hydrationResponse = {
+        id: `ai-${Date.now()}`,
+        role: 'assistant' as const,
+        content: 'Please wait a moment while I load your documents and data...',
+        timestamp: new Date().toISOString(),
+        type: 'text' as const
+      };
+      
+      setMessages(prev => [...prev, hydrationResponse]);
+      setIsProcessing(false);
+      return;
+    }
+    
     const userMessage = {
       id: `user-${Date.now()}`,
       role: 'user' as const,
@@ -298,7 +324,15 @@ export const ChatCentricLayout: React.FC = () => {
       }
 
       // Check if we have embeddings for the documents (needed for chat functionality)
+      console.log('🔍 Chat validation - Embeddings check:', {
+        embeddingsSize: embeddings.size,
+        documentCount: documents.length,
+        embeddingsKeys: Array.from(embeddings.keys()),
+        documentIds: documents.map(d => d.id)
+      });
+      
       if (embeddings.size === 0) {
+        console.log('❌ No embeddings found - showing processing message');
         const noEmbeddingsResponse = {
           id: `ai-${Date.now()}`,
           role: 'assistant' as const,
@@ -652,12 +686,16 @@ export const ChatCentricLayout: React.FC = () => {
                   />
                   <button 
                     onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || isProcessing}
+                    disabled={!inputValue.trim() || isProcessing || !isHydrated}
                     className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
+                    {!isHydrated ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-18 9-2zm0 0v-8" />
+                      </svg>
+                    )}
                   </button>
                 </div>
               </div>
