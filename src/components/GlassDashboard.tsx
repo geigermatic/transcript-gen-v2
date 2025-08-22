@@ -481,8 +481,8 @@ export const GlassDashboard: React.FC = () => {
 
         {/* Main Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Center & Left Columns - Summary spans both (now centered) */}
-          <div className="lg:col-span-2">
+          {/* Left Column - Summary */}
+          <div className="lg:col-span-1">
             <SummaryPreviewCard 
               key={`summary-${selectedDocument?.id}-${regenerationCount}`}
               summary={getSelectedDocumentSummary()} // backward compatibility
@@ -497,6 +497,18 @@ export const GlassDashboard: React.FC = () => {
               onRegenerateStyled={handleRegenerateStyled}
               regenerationSuccess={regenerationSuccess}
             />
+          </div>
+
+          {/* Center Column - Chat (adjacent to summary) */}
+          <div className="lg:col-span-1">
+            <div className="h-96">
+              <ChatCard 
+                selectedDocument={selectedDocument}
+                onSendMessage={(message) => {
+                  logInfo('CHAT', 'Message sent from dashboard', { message });
+                }}
+              />
+            </div>
           </div>
 
           {/* Right Column - Upload & Recent Documents */}
@@ -528,17 +540,7 @@ export const GlassDashboard: React.FC = () => {
             />
           </div>
 
-          {/* Chat Card - spans full width on second row */}
-          <div className="lg:col-span-2">
-            <div className="h-96">
-              <ChatCard 
-                selectedDocument={selectedDocument}
-                onSendMessage={(message) => {
-                  logInfo('CHAT', 'Message sent from dashboard', { message });
-                }}
-              />
-            </div>
-          </div>
+
 
           {/* Status Card - hidden for beta version */}
           {/* <div className="lg:col-span-1">
