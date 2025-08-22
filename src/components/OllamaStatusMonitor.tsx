@@ -17,15 +17,6 @@ export const OllamaStatusMonitor: React.FC = () => {
   });
   const [isChecking, setIsChecking] = useState(false);
 
-  useEffect(() => {
-    checkOllamaStatus();
-    
-    // Check every 30 seconds
-    const interval = setInterval(checkOllamaStatus, 30000);
-    
-    return () => clearInterval(interval);
-  }, [checkOllamaStatus]);
-
   const checkOllamaStatus = useCallback(async () => {
     if (isChecking) return;
     
@@ -76,6 +67,15 @@ export const OllamaStatusMonitor: React.FC = () => {
       setIsChecking(false);
     }
   }, [isChecking]);
+
+  useEffect(() => {
+    checkOllamaStatus();
+    
+    // Check every 30 seconds
+    const interval = setInterval(checkOllamaStatus, 30000);
+    
+    return () => clearInterval(interval);
+  }, [checkOllamaStatus]);
 
   const getStatusIcon = () => {
     switch (ollamaStatus.status) {
