@@ -114,56 +114,58 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
   };
 
   return (
-    <div className={`flex flex-col h-full min-h-96 ${className}`}>
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+    <div className={`flex flex-col h-full ${className}`}>
+      {/* Messages Area - Only show when there are messages */}
+      {messages.length > 0 && (
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {messages.map((message) => (
             <div
-              className={`max-w-3xl rounded-2xl px-4 py-3 ${
-                message.role === 'user'
-                  ? 'bg-blue-500 text-white'
-                  : message.role === 'system'
-                  ? 'bg-gray-100 text-gray-800'
-                  : 'bg-gray-50 text-gray-800 border border-gray-200'
-              }`}
+              key={message.id}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              {message.type === 'document' && (
-                <div className="flex items-center gap-2 mb-2">
-                  <FileText className="w-4 h-4" />
-                  <span className="text-sm opacity-80">Document Upload</span>
+              <div
+                className={`max-w-3xl rounded-2xl px-4 py-3 ${
+                  message.role === 'user'
+                    ? 'bg-blue-500 text-white'
+                    : message.role === 'system'
+                    ? 'bg-gray-100 text-gray-800'
+                    : 'bg-gray-50 text-gray-800 border border-gray-200'
+                }`}
+              >
+                {message.type === 'document' && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="w-4 h-4" />
+                    <span className="text-sm opacity-80">Document Upload</span>
+                  </div>
+                )}
+                
+                <div className="whitespace-pre-wrap">{message.content}</div>
+                
+                <div className="text-xs opacity-60 mt-2">
+                  {new Date(message.timestamp).toLocaleTimeString()}
                 </div>
-              )}
-              
-              <div className="whitespace-pre-wrap">{message.content}</div>
-              
-              <div className="text-xs opacity-60 mt-2">
-                {new Date(message.timestamp).toLocaleTimeString()}
               </div>
             </div>
-          </div>
-        ))}
-        
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+          ))}
+          
+          {isTyping && (
+            <div className="flex justify-start">
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                  <span className="text-gray-600">Elira is typing...</span>
                 </div>
-                <span className="text-gray-600">Elira is typing...</span>
               </div>
             </div>
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
+          )}
+          
+          <div ref={messagesEndRef} />
+        </div>
+      )}
 
 
 

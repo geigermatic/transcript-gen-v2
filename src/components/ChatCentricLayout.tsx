@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import { Settings, Plus, User, ChevronUp, Download, Clock } from 'lucide-react';
 import { AppShell } from './AppShell';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
-import { ChatInterface } from './ChatInterface';
 import { FileUpload } from './FileUpload';
 import { useAppStore } from '../store';
 
@@ -207,9 +206,20 @@ export const ChatCentricLayout: React.FC = () => {
                 }} />
               </div>
 
-              {/* Chat Interface - Constrained Width and Centered */}
-              <div className="w-full">
-                <ChatInterface />
+              {/* Chat Input Field - Only the input, no messages area */}
+              <div className="w-full max-w-2xl mx-auto">
+                <div className="flex items-center gap-3 p-4 border border-gray-300 rounded-2xl bg-white">
+                  <input
+                    type="text"
+                    placeholder="Ask anything or @mention a document..."
+                    className="flex-1 px-4 py-3 border-none outline-none focus:ring-0"
+                  />
+                  <button className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
