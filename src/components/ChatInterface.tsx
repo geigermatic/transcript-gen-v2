@@ -33,19 +33,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize with welcome message
+  // Initialize with empty messages
   useEffect(() => {
-    if (messages.length === 0) {
-      const welcomeMessage: ChatMessage = {
-        id: 'welcome',
-        role: 'assistant',
-        content: '👋 Hi! I\'m Elira, your AI assistant for transcript analysis. I can help you:\n\n• Upload and analyze transcripts\n• Generate summaries with your preferred style\n• Answer questions about your documents\n• Compare different documents\n\nStart by uploading a document or asking me anything!',
-        timestamp: new Date().toISOString(),
-        type: 'text'
-      };
-      setMessages([welcomeMessage]);
-    }
-  }, [messages.length]);
+    // Start with empty messages - no welcome message
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {

@@ -177,16 +177,7 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
         </div>
       </div>
 
-      {/* Browse Button */}
-      <div className="flex justify-center">
-        <button
-          onClick={handleBrowseClick}
-          disabled={isProcessing}
-          className="glass-button text-white disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isProcessing ? 'Processing...' : 'Browse Files'}
-        </button>
-      </div>
+
     </div>
   );
 }
