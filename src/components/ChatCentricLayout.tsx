@@ -12,12 +12,13 @@ import { FileUpload } from './FileUpload';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import { ChatEngine } from '../lib/chatEngine';
+import type { ABSummaryPair } from '../types';
 
 
 
 export const ChatCentricLayout: React.FC = () => {
   const navigate = useNavigate();
-  const { documents, styleGuide, addLog } = useAppStore();
+  const { documents, styleGuide, addLog, addABSummaryPair } = useAppStore();
   
   // Navigation state
   const [isNavExpanded, setIsNavExpanded] = useState(false);
@@ -133,6 +134,33 @@ export const ChatCentricLayout: React.FC = () => {
             setProgress({ current, total, status: status || 'Processing...' });
           }
         );
+        
+        // Create AB summary pair to store the result for future access
+        const summaryPair: ABSummaryPair = {
+          id: crypto.randomUUID(),
+          documentId: document.id,
+          documentTitle: document.title || document.filename,
+          summaryA: summaryResult,
+          summaryB: summaryResult, // Use same result for both A and B for now
+          variantDetails: {
+            variantA: { 
+              name: 'Default', 
+              description: 'Standard processing',
+              styleModifications: {},
+              promptStrategy: 'Standard summarization with style guide'
+            },
+            variantB: { 
+              name: 'Default', 
+              description: 'Standard processing',
+              styleModifications: {},
+              promptStrategy: 'Standard summarization with style guide'
+            }
+          },
+          createdAt: new Date().toISOString()
+        };
+        
+        // Add to store so it can be retrieved later
+        addABSummaryPair(summaryPair);
         
         // Hide progress, reset timer, and remove processing message
         setShowProgress(false);

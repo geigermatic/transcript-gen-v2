@@ -65,11 +65,24 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete, onProg
       const summaryPair: ABSummaryPair = {
         id: crypto.randomUUID(),
         documentId: document.id,
-        createdAt: new Date().toISOString(),
+        documentTitle: document.title || document.filename,
         summaryA: result,
-        summaryB: null, // Only A summary for now
-        selectedSummary: 'A',
-        feedback: null
+        summaryB: result, // Use same result for both A and B for now
+        variantDetails: {
+          variantA: { 
+            name: 'Default', 
+            description: 'Standard processing',
+            styleModifications: {},
+            promptStrategy: 'Standard summarization with style guide'
+          },
+          variantB: { 
+            name: 'Default', 
+            description: 'Standard processing',
+            styleModifications: {},
+            promptStrategy: 'Standard summarization with style guide'
+          }
+        },
+        createdAt: new Date().toISOString()
       };
 
       addABSummaryPair(summaryPair);
