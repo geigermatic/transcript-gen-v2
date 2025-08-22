@@ -8,7 +8,6 @@ import { Send, FileText } from 'lucide-react';
 
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
-import { FileUpload } from './FileUpload';
 
 interface ChatMessage {
   id: string;
@@ -45,33 +44,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
     }
   }, [messages]);
 
-  // Handle document upload
-  const handleDocumentUpload = (document: any) => {
-    const uploadMessage: ChatMessage = {
-      id: `upload-${Date.now()}`,
-      role: 'user',
-      content: `📄 Uploaded: ${document.title}`,
-      timestamp: new Date().toISOString(),
-      type: 'document',
-      metadata: { documentId: document.id, filename: document.filename }
-    };
-    
-    setMessages(prev => [...prev, uploadMessage]);
-    
-    // Add processing message
-    const processingMessage: ChatMessage = {
-      id: `processing-${Date.now()}`,
-      role: 'assistant',
-      content: '🔄 Processing your document... This may take a moment.',
-      timestamp: new Date().toISOString(),
-      type: 'text'
-    };
-    
-    setMessages(prev => [...prev, processingMessage]);
-    
-    // TODO: Trigger actual document processing
-    logInfo('CHAT', 'Document upload initiated', { documentId: document.id });
-  };
+
 
   // Handle message sending
   const handleSendMessage = async () => {
@@ -220,10 +193,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
           </button>
         </div>
 
-        {/* Upload Area */}
-        <div className="mt-4">
-          <FileUpload onUploadComplete={handleDocumentUpload} />
-        </div>
+
       </div>
     </div>
   );

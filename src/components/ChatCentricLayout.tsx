@@ -9,6 +9,7 @@ import { Settings, Plus, User, ChevronUp, Download, Clock } from 'lucide-react';
 import { AppShell } from './AppShell';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 import { ChatInterface } from './ChatInterface';
+import { FileUpload } from './FileUpload';
 import { useAppStore } from '../store';
 
 export const ChatCentricLayout: React.FC = () => {
@@ -197,11 +198,13 @@ export const ChatCentricLayout: React.FC = () => {
 
               {/* Drop Zone */}
               <div className="text-center">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
-                  <div className="text-4xl mb-4">📁</div>
-                  <p className="text-lg text-gray-700 mb-2">Drop Zone</p>
-                  <p className="text-gray-600">Drag and drop your documents here or click to browse</p>
-                </div>
+                <FileUpload onUploadComplete={(success, message, document) => {
+                  if (success) {
+                    console.log('Document uploaded successfully:', document);
+                  } else {
+                    console.error('Upload failed:', message);
+                  }
+                }} />
               </div>
 
               {/* Chat Interface - Constrained Width and Centered */}
