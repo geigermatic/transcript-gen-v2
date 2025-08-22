@@ -19,7 +19,7 @@ import type { ABSummaryPair } from '../types';
 
 export const ChatCentricLayout: React.FC = () => {
   const navigate = useNavigate();
-  const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, clearAllData } = useAppStore();
+  const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, clearAllData, embeddings } = useAppStore();
   
   // Navigation state
   const [isNavExpanded, setIsNavExpanded] = useState(false);
@@ -293,6 +293,21 @@ export const ChatCentricLayout: React.FC = () => {
         };
         
         setMessages(prev => [...prev, noDocsResponse]);
+        setIsProcessing(false);
+        return;
+      }
+
+      // Check if we have embeddings for the documents (needed for chat functionality)
+      if (embeddings.size === 0) {
+        const noEmbeddingsResponse = {
+          id: `ai-${Date.now()}`,
+          role: 'assistant' as const,
+          content: 'Your documents are still being processed for search. I need to generate embeddings first before I can answer questions about the content. Please wait a moment and try again.',
+          timestamp: new Date().toISOString(),
+          type: 'text' as const
+        };
+        
+        setMessages(prev => [...prev, noEmbeddingsResponse]);
         setIsProcessing(false);
         return;
       }
