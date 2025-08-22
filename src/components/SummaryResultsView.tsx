@@ -273,36 +273,40 @@ export const SummaryResultsView: React.FC = () => {
           {!isLoading && summary && (
             <>
               {/* Summary Tabs */}
-              <div className="flex justify-center mb-8">
-                <div className="flex bg-gray-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setActiveTab('stylized')}
-                    className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${
-                      activeTab === 'stylized'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                  >
-                    Styled Summary
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('raw')}
-                    className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${
-                      activeTab === 'raw'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-800'
-                    }`}
-                  >
-                    Raw Summary
-                  </button>
+              <div className="max-w-4xl mx-auto mb-8">
+                <div className="flex justify-center">
+                  <div className="flex bg-gray-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setActiveTab('stylized')}
+                      className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${
+                        activeTab === 'stylized'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      Styled Summary
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('raw')}
+                      className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${
+                        activeTab === 'raw'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      Raw Summary
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {/* Summary Content */}
-              <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8 min-h-96">
-                <div className="prose prose-lg max-w-none">
-                  <div className="text-gray-800 whitespace-pre-wrap">
-                    {renderSummaryContent()}
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8 min-h-96">
+                  <div className="prose prose-lg max-w-none">
+                    <div className="text-gray-800 whitespace-pre-wrap">
+                      {renderSummaryContent()}
+                    </div>
                   </div>
                 </div>
               </div>
