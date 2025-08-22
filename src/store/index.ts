@@ -472,7 +472,19 @@ This style guide captures the distinctive voice and approach for creating engagi
       onRehydrateStorage: () => (state) => {
         // Mark store as hydrated when persistence is complete
         if (state) {
+          console.log('🔍 onRehydrateStorage - State before hydration:', {
+            documentsCount: state.documents?.length,
+            embeddingsSize: state.embeddings?.size,
+            embeddingsKeys: state.embeddings ? Array.from(state.embeddings.keys()) : []
+          });
+          
           state.setHydrated(true);
+          
+          console.log('🔍 onRehydrateStorage - State after hydration:', {
+            documentsCount: state.documents?.length,
+            embeddingsSize: state.embeddings?.size,
+            embeddingsKeys: state.embeddings ? Array.from(state.embeddings.keys()) : []
+          });
         }
       },
       // Modern storage configuration with custom serialization for Maps
@@ -483,8 +495,13 @@ This style guide captures the distinctive voice and approach for creating engagi
           
           try {
             const parsed = JSON.parse(str);
+            console.log('🔍 Storage getItem - Raw embeddings:', parsed.state?.embeddings);
+            
             if (parsed.state?.embeddings) {
-              parsed.state.embeddings = new Map(Object.entries(parsed.state.embeddings));
+              const entries = Object.entries(parsed.state.embeddings);
+              console.log('🔍 Storage getItem - Entries to convert:', entries);
+              parsed.state.embeddings = new Map(entries);
+              console.log('🔍 Storage getItem - Converted Map:', parsed.state.embeddings);
             }
             return parsed;
           } catch (error) {
@@ -494,6 +511,9 @@ This style guide captures the distinctive voice and approach for creating engagi
         },
         setItem: (name, value) => {
           try {
+            console.log('🔍 Storage setItem - Original embeddings:', value.state.embeddings);
+            console.log('🔍 Storage setItem - Is Map?', value.state.embeddings instanceof Map);
+            
             const serializedState = {
               ...value,
               state: {
@@ -503,6 +523,8 @@ This style guide captures the distinctive voice and approach for creating engagi
                   : {},
               }
             };
+            
+            console.log('🔍 Storage setItem - Serialized embeddings:', serializedState.state.embeddings);
             localStorage.setItem(name, JSON.stringify(serializedState));
           } catch (error) {
             console.warn('Failed to store state:', error);
