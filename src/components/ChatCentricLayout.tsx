@@ -168,43 +168,46 @@ export const ChatCentricLayout: React.FC = () => {
         <div className="flex-1 flex flex-col bg-white">
           {/* Centered Content Layout */}
           <div className="flex-1 flex flex-col items-center justify-center px-8 py-12">
-            {/* Logo */}
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 mx-auto mb-4">
-                <img 
-                  src={eliraIcon} 
-                  alt="Elira" 
-                  className="w-full h-full object-contain"
-                />
+            {/* Content Container */}
+            <div className="w-full max-w-4xl space-y-8">
+              {/* Logo */}
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4">
+                  <img 
+                    src={eliraIcon} 
+                    alt="Elira" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <h1 className="text-3xl font-semibold text-gray-800">Elira</h1>
               </div>
-              <h1 className="text-3xl font-semibold text-gray-800">Elira</h1>
-            </div>
 
-            {/* Tag Line and Instructions */}
-            <div className="text-center mb-12 max-w-2xl">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50">
-                <p className="text-lg text-gray-700 mb-4">
-                  Transform your transcripts into powerful insights with AI-powered summarization, 
-                  analysis, and conversational Q&A using your local AI instance.
-                </p>
-                <p className="text-gray-600">
-                  Upload documents and start chatting with your AI assistant.
-                </p>
+              {/* Tag Line and Instructions */}
+              <div className="text-center">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50">
+                  <p className="text-lg text-gray-700 mb-4">
+                    Transform your transcripts into powerful insights with AI-powered summarization, 
+                    analysis, and conversational Q&A using your local AI instance.
+                  </p>
+                  <p className="text-gray-600">
+                    Upload documents and start chatting with your AI assistant.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Drop Zone */}
-            <div className="text-center mb-12">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
-                <div className="text-4xl mb-4">📁</div>
-                <p className="text-lg text-gray-700 mb-2">Drop Zone</p>
-                <p className="text-gray-600">Drag and drop your documents here or click to browse</p>
+              {/* Drop Zone */}
+              <div className="text-center">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                  <div className="text-4xl mb-4">📁</div>
+                  <p className="text-lg text-gray-700 mb-2">Drop Zone</p>
+                  <p className="text-gray-600">Drag and drop your documents here or click to browse</p>
+                </div>
               </div>
-            </div>
 
-            {/* Chat Interface - Constrained Width and Centered */}
-            <div className="w-full max-w-4xl mx-auto">
-              <ChatInterface />
+              {/* Chat Interface - Constrained Width and Centered */}
+              <div className="w-full">
+                <ChatInterface />
+              </div>
             </div>
           </div>
         </div>

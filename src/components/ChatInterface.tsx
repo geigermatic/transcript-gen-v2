@@ -150,7 +150,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
   };
 
   return (
-    <div className={`flex flex-col h-full ${className}`}>
+    <div className={`flex flex-col h-full min-h-96 ${className}`}>
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {messages.map((message) => (
