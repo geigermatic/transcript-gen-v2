@@ -7,30 +7,62 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Search, Grid3X3, HelpCircle, Globe, Paperclip, Mic, Send, Settings, Plus } from 'lucide-react';
 import { useAppStore } from '../store';
+import { SummarizationEngine } from '../lib/summarizationEngine';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 
 export const SummaryResultsView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { documents } = useAppStore();
+  const { documents, styleGuide } = useAppStore();
   
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
   const [followUpQuery, setFollowUpQuery] = useState('');
   const [document, setDocument] = useState<any>(null);
   const [summary, setSummary] = useState<any>(null);
   const [isNavExpanded, setIsNavExpanded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Handle navigation hover
   const handleNavMouseEnter = () => setIsNavExpanded(true);
   const handleNavMouseLeave = () => setIsNavExpanded(false);
 
+  // Fetch summary for a document
+  const fetchDocumentSummary = async (doc: any) => {
+    if (!doc) return;
+    
+    setIsLoading(true);
+    try {
+      const summaryResult = await SummarizationEngine.summarizeDocument(
+        doc, 
+        styleGuide,
+        (current: number, total: number, status?: string) => {
+          // Progress callback - could show progress bar here
+          console.log(`Processing: ${current}/${total} - ${status}`);
+        }
+      );
+      setSummary(summaryResult);
+    } catch (error) {
+      console.error('Failed to fetch summary:', error);
+      // Could show error message here
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Get document and summary data from navigation state
-    if (location.state?.document && location.state?.summary) {
+    if (location.state?.document) {
       setDocument(location.state.document);
-      setSummary(location.state.summary);
+      
+      if (location.state?.summary) {
+        // We have both document and summary
+        setSummary(location.state.summary);
+      } else {
+        // We have document but no summary - fetch it
+        fetchDocumentSummary(location.state.document);
+      }
     } else {
-      // Fallback: redirect back to chat if no data
+      // Fallback: redirect back to chat if no document data
       navigate('/');
     }
   }, [location.state, navigate]);
@@ -147,16 +179,14 @@ export const SummaryResultsView: React.FC = () => {
                           ? 'bg-blue-100 text-blue-800 border border-blue-200' 
                           : 'hover:bg-gray-100 text-gray-700'
                       }`}
-                      onClick={() => {
-                        if (doc.id !== document?.id) {
-                          navigate(`/summary/${doc.id}`, { 
-                            state: { 
-                              document: doc, 
-                              summary: null // Will need to fetch summary for other docs
-                            } 
-                          });
-                        }
-                      }}
+                                             onClick={() => {
+                         if (doc.id !== document?.id) {
+                           // Update current document and fetch its summary
+                           setDocument(doc);
+                           setSummary(null); // Clear current summary
+                           fetchDocumentSummary(doc);
+                         }
+                       }}
                     >
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
@@ -195,49 +225,64 @@ export const SummaryResultsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content */}
+                {/* Main Content */}
         <div className="flex-1 px-6 py-8 overflow-y-auto">
-        {/* Document Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {document.title || document.filename || 'Document Summary'}
-          </h1>
-        </div>
-
-        {/* Summary Tabs */}
-        <div className="flex justify-center mb-8">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setActiveTab('stylized')}
-              className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${
-                activeTab === 'stylized'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Styled Summary
-            </button>
-            <button
-              onClick={() => setActiveTab('raw')}
-              className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${
-                activeTab === 'raw'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Raw Summary
-            </button>
+          {/* Document Title */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {document.title || document.filename || 'Document Summary'}
+            </h1>
           </div>
-        </div>
 
-        {/* Summary Content */}
-        <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8 min-h-96">
-          <div className="prose prose-lg max-w-none">
-            <div className="text-gray-800 whitespace-pre-wrap">
-              {renderSummaryContent()}
+          {/* Loading State */}
+          {isLoading && (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center gap-3 text-gray-600">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                <span>Processing document...</span>
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+
+                  {/* Summary Tabs and Content - Only show when not loading and summary exists */}
+          {!isLoading && summary && (
+            <>
+              {/* Summary Tabs */}
+              <div className="flex justify-center mb-8">
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setActiveTab('stylized')}
+                    className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${
+                      activeTab === 'stylized'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-800'
+                    }`}
+                  >
+                    Styled Summary
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('raw')}
+                    className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${
+                      activeTab === 'raw'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-800'
+                    }`}
+                  >
+                    Raw Summary
+                  </button>
+                </div>
+              </div>
+
+              {/* Summary Content */}
+              <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8 min-h-96">
+                <div className="prose prose-lg max-w-none">
+                  <div className="text-gray-800 whitespace-pre-wrap">
+                    {renderSummaryContent()}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
         {/* Follow-up Input */}
         <div className="max-w-4xl mx-auto">
