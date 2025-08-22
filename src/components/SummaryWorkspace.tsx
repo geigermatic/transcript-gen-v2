@@ -184,7 +184,7 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
               ].map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setSelectedTab(tab.id as any)}
+                  onClick={() => setSelectedTab(tab.id)}
                   className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
                     selectedTab === tab.id
                       ? 'text-teal-400 border-teal-400'

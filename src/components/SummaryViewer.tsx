@@ -131,7 +131,7 @@ export function SummaryViewer({ result, onClose }: SummaryViewerProps) {
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               className={`px-6 py-3 text-white transition-colors ${
                 activeTab === tab.id 
                   ? 'bg-white bg-opacity-20 border-b-2 border-blue-400' 

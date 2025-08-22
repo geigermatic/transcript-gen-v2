@@ -11,6 +11,7 @@ import { SummarizationEngine } from '../lib/summarizationEngine';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { LeftNavigation } from './LeftNavigation';
+import type { Document, SummarizationResult } from '../types';
 
 export const SummaryResultsView: React.FC = () => {
   const navigate = useNavigate();
@@ -19,8 +20,8 @@ export const SummaryResultsView: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
   const [followUpQuery, setFollowUpQuery] = useState('');
-  const [document, setDocument] = useState<any>(null);
-  const [summary, setSummary] = useState<any>(null);
+  const [document, setDocument] = useState<Document | null>(null);
+  const [summary, setSummary] = useState<SummarizationResult | null>(null);
   const [isNavExpanded, setIsNavExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -30,7 +31,7 @@ export const SummaryResultsView: React.FC = () => {
   const handleNavMouseLeave = () => setIsNavExpanded(false);
 
   // Fetch summary for a document
-  const fetchDocumentSummary = async (doc: any) => {
+  const fetchDocumentSummary = async (doc: Document) => {
     if (!doc) return;
     
     // First check if we already have a summary for this document
