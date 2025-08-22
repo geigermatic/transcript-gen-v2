@@ -167,7 +167,7 @@ export const ChatCentricLayout: React.FC = () => {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col bg-white">
           {/* Centered Content Layout */}
-          <div className="flex-1 flex flex-col items-center justify-center px-8 py-12">
+          <div className="flex-1 flex flex-col items-center px-8 py-12">
             {/* Logo */}
             <div className="text-center mb-8">
               <div className="w-16 h-16 mx-auto mb-4">
@@ -203,7 +203,7 @@ export const ChatCentricLayout: React.FC = () => {
             </div>
 
             {/* Chat Interface - Constrained Width and Centered */}
-            <div className="w-full max-w-4xl">
+            <div className="w-full max-w-4xl mx-auto mt-auto">
               <ChatInterface />
             </div>
           </div>
