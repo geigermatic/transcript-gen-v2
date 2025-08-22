@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Search, Grid, Mic, Paperclip, Globe, Calendar, FileText } from 'lucide-react';
+import { Send, FileText } from 'lucide-react';
 
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
@@ -29,7 +29,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
-  const [showActionChips, setShowActionChips] = useState(true);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -97,7 +97,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
-    setShowActionChips(false);
 
     logInfo('CHAT', 'User message sent', { content: userMessage.content });
 
@@ -113,7 +112,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
         };
         setMessages(prev => [...prev, noDocsResponse]);
         setIsTyping(false);
-        setShowActionChips(true);
         return;
       }
 
@@ -138,36 +136,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
-      setShowActionChips(true);
     }
   };
 
-  // Handle action chip clicks
-  const handleActionChip = (action: string) => {
-    let message = '';
-    switch (action) {
-      case 'troubleshoot':
-        message = 'I can help you troubleshoot issues with your documents or analysis. What specific problem are you experiencing?';
-        break;
-      case 'analyze':
-        message = 'I\'m ready to analyze your documents. What would you like me to focus on?';
-        break;
-      case 'local':
-        message = 'I\'m running locally on your machine for privacy. What would you like to know about your local setup?';
-        break;
-      case 'finance':
-        message = 'I can help analyze financial transcripts and documents. What financial content would you like me to examine?';
-        break;
-      case 'shopping':
-        message = 'I can help with shopping-related transcripts and analysis. What shopping content do you have?';
-        break;
-      default:
-        message = `I can help with ${action}. What would you like to know?`;
-    }
-    
-    setInputValue(message);
-    inputRef.current?.focus();
-  };
+
 
   // Handle key press
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -229,41 +201,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Action Chips */}
-      {showActionChips && (
-        <div className="px-6 pb-4">
-          <div className="flex flex-wrap gap-2">
-            {['troubleshoot', 'analyze', 'local', 'finance', 'shopping'].map((action) => (
-              <button
-                key={action}
-                onClick={() => handleActionChip(action)}
-                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-sm font-medium transition-colors capitalize"
-              >
-                {action}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* Input Area */}
       <div className="border-t border-gray-200 p-6">
-        <div className="flex items-end gap-3">
-          {/* Left Action Icons */}
-          <div className="flex items-center gap-2">
-            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-              <Search className="w-5 h-5" />
-            </button>
-            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-              <Grid className="w-5 h-5" />
-            </button>
-            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-              <Paperclip className="w-5 h-5" />
-            </button>
-          </div>
-
+        <div className="flex items-center gap-3">
           {/* Main Input Field */}
-          <div className="flex-1 relative">
+          <div className="flex-1">
             <input
               ref={inputRef}
               type="text"
@@ -271,30 +215,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Ask anything or @mention a document..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              
+              className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
-          {/* Right Action Icons */}
-          <div className="flex items-center gap-2">
-            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-              <Calendar className="w-5 h-5" />
-            </button>
-            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-              <Globe className="w-5 h-5" />
-            </button>
-            <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-              <Mic className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isTyping}
-              className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </div>
+          {/* Send Button */}
+          <button
+            onClick={handleSendMessage}
+            disabled={!inputValue.trim() || isTyping}
+            className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Send className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Upload Area */}
