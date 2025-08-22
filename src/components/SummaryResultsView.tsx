@@ -175,6 +175,21 @@ export const SummaryResultsView: React.FC = () => {
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                 Documents ({documents.length})
               </h3>
+              {/* Debug: Always show this to test if section is rendering */}
+              <div className="text-xs text-red-500 mb-2">
+                NAV EXPANDED: {isNavExpanded.toString()} | DOCS: {documents.length}
+              </div>
+              
+              {/* Test button that should always work */}
+              <button 
+                onClick={() => {
+                  console.log('Test button clicked!');
+                  alert('Test button works!');
+                }}
+                className="w-full mb-2 p-2 bg-green-100 text-green-800 rounded text-xs"
+              >
+                🧪 TEST BUTTON - Should Always Work
+              </button>
 
 
               {documents.length === 0 ? (
