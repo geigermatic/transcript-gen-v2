@@ -181,7 +181,7 @@ export class QATester {
       try {
         await DocumentProcessor.processFile(smallFile);
         throw new Error('Should have rejected file below minimum size');
-      } catch (error) {
+      } catch {
         // Expected to fail
       }
 

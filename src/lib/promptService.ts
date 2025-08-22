@@ -273,7 +273,7 @@ Generate a JSON response with this exact structure:
 
 CRITICAL JSON FORMATTING REQUIREMENTS:
 1. Respond with ONLY valid JSON - no markdown, no explanations, no extra text
-2. Use proper JSON escaping for all special characters (\n for newlines, \" for quotes)
+2. Use proper JSON escaping for all special characters (\n for newlines, " for quotes)
 3. Do NOT include trailing commas anywhere in the JSON
 4. Ensure all string values are properly quoted
 5. Test your JSON mentally before responding
@@ -364,7 +364,7 @@ export class PromptService {
         DEFAULT_PROMPTS[prompt.id] && 
         DEFAULT_PROMPTS[prompt.id] !== prompt.template
       );
-    } catch (error) {
+    } catch {
       return false;
     }
   }

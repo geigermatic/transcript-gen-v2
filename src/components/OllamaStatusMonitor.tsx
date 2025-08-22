@@ -78,7 +78,7 @@ export const OllamaStatusMonitor: React.FC = () => {
     const interval = setInterval(checkOllamaStatus, 30000);
     
     return () => clearInterval(interval);
-  }, []); // Empty dependency array - only run on mount
+  }, [checkOllamaStatus]); // Include checkOllamaStatus dependency
 
   const getStatusIcon = () => {
     switch (ollamaStatus.status) {

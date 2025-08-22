@@ -349,7 +349,8 @@ export const StyleGuideManager: React.FC = () => {
               .replace(/\n/g, '\\n')
               .replace(/\r/g, '\\n')
               .replace(/\t/g, '\\t')
-              .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+              // eslint-disable-next-line no-control-regex
+              .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
             return `"${fixed}"`;
           });
         };
@@ -378,6 +379,7 @@ export const StyleGuideManager: React.FC = () => {
               // Fix missing commas in arrays first
               .replace(/([""])\s+([""])/g, '$1, $2')
               // Remove any remaining control characters more aggressively
+              // eslint-disable-next-line no-control-regex
               .replace(/[\u0000-\u001F]/g, '')
               // Fix common JSON issues more aggressively
               .replace(/,(\s*[}\]])/g, '$1')

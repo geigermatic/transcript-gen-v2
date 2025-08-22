@@ -8,11 +8,7 @@ import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
 import eliraIcon from '../assets/icons/elira_leaf.svg';
 
-interface TopbarProps {
-  // sidebarCollapsed prop removed for beta version
-}
-
-export const Topbar: React.FC<TopbarProps> = () => {
+export const Topbar: React.FC = () => {
   const { isDarkMode, toggleDarkMode, clearAllData, documents } = useAppStore();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isVisible, setIsVisible] = useState(true);
