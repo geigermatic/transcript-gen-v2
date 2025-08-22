@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ChatCentricLayout } from './components/ChatCentricLayout';
+import { SummaryResultsView } from './components/SummaryResultsView';
 import { UploadPage } from './pages/UploadPage';
 import { GlossaryPage } from './pages/GlossaryPage';
 import { LibraryPage } from './pages/LibraryPage';
@@ -45,6 +46,9 @@ function App() {
       <Routes>
         {/* Main Dashboard - Chat-centric interface */}
         <Route path="/" element={<ChatCentricLayout />} />
+        
+        {/* Summary Results View */}
+        <Route path="/summary/:documentId" element={<SummaryResultsView />} />
         
         {/* Supporting Pages */}
         <Route path="/upload" element={<UploadPage />} />

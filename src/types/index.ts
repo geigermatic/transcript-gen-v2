@@ -170,8 +170,6 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
-  type?: 'text' | 'summary';
-  document?: any;
   sources?: SearchResult[];
 }
 
