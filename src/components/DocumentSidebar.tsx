@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { FileText, Clock, Tag, Download, Share2, MoreHorizontal } from 'lucide-react';
 import { useAppStore } from '../store';
 import { CompactSummaryViewer } from './CompactSummaryViewer';
+import type { Document } from '../types';
 
 interface DocumentSidebarProps {
   className?: string;
@@ -14,7 +15,7 @@ interface DocumentSidebarProps {
 
 export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({ className = '' }) => {
   const { documents, abSummaryPairs } = useAppStore();
-  const [selectedDocument, setSelectedDocument] = useState<any>(null);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
 
   // Get summary for selected document
@@ -29,7 +30,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({ className = ''
   };
 
   // Handle document selection
-  const handleDocumentSelect = (document: any) => {
+  const handleDocumentSelect = (document: Document) => {
     setSelectedDocument(document);
   };
 

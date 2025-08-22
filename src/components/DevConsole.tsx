@@ -90,7 +90,7 @@ export const DevConsole: React.FC<DevConsoleProps> = ({
     };
   }, [isResizing, position]);
 
-  const handleFilterChange = (key: keyof LogFilter, value: any) => {
+  const handleFilterChange = (key: keyof LogFilter, value: LogFilter[keyof LogFilter]) => {
     setFilter({ ...filter, [key]: value });
   };
 
@@ -229,7 +229,7 @@ export const DevConsole: React.FC<DevConsoleProps> = ({
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setSelectedTab(tab.id as any)}
+            onClick={() => setSelectedTab(tab.id)}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               selectedTab === tab.id
                 ? 'text-blue-400 border-b-2 border-blue-400'
