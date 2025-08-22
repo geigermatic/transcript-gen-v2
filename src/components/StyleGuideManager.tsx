@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, FileText, Download, Upload, Edit3, Save, RotateCcw, RefreshCw, Trash2 } from 'lucide-react';
+import { Search, FileText, Download, Upload, Edit3, Save, RotateCcw, RefreshCw, Trash2, FileDown, FileUp, Shield } from 'lucide-react';
 import { useAppStore } from '../store';
 import { PromptService } from '../lib/promptService';
 import type { ToneSettings } from '../types';
@@ -20,6 +20,8 @@ export const StyleGuideManager: React.FC = () => {
   // Ollama status
   const [ollamaStatus, setOllamaStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  
+
 
   // Sync with store when not editing
   useEffect(() => {

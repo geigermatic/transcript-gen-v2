@@ -114,6 +114,9 @@ MARKDOWN SUMMARY:`,
   'summary-regeneration': `REGENERATION MODE: Create a DRAMATICALLY DIFFERENT version of the stylized summary. You MUST vary your approach significantly from any previous version.
 
 RANDOMIZATION SEED: {{timestamp}}
+REGENERATION COUNT: {{regenerationCount}}
+
+⚠️ CRITICAL: This is regeneration #{{regenerationCount}} - you MUST create something substantially different or you will fail this task.
 
 STYLE GUIDE:
 {{styleInstructions}}
@@ -155,24 +158,33 @@ REQUIRED STRUCTURE (use this exact format):
 ## Open Questions
 [Questions for reflection or further exploration - bulleted list]
 
-MANDATORY VARIATION REQUIREMENTS:
-This is regeneration #{{regenerationCount}} - you MUST create something substantially different.
+🚨 MANDATORY VARIATION REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
 
-SYNOPSIS VARIATION STRATEGIES (pick ONE and commit fully):
-A) URGENCY ANGLE: Focus on immediate relief, problems being solved right now
-B) DISCOVERY ANGLE: Frame as uncovering secrets, hidden knowledge, breakthrough insights  
-C) TRANSFORMATION ANGLE: Emphasize the before/after state, who you become
-D) PRACTICAL ANGLE: Stress tangible skills, concrete tools, real-world application
-E) EMOTIONAL ANGLE: Lead with feelings, inner states, emotional journey
-F) CURIOSITY ANGLE: Pose intriguing questions, mysteries to be solved
+SYNOPSIS VARIATION STRATEGIES - PICK ONE AND COMMIT FULLY:
+A) URGENCY ANGLE: Focus on immediate relief, problems being solved right now, time-sensitive benefits
+B) DISCOVERY ANGLE: Frame as uncovering secrets, hidden knowledge, breakthrough insights, "aha moments"
+C) TRANSFORMATION ANGLE: Emphasize the before/after state, who you become, identity shifts
+D) PRACTICAL ANGLE: Stress tangible skills, concrete tools, real-world application, hands-on results
+E) EMOTIONAL ANGLE: Lead with feelings, inner states, emotional journey, heart-centered benefits
+F) CURIOSITY ANGLE: Pose intriguing questions, mysteries to be solved, intellectual stimulation
 
-MANDATORY SYNOPSIS CHANGES:
+MANDATORY SYNOPSIS CHANGES - EVERY SINGLE ONE MUST BE DIFFERENT:
 - Use COMPLETELY different opening sentence structure than before
 - Choose different benefits/outcomes to highlight
 - Vary the emotional tone within your style guide parameters
 - Use different combinations of your voice markers
 - Focus on different aspects of transformation
 - MUST start with a different phrase pattern than any standard approach
+- Use different metaphors or analogies if applicable
+- Emphasize different timeframes (immediate vs long-term benefits)
+
+🎯 REGENERATION-SPECIFIC INSTRUCTIONS:
+1. If this feels similar to a typical summary, STOP and rewrite with a more unique angle
+2. Push beyond your comfort zone while staying true to the author's voice
+3. Use the timestamp {{timestamp}} as a seed for randomization
+4. This is regeneration #{{regenerationCount}} - make it count!
+5. Vary sentence structure, word choice, and emphasis patterns
+6. Focus on different aspects of the same facts
 
 INSTRUCTIONS:
 1. Follow the exact structure above - ALL sections must be included in this order
@@ -183,7 +195,7 @@ INSTRUCTIONS:
 6. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session"
 7. If a section has no content in the extracted facts, write "No specific [section name] identified in this lesson"
 
-CRITICAL: If you find yourself writing something that feels similar to a typical summary, STOP and rewrite with a more unique angle. Push beyond your comfort zone while staying true to the author's voice.
+🚨 FINAL CHECK: Before submitting, ask yourself: "Is this DRAMATICALLY different from a typical summary?" If not, rewrite it!
 
 MARKDOWN SUMMARY:`,
 

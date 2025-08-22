@@ -3,7 +3,7 @@
  * Matches the provided mockup exactly
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import { AppShell } from './AppShell';
@@ -16,6 +16,23 @@ import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 
+// Calculate similarity between two texts (0 = completely different, 1 = identical)
+const calculateSimilarity = (text1: string, text2: string): number => {
+  if (text1 === text2) return 1;
+  if (text1.length === 0 || text2.length === 0) return 0;
+  
+  // Simple word-based similarity
+  const words1 = text1.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const words2 = text2.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  
+  if (words1.length === 0 || words2.length === 0) return 0;
+  
+  const commonWords = words1.filter(word => words2.includes(word));
+  const totalWords = new Set([...words1, ...words2]).size;
+  
+  return commonWords.length / totalWords;
+};
+
 export const GlassDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { documents, abSummaryPairs, logs, styleGuide, updateABSummaryPair } = useAppStore();
@@ -27,13 +44,36 @@ export const GlassDashboard: React.FC = () => {
   const [progressPercent, setProgressPercent] = useState(0);
   const [progressStatus, setProgressStatus] = useState('');
   const [regenerationCount, setRegenerationCount] = useState(1);
+  const [regenerationSuccess, setRegenerationSuccess] = useState(false);
+  const [isUploading, setIsUploading] = useState(false); // Separate state for uploads
+  const [regenerationInProgress, setRegenerationInProgress] = useState(false); // Persistent regeneration state
 
   // Ensure page starts at top on component mount
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
+  // Check for persistent regeneration state on mount
+  useEffect(() => {
+    const savedRegenerationState = localStorage.getItem('regenerationInProgress');
+    if (savedRegenerationState === 'true') {
+      console.log('🔄 Restoring regeneration state from localStorage');
+      setRegenerationInProgress(true);
+      setIsSummarizing(true);
+    }
+  }, []);
 
+
+
+  // Protect the loading state from being reset by other operations
+  const protectedSetIsSummarizing = useCallback((value: boolean) => {
+    // If we're trying to set loading to false and regeneration is in progress, don't allow it
+    if (value === false && regenerationInProgress) {
+      return;
+    }
+    
+    setIsSummarizing(value);
+  }, [regenerationInProgress]);
 
   const handleUploadComplete = (success: boolean, message: string, document?: any) => {
     if (success && document) {
@@ -118,21 +158,49 @@ export const GlassDashboard: React.FC = () => {
       .filter(pair => pair.documentId === selectedDocument.id)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
       
-    return recentSummary?.summaryA.markdownSummary || null;
+    const summary = recentSummary?.summaryA.markdownSummary || null;
+    
+    // Debug logging
+    if (recentSummary) {
+      logInfo('UI', 'Retrieved summary for document', {
+        documentId: selectedDocument.id,
+        pairId: recentSummary.id,
+        hasSummary: !!summary,
+        summaryLength: summary?.length || 0,
+        hasStyledSummary: !!recentSummary.summaryA.styledSummary,
+        hasMarkdownSummary: !!recentSummary.summaryA.markdownSummary
+      });
+    }
+    
+    return summary;
   };
 
   // Get both raw and styled summaries for the selected document
   const getSelectedDocumentSummaries = () => {
-    if (!selectedDocument) return { raw: null, styled: null };
+    if (!selectedDocument) return { raw: undefined, styled: undefined };
     
     const recentSummary = abSummaryPairs
       .filter(pair => pair.documentId === selectedDocument.id)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
       
-    return {
-      raw: recentSummary?.summaryA.rawSummary || null,
-      styled: recentSummary?.summaryA.styledSummary || recentSummary?.summaryA.markdownSummary || null
+    const result = {
+      raw: recentSummary?.summaryA.rawSummary || undefined,
+      styled: recentSummary?.summaryA.styledSummary || recentSummary?.summaryA.markdownSummary || undefined
     };
+    
+    // Debug logging
+    if (recentSummary) {
+      logInfo('UI', 'Retrieved summaries for document', {
+        documentId: selectedDocument.id,
+        pairId: recentSummary.id,
+        hasRaw: !!result.raw,
+        hasStyled: !!result.styled,
+        rawLength: result.raw?.length || 0,
+        styledLength: result.styled?.length || 0
+      });
+    }
+    
+    return result;
   };
 
   // Handle regenerating the stylized summary
@@ -140,7 +208,8 @@ export const GlassDashboard: React.FC = () => {
     logInfo('UI', 'Regenerate button clicked - starting regeneration process', {
       hasSelectedDocument: !!selectedDocument,
       hasStyleGuide: !!styleGuide,
-      regenerationCount
+      regenerationCount,
+      abSummaryPairsCount: abSummaryPairs.length
     });
 
     if (!selectedDocument || !styleGuide) {
@@ -156,30 +225,51 @@ export const GlassDashboard: React.FC = () => {
     logInfo('UI', 'Found recent summary pair', {
       found: !!recentSummary,
       hasFacts: !!recentSummary?.summaryA.mergedFacts,
-      pairId: recentSummary?.id
+      pairId: recentSummary?.id,
+      factsKeys: recentSummary?.summaryA.mergedFacts ? Object.keys(recentSummary.summaryA.mergedFacts) : []
     });
 
     if (!recentSummary?.summaryA.mergedFacts) {
-      logInfo('UI', 'Cannot regenerate: no existing facts found');
+      logInfo('UI', 'Cannot regenerate: no existing facts found', {
+        recentSummary: recentSummary ? {
+          id: recentSummary.id,
+          hasSummaryA: !!recentSummary.summaryA,
+          summaryAKeys: recentSummary.summaryA ? Object.keys(recentSummary.summaryA) : []
+        } : null
+      });
       return;
     }
 
-    try {
-      setIsSummarizing(true);
-      setProgressStatus('Regenerating stylized summary...');
-      
-      logInfo('UI', 'Starting regeneration with SummarizationEngine', {
-        documentId: selectedDocument.id,
-        regenerationCount,
-        factsKeys: Object.keys(recentSummary.summaryA.mergedFacts),
-        styleGuideHasInstructions: !!styleGuide.instructions_md
-      });
-      
-      logInfo('UI', 'Starting stylized summary regeneration', { 
-        documentId: selectedDocument.id,
-        documentTitle: selectedDocument.title || selectedDocument.filename || 'Unknown Document'
-      });
+    // IMMEDIATELY set loading state for instant UI feedback
+    protectedSetIsSummarizing(true);
+    setRegenerationInProgress(true);
+    localStorage.setItem('regenerationInProgress', 'true');
+    setProgressStatus('Regenerating stylized summary...');
+    
+    // Set regeneration start time for progress tracking
+    setProcessingStartTime(new Date());
+    
+    // Store the regeneration start time to prevent premature state reset
+    const regenerationStartTime = Date.now();
+    
+    logInfo('UI', 'Starting regeneration with SummarizationEngine', {
+      documentId: selectedDocument.id,
+      regenerationCount,
+      factsKeys: Object.keys(recentSummary.summaryA.mergedFacts),
+      styleGuideHasInstructions: !!styleGuide.instructions_md,
+      styleGuideInstructionsLength: styleGuide.instructions_md?.length || 0,
+      regenerationStartTime
+    });
+    
+    logInfo('UI', 'Starting stylized summary regeneration', { 
+      documentId: selectedDocument.id,
+      documentTitle: selectedDocument.title || selectedDocument.filename || 'Unknown Document'
+    });
 
+    try {
+      // Update progress status to show we're calling the AI
+      setProgressStatus('Calling AI for regeneration...');
+      
       // Regenerate just the stylized summary
       const newStyledSummary = await SummarizationEngine.regenerateStyledSummary(
         selectedDocument,
@@ -187,10 +277,52 @@ export const GlassDashboard: React.FC = () => {
         styleGuide,
         regenerationCount
       );
+      
+      // Update progress status to show we're processing the response
+      setProgressStatus('Processing AI response...');
+
+      // Compare old vs new summary to verify regeneration worked
+      const oldSummary = recentSummary.summaryA.styledSummary || recentSummary.summaryA.markdownSummary || '';
+      const isIdentical = oldSummary === newStyledSummary;
+      
+      // More sophisticated similarity check
+      const similarityScore = calculateSimilarity(oldSummary, newStyledSummary);
+      const isTooSimilar = similarityScore > 0.8; // 80% similarity threshold
+      
+      console.log('🔄 SUMMARY COMPARISON:', {
+        regenerationCount,
+        oldSummaryLength: oldSummary.length,
+        newSummaryLength: newStyledSummary.length,
+        isIdentical,
+        similarityScore: similarityScore.toFixed(3),
+        isTooSimilar,
+        oldSummaryStart: oldSummary.substring(0, 100),
+        newSummaryStart: newStyledSummary.substring(0, 100),
+        oldSummaryEnd: oldSummary.substring(oldSummary.length - 100),
+        newSummaryEnd: newStyledSummary.substring(newStyledSummary.length - 100)
+      });
+
+      if (isIdentical) {
+        console.warn('⚠️ WARNING: Regenerated summary is IDENTICAL to previous summary!');
+        logInfo('UI', 'Warning: Regenerated summary is identical to previous summary', {
+          regenerationCount,
+          summaryLength: newStyledSummary.length
+        });
+      } else if (isTooSimilar) {
+        console.warn('⚠️ WARNING: Regenerated summary is too similar to previous summary!', {
+          similarityScore: similarityScore.toFixed(3)
+        });
+        logInfo('UI', 'Warning: Regenerated summary is too similar to previous summary', {
+          regenerationCount,
+          similarityScore: similarityScore.toFixed(3)
+        });
+      }
 
       logInfo('UI', 'Regeneration completed successfully', {
         newSummaryLength: newStyledSummary.length,
-        newSummaryPreview: newStyledSummary.substring(0, 200) + '...'
+        newSummaryPreview: newStyledSummary.substring(0, 200) + '...',
+        regenerationCount,
+        isIdentical
       });
 
       // Increment regeneration count for next time
@@ -211,22 +343,70 @@ export const GlassDashboard: React.FC = () => {
 
       logInfo('UI', 'About to update AB summary pair', {
         pairId: updatedPair.id,
-        hasUpdatedPair: !!updatedPair
+        hasUpdatedPair: !!updatedPair,
+        oldSummaryLength: recentSummary.summaryA.styledSummary?.length || recentSummary.summaryA.markdownSummary?.length || 0,
+        newSummaryLength: newStyledSummary.length
       });
 
+      // Update the store
       updateABSummaryPair(updatedPair);
       
       logInfo('UI', 'AB summary pair updated successfully - regeneration complete', {
         summaryLength: newStyledSummary.length,
-        regenerationCount: regenerationCount + 1
+        regenerationCount: regenerationCount + 1,
+        updatedPairId: updatedPair.id
       });
 
+      // Force a UI refresh by updating local state
+      // This ensures the component re-renders with the new summary
+      setSelectedDocument((prev: any) => prev ? { ...prev } : null);
+      
+      // Show success message
+      setRegenerationSuccess(true);
+      setTimeout(() => setRegenerationSuccess(false), 3000);
+      
+      // Final status update
+      setProgressStatus('Regeneration completed successfully!');
+      
+      // Clear persistent regeneration state
+      setRegenerationInProgress(false);
+      localStorage.removeItem('regenerationInProgress');
+
     } catch (error) {
-      logInfo('UI', 'Failed to regenerate stylized summary', { error });
+      logInfo('UI', 'Failed to regenerate stylized summary', { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
+      // Show error to user
+      setProgressStatus(`Regeneration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Keep error visible for a few seconds
+      setTimeout(() => setProgressStatus(''), 5000);
     } finally {
-      setIsSummarizing(false);
-      setProgressStatus('');
-      logInfo('UI', 'Regeneration process finished (finally block)');
+      // Only reset loading state if this was a regeneration operation
+      // Check if we're still in the same regeneration cycle
+      const currentTime = Date.now();
+      const timeSinceRegenerationStart = currentTime - regenerationStartTime;
+      
+      // If this is a regeneration operation (started within last 5 minutes), reset the state
+      if (timeSinceRegenerationStart < 300000) { // 5 minutes
+        protectedSetIsSummarizing(false);
+        setRegenerationInProgress(false);
+        localStorage.removeItem('regenerationInProgress');
+        if (!progressStatus.includes('failed')) {
+          setProgressStatus('');
+        }
+        logInfo('UI', 'Regeneration process finished (finally block)', {
+          timeSinceRegenerationStart,
+          regenerationStartTime
+        });
+      } else {
+        logInfo('UI', 'Skipping loading state reset - not a regeneration operation', {
+          timeSinceRegenerationStart,
+          regenerationStartTime
+        });
+      }
     }
   };
 
@@ -251,6 +431,7 @@ export const GlassDashboard: React.FC = () => {
           {/* Center & Left Columns - Summary spans both (now centered) */}
           <div className="lg:col-span-2">
             <SummaryPreviewCard 
+              key={`summary-${selectedDocument?.id}-${regenerationCount}`}
               summary={getSelectedDocumentSummary()} // backward compatibility
               rawSummary={getSelectedDocumentSummaries().raw}
               styledSummary={getSelectedDocumentSummaries().styled}
@@ -261,6 +442,7 @@ export const GlassDashboard: React.FC = () => {
               progressPercent={progressPercent}
               progressStatus={progressStatus}
               onRegenerateStyled={handleRegenerateStyled}
+              regenerationSuccess={regenerationSuccess}
             />
           </div>
 
@@ -272,7 +454,7 @@ export const GlassDashboard: React.FC = () => {
               onProgress={(current, total, status) => {
                 setProgressPercent(current);
                 setProgressStatus(status || '');
-                setIsSummarizing(current < 100);
+                setIsUploading(current < 100); // Use separate upload state
                 
                 // Also set chunk info for backward compatibility
                 const estimatedTotalChunks = 7;

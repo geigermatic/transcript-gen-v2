@@ -67,17 +67,40 @@ export class SummarizationEngine {
         promptLength: regenerationPrompt.length,
         regenerationCount,
         timestamp,
-        promptPreview: regenerationPrompt.substring(0, 500) + '...'
+        promptPreview: regenerationPrompt.substring(0, 500) + '...',
+        fullPrompt: regenerationPrompt // Log the full prompt for debugging
       });
 
-      const response = await ollama.chat([{
-        role: 'user',
-        content: regenerationPrompt
-      }]);
+      console.log('🔄 REGENERATION DEBUG:', {
+        regenerationCount,
+        timestamp,
+        promptLength: regenerationPrompt.length,
+        promptStart: regenerationPrompt.substring(0, 200),
+        promptEnd: regenerationPrompt.substring(regenerationPrompt.length - 200)
+      });
+
+      const response = await ollama.chat([
+        {
+          role: 'system',
+          content: `You are a creative AI assistant that MUST create DRAMATICALLY DIFFERENT content when asked to regenerate. You are currently regenerating summary #${regenerationCount}. You MUST vary your approach significantly and follow ALL variation requirements in the user's prompt. If you create similar content, you will fail this task.`
+        },
+        {
+          role: 'user',
+          content: regenerationPrompt
+        }
+      ]);
+      
+      console.log('🔄 REGENERATION RESPONSE:', {
+        responseLength: response.length,
+        responseStart: response.substring(0, 200),
+        responseEnd: response.substring(response.length - 200),
+        isIdentical: false // We'll check this in the calling code
+      });
       
       logInfo('SUMMARIZATION', 'Ollama response received', {
         responseLength: response.length,
-        responsePreview: response.substring(0, 200) + '...'
+        responsePreview: response.substring(0, 200) + '...',
+        fullResponse: response // Log the full response for debugging
       });
       
       logInfo('SUMMARIZATION', `Stylized summary regenerated for: ${document.title || document.filename || 'Unknown Document'}`, {

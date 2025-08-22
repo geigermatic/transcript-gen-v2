@@ -142,19 +142,89 @@ export const useAppStore = create<AppState>()(
 
       // Style Guide
       styleGuide: {
-        instructions_md: '',
+        instructions_md: `## Writing Style Analysis
+
+This style guide captures the distinctive voice and approach for creating engaging, transformative content that resonates with readers seeking personal growth and practical wisdom.
+
+### Core Writing Principles
+
+**Transformative Focus**: Every piece of content should focus on transformation and practical outcomes. Ask yourself: What problems does this solve? What will the reader feel/experience? How will they be different after engaging with this content?
+
+**Benefit-Oriented Language**: Emphasize benefits over features. Instead of describing what something is, explain what it does for the reader and how it improves their life.
+
+**Authentic Connection**: Write as if speaking directly to a friend who trusts your guidance. Use inclusive language that creates a sense of partnership and shared journey.
+
+**Practical Wisdom**: Balance inspiration with actionable insights. Every concept should have a practical application or reflection point.
+
+### Voice Characteristics
+
+**Warm and Encouraging**: Maintain a tone that uplifts and supports, even when discussing challenges or difficult topics.
+
+**Confident and Grounded**: Express certainty about the value and effectiveness of the practices and insights shared.
+
+**Accessible and Clear**: Make complex concepts understandable without oversimplifying. Use analogies and examples that resonate with everyday experience.
+
+**Reflective and Contemplative**: Encourage readers to pause, reflect, and integrate insights rather than just consuming information.
+
+### Content Structure Guidelines
+
+**Opening Engagement**: Start with a hook that immediately connects to the reader's experience or challenges. Use questions, scenarios, or relatable situations.
+
+**Progressive Revelation**: Build understanding step by step, allowing readers to see how each piece connects to the whole.
+
+**Practical Integration**: End each major section with reflection questions or simple practices that help readers apply the insights.
+
+**Closing Inspiration**: Conclude with a vision of possibility and a clear next step that readers can take immediately.`,
         tone_settings: {
-          formality: 50,
-          enthusiasm: 50,
-          technicality: 50,
+          formality: 35,
+          enthusiasm: 75,
+          technicality: 40,
         },
-        keywords: [],
+        keywords: [
+          "that said",
+          "here's the thing",
+          "the truth is",
+          "what I've found",
+          "here's what happens",
+          "the beautiful part",
+          "here's the magic",
+          "what's fascinating",
+          "the key insight",
+          "here's the shift"
+        ],
         example_phrases: {
-          preferred_openings: [],
-          preferred_transitions: [],
-          preferred_conclusions: [],
-          avoid_phrases: [],
+          preferred_openings: [
+            "In this lesson",
+            "What I want you to know",
+            "Here's what I've discovered",
+            "The thing about this is",
+            "Let me share something with you"
+          ],
+          preferred_transitions: [
+            "That said",
+            "Here's the thing",
+            "The truth is",
+            "What's fascinating",
+            "Here's what happens"
+          ],
+          preferred_conclusions: [
+            "The beautiful part is",
+            "Here's the magic",
+            "The key insight here",
+            "What this means for you",
+            "Here's your next step"
+          ],
+          avoid_phrases: [
+            "In conclusion",
+            "To summarize",
+            "As mentioned above",
+            "It is important to note",
+            "Furthermore"
+          ],
         },
+        source_content: [
+          "Default style guide created from proven client objectives and writing patterns"
+        ],
       },
       updateStyleGuide: (updates) =>
         set((state) => ({
@@ -163,19 +233,89 @@ export const useAppStore = create<AppState>()(
       resetStyleGuide: () =>
         set(() => ({
           styleGuide: {
-            instructions_md: '',
+            instructions_md: `## Writing Style Analysis
+
+This style guide captures the distinctive voice and approach for creating engaging, transformative content that resonates with readers seeking personal growth and practical wisdom.
+
+### Core Writing Principles
+
+**Transformative Focus**: Every piece of content should focus on transformation and practical outcomes. Ask yourself: What problems does this solve? What will the reader feel/experience? How will they be different after engaging with this content?
+
+**Benefit-Oriented Language**: Emphasize benefits over features. Instead of describing what something is, explain what it does for the reader and how it improves their life.
+
+**Authentic Connection**: Write as if speaking directly to a friend who trusts your guidance. Use inclusive language that creates a sense of partnership and shared journey.
+
+**Practical Wisdom**: Balance inspiration with actionable insights. Every concept should have a practical application or reflection point.
+
+### Voice Characteristics
+
+**Warm and Encouraging**: Maintain a tone that uplifts and supports, even when discussing challenges or difficult topics.
+
+**Confident and Grounded**: Express certainty about the value and effectiveness of the practices and insights shared.
+
+**Accessible and Clear**: Make complex concepts understandable without oversimplifying. Use analogies and examples that resonate with everyday experience.
+
+**Reflective and Contemplative**: Encourage readers to pause, reflect, and integrate insights rather than just consuming information.
+
+### Content Structure Guidelines
+
+**Opening Engagement**: Start with a hook that immediately connects to the reader's experience or challenges. Use questions, scenarios, or relatable situations.
+
+**Progressive Revelation**: Build understanding step by step, allowing readers to see how each piece connects to the whole.
+
+**Practical Integration**: End each major section with reflection questions or simple practices that help readers apply the insights.
+
+**Closing Inspiration**: Conclude with a vision of possibility and a clear next step that readers can take immediately.`,
             tone_settings: {
-              formality: 50,
-              enthusiasm: 50,
-              technicality: 50,
+              formality: 35,
+              enthusiasm: 75,
+              technicality: 40,
             },
-            keywords: [],
+            keywords: [
+              "that said",
+              "here's the thing",
+              "the truth is",
+              "what I've found",
+              "here's what happens",
+              "the beautiful part",
+              "here's the magic",
+              "what's fascinating",
+              "the key insight",
+              "here's the shift"
+            ],
             example_phrases: {
-              preferred_openings: [],
-              preferred_transitions: [],
-              preferred_conclusions: [],
-              avoid_phrases: [],
+              preferred_openings: [
+                "In this lesson",
+                "What I want you to know",
+                "What I've discovered",
+                "The thing about this is",
+                "Let me share something with you"
+              ],
+              preferred_transitions: [
+                "That said",
+                "Here's the thing",
+                "The truth is",
+                "What's fascinating",
+                "Here's what happens"
+              ],
+              preferred_conclusions: [
+                "The beautiful part is",
+                "Here's the magic",
+                "The key insight here",
+                "What this means for you",
+                "Here's your next step"
+              ],
+              avoid_phrases: [
+                "In conclusion",
+                "To summarize",
+                "As mentioned above",
+                "It is important to note",
+                "Furthermore"
+              ],
             },
+            source_content: [
+              "Default style guide created from proven client objectives and writing patterns"
+            ],
           },
         })),
 
@@ -212,12 +352,26 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           abSummaryPairs: [...state.abSummaryPairs, pair],
         })),
-      updateABSummaryPair: (updatedPair) =>
-        set((state) => ({
-          abSummaryPairs: state.abSummaryPairs.map((pair) =>
+      updateABSummaryPair: (updatedPair) => {
+        console.log('Store: Updating AB summary pair', {
+          pairId: updatedPair.id,
+          oldPairsCount: get().abSummaryPairs.length,
+          updatedPair: updatedPair
+        });
+        
+        set((state) => {
+          const newPairs = state.abSummaryPairs.map((pair) =>
             pair.id === updatedPair.id ? updatedPair : pair
-          ),
-        })),
+          );
+          
+          console.log('Store: AB summary pairs after update', {
+            newPairsCount: newPairs.length,
+            updatedPairFound: newPairs.find(p => p.id === updatedPair.id)
+          });
+          
+          return { abSummaryPairs: newPairs };
+        });
+      },
       updateABSummaryFeedback: (pairId, feedback) =>
         set((state) => ({
           abSummaryPairs: state.abSummaryPairs.map((pair) =>
