@@ -165,12 +165,19 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({ className = ''
 
             {/* Summary Content */}
             <div className="max-h-64 overflow-y-auto">
-              <CompactSummaryViewer
-                document={selectedDocument}
-                summary={getSelectedDocumentSummary()}
-                activeTab={activeTab}
-                compact={true}
-              />
+              {getSelectedDocumentSummary() ? (
+                <CompactSummaryViewer
+                  document={selectedDocument}
+                  summary={getSelectedDocumentSummary()!}
+                  activeTab={activeTab}
+                  compact={true}
+                />
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No summary available</p>
+                  <p className="text-sm">Process this document to generate a summary</p>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}

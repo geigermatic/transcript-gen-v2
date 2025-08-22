@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ChatCentricLayout } from './components/ChatCentricLayout';
 import { SummaryResultsView } from './components/SummaryResultsView';

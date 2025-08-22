@@ -5,8 +5,8 @@ import { useAppStore } from '../store';
 export const ABTestingDashboard: React.FC = () => {
   const { abSummaryPairs } = useAppStore();
   
-  let stats;
-  let recentTests;
+  let stats: any;
+  let recentTests: any[] = [];
   
   try {
     stats = ABSummaryEngine.getABTestingStats();

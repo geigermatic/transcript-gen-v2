@@ -76,8 +76,7 @@ export const DocumentLibrary: React.FC<DocumentLibraryProps> = ({
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <SearchBar
-              value={searchQuery}
-              onChange={setSearchQuery}
+              onSearch={setSearchQuery}
               placeholder="Search documents by name or content..."
             />
           </div>

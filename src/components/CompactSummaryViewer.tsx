@@ -36,9 +36,9 @@ export const CompactSummaryViewer: React.FC<CompactSummaryViewerProps> = ({
 
   const renderSummaryContent = () => {
     if (activeTab === 'stylized') {
-      return summary.styledSummary || summary.summaryA?.markdownSummary || 'No stylized summary available';
+      return summary.styledSummary || 'No stylized summary available';
     } else {
-      return summary.rawSummary || summary.summaryA?.rawSummary || 'No raw summary available';
+      return summary.rawSummary || 'No raw summary available';
     }
   };
 

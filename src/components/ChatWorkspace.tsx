@@ -81,20 +81,25 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
     setIsTyping(true);
 
     try {
-      const response = await chatEngine.chatWithDocument(
+      const context: ChatContext = {
+        messages: messages,
+        documentIds: [selectedDocument.id],
+        activeDocument: selectedDocument,
+        selectedDocumentSummary: undefined,
+        maxContextLength: 4000
+      };
+
+      const response = await ChatEngine.processQuery(
         userMessage.content,
-        embeddings,
-        styleGuide,
-        messages
+        context
       );
 
       const assistantMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: response.answer,
+        content: response.message.content,
         timestamp: new Date().toISOString(),
-        sources: response.sources,
-        confidence: response.confidence
+        sources: response.sources
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -102,7 +107,6 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
       logInfo('CHAT', 'Chat response generated', {
         documentId: selectedDocument.id,
         query: userMessage.content,
-        confidence: response.confidence,
         sourcesCount: response.sources.length
       });
     } catch (error) {
@@ -185,7 +189,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
               Ask questions about your document content
             </p>
           </div>
-          <EmbeddingManager document={selectedDocument} compact />
+                      <EmbeddingManager document={selectedDocument} />
         </div>
 
         {/* Document info */}
@@ -232,18 +236,14 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
                       <div className="space-y-1">
                         {message.sources.slice(0, 3).map((source, idx) => (
                           <div key={idx} className="text-xs text-gray-300 bg-gray-700/50 p-2 rounded">
-                            "{source.content.substring(0, 100)}..."
+                            "{source.chunk.text.substring(0, 100)}..."
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {message.confidence && (
-                    <div className="mt-2 text-xs text-gray-400">
-                      Confidence: {(message.confidence * 100).toFixed(0)}%
-                    </div>
-                  )}
+
                 </div>
               </div>
             ))}

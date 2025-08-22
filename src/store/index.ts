@@ -124,11 +124,7 @@ export const useAppStore = create<AppState>()(
         }),
       getAllEmbeddings: () => {
         const state = get();
-        const allChunks: EmbeddedChunk[] = [];
-        state.embeddings.forEach((chunks) => {
-          allChunks.push(...chunks);
-        });
-        return allChunks;
+        return state.embeddings;
       },
 
       // Embedding progress tracking

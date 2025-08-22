@@ -229,7 +229,7 @@ export const DevConsole: React.FC<DevConsoleProps> = ({
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setSelectedTab(tab.id)}
+            onClick={() => setSelectedTab(tab.id as 'timeline' | 'metrics' | 'export')}
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               selectedTab === tab.id
                 ? 'text-blue-400 border-b-2 border-blue-400'
