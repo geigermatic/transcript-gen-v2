@@ -82,18 +82,7 @@ export const ChatCentricLayout: React.FC = () => {
               </button>
             </div>
 
-            {/* Library Section */}
-            <div className="px-4 py-2">
-              {isNavExpanded && (
-                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
-                  Library
-                </h3>
-              )}
-              <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <Plus className="w-5 h-5 text-gray-600" />
-                {isNavExpanded && <span className="text-gray-700">Add Document</span>}
-              </button>
-            </div>
+
 
             {/* Documents Section - Only show when expanded */}
             {isNavExpanded && (
