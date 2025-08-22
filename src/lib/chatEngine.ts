@@ -172,8 +172,11 @@ export class ChatEngine {
         content: prompt
       }]);
 
+      console.log('🔍 generateGroundedResponse - Raw Ollama response:', response);
+      
       // Format the response with proper paragraph breaks
       const formattedResponse = this.formatResponseWithParagraphs(response.trim());
+      console.log('🔍 generateGroundedResponse - After formatting:', formattedResponse);
 
       const message: ChatMessage = {
         id: crypto.randomUUID(),
@@ -203,11 +206,16 @@ export class ChatEngine {
    * Format AI response with proper paragraph breaks for better readability
    */
   private static formatResponseWithParagraphs(response: string): string {
+    console.log('🔍 formatResponseWithParagraphs - Input response:', response);
+    
     // Split the response into sentences
     const sentences = response.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+    console.log('🔍 formatResponseWithParagraphs - Sentences found:', sentences.length);
+    console.log('🔍 formatResponseWithParagraphs - First few sentences:', sentences.slice(0, 3));
     
     if (sentences.length <= 3) {
       // For short responses, just return as is
+      console.log('🔍 formatResponseWithParagraphs - Short response, returning as-is');
       return response;
     }
 
@@ -230,8 +238,14 @@ export class ChatEngine {
       }
     });
     
+    console.log('🔍 formatResponseWithParagraphs - Paragraphs created:', paragraphs.length);
+    console.log('🔍 formatResponseWithParagraphs - First paragraph:', paragraphs[0]);
+    
     // Join paragraphs with double newlines for proper spacing
-    return paragraphs.join('\n\n');
+    const result = paragraphs.join('\n\n');
+    console.log('🔍 formatResponseWithParagraphs - Final result:', result);
+    
+    return result;
   }
 
   /**
