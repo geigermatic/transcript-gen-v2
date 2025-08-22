@@ -211,7 +211,7 @@ export const ChatCentricLayout: React.FC = () => {
                 <div className="flex items-center gap-3 p-4 border border-gray-300 rounded-2xl bg-white">
                   <input
                     type="text"
-                    placeholder="Ask anything or @mention a document..."
+                    placeholder="Add a document to get started..."
                     className="flex-1 px-4 py-3 border-none outline-none focus:ring-0 text-gray-800 placeholder-gray-500"
                   />
                   <button className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
