@@ -29,6 +29,7 @@ body {
   background-attachment: fixed;
   color: white;
   line-height: 1.65;
+  font-family: 'Lora', serif !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Prevent white overscroll background */
@@ -332,35 +333,41 @@ html {
   font-weight: 700;
   line-height: 1.2;
   color: white;
+  font-family: 'Lora', serif !important;
 }
 
 .text-title {
   font-size: 24px;
   font-weight: 600;
   color: white;
+  font-family: 'Lora', serif !important;
 }
 
 .text-heading {
   font-size: 20px;
   font-weight: 500;
   color: white;
+  font-family: 'Lora', serif !important;
 }
 
 .text-body {
   font-size: 16px;
   color: rgba(255, 255, 255, 0.8);
   line-height: 1.65;
+  font-family: 'Lora', serif !important;
 }
 
 .text-caption {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.6);
+  font-family: 'Lora', serif !important;
 }
 
 .text-label {
   font-size: 14px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.8);
+  font-family: 'Lora', serif !important;
 }
 
 /* Focus States */
@@ -401,4 +408,28 @@ html {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Force Lora font on all elements - override Tailwind defaults */
+* {
+  font-family: 'Lora', serif !important;
+}
+
+/* Specific overrides for common elements */
+p, span, div, button, input, textarea, label, a, li, td, th, h1, h2, h3, h4, h5, h6 {
+  font-family: 'Lora', serif !important;
+}
+
+/* Override Tailwind utility classes */
+.text-sm, .text-base, .text-lg, .text-xl, .text-2xl, .text-3xl, .text-4xl, .text-5xl, .text-6xl {
+  font-family: 'Lora', serif !important;
+}
+
+.font-normal, .font-medium, .font-semibold, .font-bold, .font-light, .font-extralight, .font-extrabold, .font-black {
+  font-family: 'Lora', serif !important;
+}
+
+/* Ensure all text elements use Lora */
+.text-body, .text-title, .text-heading, .text-caption, .text-label, .text-display {
+  font-family: 'Lora', serif !important;
 }

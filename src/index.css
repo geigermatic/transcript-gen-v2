@@ -12,6 +12,25 @@
     line-height: unset !important;
     margin: unset !important;
   }
+  
+  /* Force Lora font on all elements */
+  *, *::before, *::after {
+    font-family: 'Lora', serif !important;
+  }
+  
+  /* Specific overrides for common Tailwind classes */
+  .text-sm, .text-base, .text-lg, .text-xl, .text-2xl, .text-3xl, .text-4xl, .text-5xl, .text-6xl {
+    font-family: 'Lora', serif !important;
+  }
+  
+  .font-normal, .font-medium, .font-semibold, .font-bold {
+    font-family: 'Lora', serif !important;
+  }
+  
+  /* Override any remaining Inter references */
+  body, html, #root, .app, .main, .container, .wrapper {
+    font-family: 'Lora', serif !important;
+  }
 }
 
 /* World-Class Glassmorphic Design System - Linear.app/Framer/Vercel inspired */
