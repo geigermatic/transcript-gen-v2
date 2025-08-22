@@ -15,10 +15,7 @@ export const SummaryResultsView: React.FC = () => {
   const location = useLocation();
   const { documents, styleGuide, getDocumentSummary, clearAllData } = useAppStore();
   
-  // Debug logging for store state
-  console.log('SummaryResultsView render - documents:', documents);
-  console.log('SummaryResultsView render - styleGuide:', styleGuide);
-  console.log('SummaryResultsView render - getDocumentSummary function:', typeof getDocumentSummary);
+
   
 
   
@@ -35,25 +32,17 @@ export const SummaryResultsView: React.FC = () => {
 
   // Fetch summary for a document
   const fetchDocumentSummary = async (doc: any) => {
-    console.log('fetchDocumentSummary called with:', doc);
-    if (!doc) {
-      console.log('No document provided to fetchDocumentSummary');
-      return;
-    }
+    if (!doc) return;
     
     // First check if we already have a summary for this document
-    console.log('Checking for existing summary for document:', doc.id);
     const existingSummary = getDocumentSummary(doc.id);
-    console.log('Existing summary found:', existingSummary);
     
     if (existingSummary) {
-      console.log('Found existing summary for document:', doc.id);
       setSummary(existingSummary);
       return;
     }
     
     // If no existing summary, generate a new one
-    console.log('No existing summary found, generating new one for document:', doc.id);
     setIsLoading(true);
     try {
       const summaryResult = await SummarizationEngine.summarizeDocument(
@@ -61,10 +50,8 @@ export const SummaryResultsView: React.FC = () => {
         styleGuide,
         (current: number, total: number, status?: string) => {
           // Progress callback - could show progress bar here
-          console.log(`Processing: ${current}/${total} - ${status}`);
         }
       );
-      console.log('Summary generated successfully:', summaryResult);
       setSummary(summaryResult);
     } catch (error) {
       console.error('Failed to fetch summary:', error);
@@ -86,10 +73,8 @@ export const SummaryResultsView: React.FC = () => {
         // We have document but no summary - check if we have it stored, otherwise fetch it
         const existingSummary = getDocumentSummary(location.state.document.id);
         if (existingSummary) {
-          console.log('Found existing summary in store for document:', location.state.document.id);
           setSummary(existingSummary);
         } else {
-          console.log('No existing summary found, fetching new one for document:', location.state.document.id);
           fetchDocumentSummary(location.state.document);
         }
       }
@@ -191,23 +176,7 @@ export const SummaryResultsView: React.FC = () => {
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                 Documents ({documents.length})
               </h3>
-              {/* Debug info */}
-              <div className="text-xs text-gray-400 mb-2">
-                Debug: isNavExpanded={isNavExpanded.toString()}, documents.length={documents.length}
-              </div>
-              
-              {/* Test button */}
-              <button 
-                onClick={() => {
-                  alert('Test button clicked! Check console for details.');
-                  console.log('Test button clicked!');
-                  console.log('Documents:', documents);
-                  console.log('Current document:', document);
-                }}
-                className="w-full mb-2 p-2 bg-red-100 text-red-800 rounded text-xs"
-              >
-                🧪 TEST CLICK - Check Console
-              </button>
+
 
               {documents.length === 0 ? (
                 <div className="text-center py-4">
@@ -230,19 +199,11 @@ export const SummaryResultsView: React.FC = () => {
                           : 'hover:bg-gray-100 text-gray-700'
                       }`}
                                                                    onClick={() => {
-                        alert(`Document clicked: ${doc.title || doc.filename}`);
-                        console.log('Document clicked!', doc);
-                        console.log('Current document:', document);
-                        console.log('Document IDs match?', doc.id === document?.id);
-                        
                         if (doc.id !== document?.id) {
-                          console.log('Switching to document:', doc.id);
                           // Update current document and fetch its summary
                           setDocument(doc);
                           setSummary(null); // Clear current summary
                           fetchDocumentSummary(doc);
-                        } else {
-                          console.log('Document already selected, no action needed');
                         }
                       }}
                     >

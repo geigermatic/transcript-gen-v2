@@ -405,7 +405,6 @@ export const ChatCentricLayout: React.FC = () => {
               <button 
                 onClick={() => {
                   if (window.confirm('Are you sure you want to delete all documents? This action cannot be undone.')) {
-                    console.log('Clearing all documents and data...');
                     clearAllData();
                     // Refresh the page to show clean interface
                     window.location.reload();
@@ -443,7 +442,6 @@ export const ChatCentricLayout: React.FC = () => {
                         key={doc.id}
                         className="p-3 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition-colors"
                         onClick={() => {
-                          console.log('Document clicked in main view:', doc);
                           // Navigate to summary view with document data
                           navigate('/summary/' + doc.id, { 
                             state: { document: doc }
