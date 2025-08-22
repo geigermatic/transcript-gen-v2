@@ -35,6 +35,8 @@ export const ChatCentricLayout: React.FC = () => {
   // Progress tracking state
   const [progress, setProgress] = useState({ current: 0, total: 0, status: '' });
   const [showProgress, setShowProgress] = useState(false);
+  const [processingStartTime, setProcessingStartTime] = useState<Date | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   // Format file size
   const formatFileSize = (bytes: number) => {
@@ -43,6 +45,13 @@ export const ChatCentricLayout: React.FC = () => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Format elapsed time as MM:SS
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   
@@ -54,6 +63,25 @@ export const ChatCentricLayout: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
+
+  // Timer for elapsed time tracking
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (showProgress && processingStartTime) {
+      interval = setInterval(() => {
+        const now = new Date();
+        const elapsed = Math.floor((now.getTime() - processingStartTime.getTime()) / 1000);
+        setElapsedTime(elapsed);
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [showProgress, processingStartTime]);
 
   // Handle document upload and add to chat
   const handleDocumentUpload = async (success: boolean, message: string, document?: any) => {
@@ -90,8 +118,10 @@ export const ChatCentricLayout: React.FC = () => {
           details: { documentId: document.id, filename: document.filename }
         });
 
-        // Show progress indicator
+        // Show progress indicator and start timer
         setShowProgress(true);
+        setProcessingStartTime(new Date());
+        setElapsedTime(0);
         setProgress({ current: 0, total: 0, status: 'Initializing document processing...' });
 
         // Process document with AI summarization with progress tracking
@@ -103,8 +133,10 @@ export const ChatCentricLayout: React.FC = () => {
           }
         );
         
-        // Hide progress and remove processing message
+        // Hide progress, reset timer, and remove processing message
         setShowProgress(false);
+        setProcessingStartTime(null);
+        setElapsedTime(0);
         setProgress({ current: 0, total: 0, status: '' });
         setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id));
         
@@ -134,8 +166,10 @@ export const ChatCentricLayout: React.FC = () => {
       } catch (error) {
         console.error('Document processing failed:', error);
         
-        // Hide progress and remove processing message
+        // Hide progress, reset timer, and remove processing message
         setShowProgress(false);
+        setProcessingStartTime(null);
+        setElapsedTime(0);
         setProgress({ current: 0, total: 0, status: '' });
         setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id));
         
@@ -479,9 +513,10 @@ export const ChatCentricLayout: React.FC = () => {
                     
                     <div className="flex items-center justify-between text-sm text-gray-600">
                       <span>{progress.status || 'Processing...'}</span>
-                      {progress.total > 0 && (
-                        <span>Chunk {Math.round(progress.current)} of {progress.total}</span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <Clock size={14} />
+                        <span>Elapsed: {formatTime(elapsedTime)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
