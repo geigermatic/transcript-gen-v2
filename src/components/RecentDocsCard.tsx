@@ -100,12 +100,14 @@ export const RecentDocsCard: React.FC<RecentDocsCardProps> = ({ onDocumentSelect
       </div>
 
       <div className="space-y-4">
-        {displayDocs.length > 0 ? displayDocs.map((doc) => (
-          <div
-            key={doc.id}
-            className="group p-4 rounded-xl border border-white border-opacity-20 bg-white bg-opacity-10 hover:bg-white hover:bg-opacity-20 transition-all duration-200 cursor-pointer"
-            onClick={() => handleDocumentClick(doc)}
-          >
+        {displayDocs.length > 0 ? displayDocs.map((doc) => {
+          const originalDoc = documents.find(d => d.id === doc.id);
+          return (
+            <div
+              key={doc.id}
+              className="group p-4 rounded-xl border border-white border-opacity-20 bg-white bg-opacity-10 hover:bg-white hover:bg-opacity-20 transition-all duration-200 cursor-pointer"
+              onClick={() => originalDoc && handleDocumentClick(originalDoc)}
+            >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
@@ -158,7 +160,8 @@ export const RecentDocsCard: React.FC<RecentDocsCardProps> = ({ onDocumentSelect
               </div>
             </div>
           </div>
-        )) : (
+          );
+        }) : (
           <div className="text-center py-8">
             <FileText size={32} className="mx-auto text-white text-opacity-30 mb-3" />
             <p className="text-body mb-2">No documents uploaded yet</p>

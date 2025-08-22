@@ -78,7 +78,7 @@ export const GlassDashboard: React.FC = () => {
     setIsSummarizing(value);
   }, [regenerationInProgress]);
 
-  const handleUploadComplete = (success: boolean, message: string, document?: Document) => {
+  const handleUploadComplete = (success: boolean, _message: string, document?: Document) => {
     if (success && document) {
       setSelectedDocument(document);
       setIsSummarizing(true);
@@ -489,7 +489,7 @@ export const GlassDashboard: React.FC = () => {
             {/* Upload Card */}
             <UploadCard 
               onUploadComplete={handleUploadComplete}
-              onProgress={(current, total, status) => {
+              onProgress={(current, _total, status) => {
                 setProgressPercent(current);
                 setProgressStatus(status || '');
                 
@@ -508,13 +508,13 @@ export const GlassDashboard: React.FC = () => {
             {/* Summary Card */}
             <SummaryPreviewCard 
               key={`summary-${selectedDocument?.id}-${regenerationCount}`}
-              summary={getSelectedDocumentSummary()} // backward compatibility
+              summary={getSelectedDocumentSummary() || undefined} // backward compatibility
               rawSummary={getSelectedDocumentSummaries().raw}
               styledSummary={getSelectedDocumentSummaries().styled}
               isLoading={isSummarizing}
               chunksProcessed={chunksProcessed}
               totalChunks={totalChunks}
-              processingStartTime={processingStartTime}
+              processingStartTime={processingStartTime || undefined}
               progressPercent={progressPercent}
               progressStatus={progressStatus}
               onRegenerateStyled={handleRegenerateStyled}
@@ -527,7 +527,7 @@ export const GlassDashboard: React.FC = () => {
             {/* Chat Card */}
             <div className="h-96">
               <ChatCard 
-                selectedDocument={selectedDocument}
+                selectedDocument={selectedDocument || undefined}
                 onSendMessage={(message) => {
                   logInfo('CHAT', 'Message sent from dashboard', { message });
                 }}

@@ -342,7 +342,7 @@ export const StyleGuideManager: React.FC = () => {
         // Then handle control characters within string values
         // This approach protects JSON structure while fixing string content
         const fixStringContent = (jsonStr: string): string => {
-          return jsonStr.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, (match, content) => {
+          return jsonStr.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, (_match, content) => {
             // Only fix control characters inside the quotes
             const fixed = content
               .replace(/\r\n/g, '\\n')
@@ -446,6 +446,7 @@ export const StyleGuideManager: React.FC = () => {
     const allKeywords = [...existingKeywords, ...newKeywords];
     const uniqueKeywords = Array.from(new Set(allKeywords.map(k => k.toLowerCase())))
       .map(k => allKeywords.find(orig => orig.toLowerCase() === k))
+      .filter((k): k is string => k !== undefined)
       .slice(0, 15);
 
     // Blend tone settings (70% existing, 30% new for gentle refinement)
@@ -474,6 +475,7 @@ export const StyleGuideManager: React.FC = () => {
       const combined = [...(existing || []), ...(newOnes || [])];
       return Array.from(new Set(combined.map(p => p.toLowerCase())))
         .map(p => combined.find(orig => orig.toLowerCase() === p))
+        .filter((p): p is string => p !== undefined)
         .slice(0, 8); // Limit each category
     };
 
