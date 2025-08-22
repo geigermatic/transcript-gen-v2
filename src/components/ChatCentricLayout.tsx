@@ -6,6 +6,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Settings, Plus, User, ChevronUp, Download, Clock, Trash2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { AppShell } from './AppShell';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 import { FileUpload } from './FileUpload';
@@ -650,7 +652,22 @@ export const ChatCentricLayout: React.FC = () => {
                               : 'bg-gray-50 text-gray-800 border border-gray-200'
                           }`}
                         >
-                          <div className="text-sm">{message.content}</div>
+                          <div className="text-sm prose prose-sm max-w-none">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                                strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                                em: ({ children }) => <em className="italic">{children}</em>,
+                                ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                                ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                                li: ({ children }) => <li className="text-gray-700">{children}</li>,
+                                blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-2">{children}</blockquote>,
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
                           <div className={`text-xs mt-2 ${
                             message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
                           }`}>
