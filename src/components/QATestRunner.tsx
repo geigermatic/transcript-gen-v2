@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { qaTester, type QATestSuite, type QATestResult } from '../lib/qa-testing';
+import { qaTester, type QATestSuite } from '../lib/qa-testing';
 import { logInfo } from '../lib/logger';
 
 export const QATestRunner: React.FC = () => {

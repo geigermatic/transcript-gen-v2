@@ -3,7 +3,7 @@
  * Implements smart paragraph splitting with fallback to fixed-size chunks
  */
 
-import { ChunkingConfigManager, type ChunkingConfig } from './chunkingConfig';
+import { ChunkingConfigManager } from './chunkingConfig';
 
 export interface TextChunk {
   id: string;

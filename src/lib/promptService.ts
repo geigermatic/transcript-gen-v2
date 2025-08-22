@@ -321,8 +321,8 @@ export class PromptService {
           return prompt.template;
         }
       }
-    } catch (error) {
-      console.error('Failed to load saved prompt:', error);
+    } catch {
+      console.error('Failed to load saved prompt');
     }
     
     // Fallback to default

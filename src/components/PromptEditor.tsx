@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit3, Save, RotateCcw, Copy, FileText, MessageSquare, Search, Zap } from 'lucide-react';
+import { Save, RotateCcw, Copy, FileText, MessageSquare, Search, Zap } from 'lucide-react';
 import { useAppStore } from '../store';
 
 interface PromptTemplate {

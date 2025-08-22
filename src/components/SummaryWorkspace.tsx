@@ -11,7 +11,7 @@ import { ABSummaryEngine } from '../lib/abSummaryEngine';
 import { ExportOptions } from './ExportOptions';
 import { EmbeddingManager } from './EmbeddingManager';
 import { ChunkingSettings } from './ChunkingSettings';
-import { ChunkingConfigManager } from '../lib/chunkingConfig';
+
 import { logInfo, logTime } from '../lib/logger';
 import type { Document, SummarizationResult } from '../types';
 
@@ -26,7 +26,7 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
   onDocumentSelect,
   onSummaryGenerated
 }) => {
-  const { documents, styleGuide, getAllEmbeddings } = useAppStore();
+  const { documents, styleGuide } = useAppStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [summaryResult, setSummaryResult] = useState<SummarizationResult | null>(null);
   const [showExportOptions, setShowExportOptions] = useState(false);

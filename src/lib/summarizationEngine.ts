@@ -538,7 +538,7 @@ export class SummarizationEngine {
       
       return response.trim();
       
-    } catch (error) {
+    } catch {
       // Fallback: generate summary from facts
       return this.generateFallbackSummary(document, mergedFacts);
     }

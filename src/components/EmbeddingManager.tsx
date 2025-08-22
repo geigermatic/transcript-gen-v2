@@ -29,7 +29,7 @@ export function EmbeddingManager({ document }: EmbeddingManagerProps) {
       const available = await ollama.isAvailable();
       setOllamaAvailable(available);
       return available;
-    } catch (error) {
+    } catch {
       setOllamaAvailable(false);
       return false;
     }

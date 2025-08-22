@@ -89,7 +89,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className = '' }) 
       };
       
       setMessages(prev => [...prev, response]);
-    } catch (error) {
+    } catch {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 3).toString(),
         role: 'assistant',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TestTube, Eye, Copy, CheckCircle } from 'lucide-react';
+import { TestTube, Copy, CheckCircle } from 'lucide-react';
 import { useAppStore } from '../store';
 import { PromptService } from '../lib/promptService';
 import { ollama } from '../lib/ollama';

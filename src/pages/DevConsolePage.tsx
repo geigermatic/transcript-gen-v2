@@ -21,7 +21,7 @@ export function DevConsolePage() {
     try {
       const isAvailable = await ollama.isAvailable();
       setOllamaStatus(isAvailable ? 'connected' : 'disconnected');
-    } catch (error) {
+    } catch {
       setOllamaStatus('disconnected');
     }
   };

@@ -9,7 +9,7 @@ import { SummarizationEngine } from './summarizationEngine';
 import { ChatEngine } from './chatEngine';
 import { ExportEngine } from './exportEngine';
 import { offlineStorage } from './storage';
-import { logInfo, logError, logWarn } from './logger';
+import { logInfo, logError } from './logger';
 import type { Document, StyleGuide } from '../types';
 
 export interface QATestResult {

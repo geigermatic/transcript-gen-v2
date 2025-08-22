@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, type DragEvent, type ChangeEvent } from 'react';
 import { DocumentProcessor } from '../lib/documentProcessor';
 import { useAppStore } from '../store';
-import { HelpTooltip } from './Tooltip';
 
 interface FileUploadProps {
   onUploadComplete?: (success: boolean, message: string, document?: Document) => void;
@@ -10,7 +9,6 @@ interface FileUploadProps {
 export function FileUpload({ onUploadComplete }: FileUploadProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingFile, setProcessingFile] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addDocument, addLog, documents } = useAppStore();
 
@@ -64,7 +62,6 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
   };
 
   const processFile = async (file: File) => {
-    setProcessingFile(file.name);
     setIsProcessing(true);
 
     try {
@@ -113,7 +110,6 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
       onUploadComplete?.(false, errorMessage);
     } finally {
       setIsProcessing(false);
-      setProcessingFile('');
       // Reset file input value to allow re-uploading the same file
       if (fileInputRef.current) {
         fileInputRef.current.value = '';

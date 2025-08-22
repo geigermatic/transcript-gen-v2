@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Settings, Trash2 } from 'lucide-react';
+import { Settings, Trash2 } from 'lucide-react';
 import { AppShell } from './AppShell';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 import { UploadCard } from './UploadCard';
@@ -48,7 +48,6 @@ export const GlassDashboard: React.FC = () => {
   const [progressStatus, setProgressStatus] = useState('');
   const [regenerationCount, setRegenerationCount] = useState(1);
   const [regenerationSuccess, setRegenerationSuccess] = useState(false);
-  const [isUploading, setIsUploading] = useState(false); // Separate state for uploads
   const [regenerationInProgress, setRegenerationInProgress] = useState(false); // Persistent regeneration state
 
   // Ensure page starts at top on component mount
@@ -492,7 +491,6 @@ export const GlassDashboard: React.FC = () => {
               onProgress={(current, total, status) => {
                 setProgressPercent(current);
                 setProgressStatus(status || '');
-                setIsUploading(current < 100); // Use separate upload state
                 
                 // Also set chunk info for backward compatibility
                 const estimatedTotalChunks = 7;

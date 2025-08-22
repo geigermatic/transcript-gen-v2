@@ -23,7 +23,7 @@ export function SummarizationManager({ document }: SummarizationManagerProps) {
       const available = await ollama.isAvailable();
       setOllamaAvailable(available);
       return available;
-    } catch (error) {
+    } catch {
       setOllamaAvailable(false);
       return false;
     }

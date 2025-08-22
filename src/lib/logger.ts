@@ -201,7 +201,7 @@ export class Logger {
 
   // Log retrieval and filtering
   getEvents(filter?: LogFilter): LogEvent[] {
-    let events = this.eventBuffer.getAll();
+    const events = this.eventBuffer.getAll();
 
     if (!filter) return events;
 

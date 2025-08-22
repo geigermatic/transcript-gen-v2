@@ -25,7 +25,7 @@ export const ChunkingSettings: React.FC<ChunkingSettingsProps> = ({
       const currentConfig = ChunkingConfigManager.getCurrentConfig();
       // Find matching preset
       const preset = Object.entries(PROCESSING_PRESETS).find(
-        ([_, config]) => config.chunking.mode === currentConfig.chunking.mode
+        ([, config]) => config.chunking.mode === currentConfig.chunking.mode
       );
       if (preset) {
         setSelectedPreset(preset[0]);

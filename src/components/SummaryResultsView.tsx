@@ -15,7 +15,7 @@ import { LeftNavigation } from './LeftNavigation';
 export const SummaryResultsView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { documents, styleGuide, getDocumentSummary, clearAllData } = useAppStore();
+  const { documents, styleGuide, getDocumentSummary } = useAppStore();
   
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
   const [followUpQuery, setFollowUpQuery] = useState('');
@@ -47,9 +47,7 @@ export const SummaryResultsView: React.FC = () => {
       const summaryResult = await SummarizationEngine.summarizeDocument(
         doc, 
         styleGuide,
-        (current: number, total: number, status?: string) => {
-          // Progress callback - could show progress bar here
-        }
+
       );
       setSummary(summaryResult);
     } catch (error) {

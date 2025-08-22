@@ -413,7 +413,7 @@ NOTE: When the user refers to "the summary", "the generated summary", or "this s
    * Trim context to fit within limits
    */
   static trimContext(context: ChatContext): ChatContext {
-    let messages = [...context.messages];
+    const messages = [...context.messages];
     let totalLength = this.formatContextLength({ messages, maxContextLength: context.maxContextLength });
     
     // Remove oldest messages until we're under the limit

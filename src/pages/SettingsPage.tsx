@@ -7,9 +7,7 @@ export function SettingsPage() {
     isDarkMode, 
     toggleDarkMode, 
     settings, 
-    updateSettings,
-    isUserTestingMode,
-    toggleUserTestingMode 
+    updateSettings
   } = useAppStore();
 
   return (

@@ -10,7 +10,6 @@ import {
   BookOpen, 
   FileText, 
   Settings, 
-  Search, 
   User,
   ChevronLeft,
   ChevronRight,
