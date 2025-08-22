@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Settings, Sun, Moon, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
-import eliraLeafIcon from '../assets/icons/elira_leaf_512.png';
+import eliraLeafIcon from '../assets/icons/elira_leaf_512.png?url';
 
 interface TopbarProps {
   // sidebarCollapsed prop removed for beta version

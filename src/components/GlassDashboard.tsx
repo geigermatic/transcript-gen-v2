@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import { AppShell } from './AppShell';
-import eliraLeafIcon from '../assets/icons/elira_leaf_512.png';
+import eliraLeafIcon from '../assets/icons/elira_leaf_512.png?url';
 import { UploadCard } from './UploadCard';
 import { RecentDocsCard } from './RecentDocsCard';
 import { SummaryPreviewCard } from './SummaryPreviewCard';
