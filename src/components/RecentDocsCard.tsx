@@ -6,18 +6,9 @@ import React, { useState } from 'react';
 import { Calendar, FileText, Tag, ChevronDown, ChevronUp, FolderOpen, Trash2, Clock } from 'lucide-react';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
+import type { Document } from '../types';
 
-interface Document {
-  id: string;
-  filename: string;
-  uploadedAt: string;
-  metadata: {
-    filename: string;
-    wordCount?: number;
-    fileSize?: number;
-  };
-  tags?: string[];
-}
+
 
 interface RecentDocsCardProps {
   onDocumentSelect?: (doc: Document) => void;
@@ -83,7 +74,7 @@ export const RecentDocsCard: React.FC<RecentDocsCardProps> = ({ onDocumentSelect
     processingTime: getDocumentProcessingTime(doc.id)
   }));
 
-  const handleDocumentClick = (doc: any) => {
+  const handleDocumentClick = (doc: Document) => {
     logInfo('UI', `Recent document clicked: ${doc.filename}`, { docId: doc.id });
     onDocumentSelect?.(doc);
   };

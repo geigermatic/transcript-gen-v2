@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, FileText, Download, Upload, Edit3, Save, RotateCcw, RefreshCw, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { PromptService } from '../lib/promptService';
-import type { ToneSettings } from '../types';
+import type { ToneSettings, StyleGuide } from '../types';
 import { StyleGuideTester } from './StyleGuideTester';
 
 export const StyleGuideManager: React.FC = () => {
@@ -10,7 +10,7 @@ export const StyleGuideManager: React.FC = () => {
   const [showTextInput, setShowTextInput] = useState(false);
   const [newsletterText, setNewsletterText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analyzedStyleGuide, setAnalyzedStyleGuide] = useState<any>(null);
+  const [analyzedStyleGuide, setAnalyzedStyleGuide] = useState<StyleGuide | null>(null);
   
   // Local editing state
   const [localStyleGuide, setLocalStyleGuide] = useState(styleGuide);
@@ -65,7 +65,7 @@ export const StyleGuideManager: React.FC = () => {
           
           if (modelResponse.ok) {
             const data = await modelResponse.json();
-            const modelNames = data.models?.map((model: any) => model.name) || [];
+            const modelNames = data.models?.map((model: { name: string }) => model.name) || [];
             setOllamaModels(modelNames);
             setOllamaStatus('available');
           } else {
@@ -437,7 +437,7 @@ export const StyleGuideManager: React.FC = () => {
     }
   };
 
-  const mergeStyleGuides = (current: any, analyzed: any, allSourceContent: string[]) => {
+  const mergeStyleGuides = (current: StyleGuide, analyzed: StyleGuide, allSourceContent: string[]) => {
     // Intelligently merge keywords (deduplicate, max 15)
     const existingKeywords = current.keywords || [];
     const newKeywords = analyzed.keywords || [];
