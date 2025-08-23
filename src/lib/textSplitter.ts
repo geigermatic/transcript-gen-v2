@@ -21,8 +21,6 @@ export interface ChunkingOptions {
 }
 
 export class TextSplitter {
-  private static readonly DEFAULT_CHUNK_SIZE = 2500; // characters (~500 words)
-  private static readonly OVERLAP_SIZE = 200; // characters overlap between chunks
 
   /**
    * Split text into chunks using current configuration

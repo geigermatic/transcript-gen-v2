@@ -14,7 +14,7 @@ export function SemanticSearchTest() {
   const allEmbeddings = getAllEmbeddings();
 
   const performSearch = async () => {
-    if (!query.trim() || allEmbeddings.length === 0) return;
+    if (!query.trim() || allEmbeddings.size === 0) return;
 
     setIsSearching(true);
     setError(null);
@@ -24,9 +24,9 @@ export function SemanticSearchTest() {
       let searchResults;
       
       if (searchType === 'semantic') {
-        searchResults = await EmbeddingEngine.performSemanticSearch(query, allEmbeddings, 5);
+        searchResults = await EmbeddingEngine.performSemanticSearch(query, Array.from(allEmbeddings.values()).flat(), 5);
       } else {
-        searchResults = await EmbeddingEngine.performHybridSearch(query, allEmbeddings, 5);
+        searchResults = await EmbeddingEngine.performHybridSearch(query, Array.from(allEmbeddings.values()).flat(), 5);
       }
       
       setResults(searchResults);
@@ -47,7 +47,7 @@ export function SemanticSearchTest() {
     <div className="glass-panel p-6">
       <h3 className="text-lg font-semibold text-white mb-4">Semantic Search Test</h3>
       
-      {allEmbeddings.length === 0 ? (
+      {allEmbeddings.size === 0 ? (
         <div className="text-gray-400 text-center py-8">
           <p className="mb-2">No embeddings available for search.</p>
           <p className="text-sm">Upload documents and generate embeddings first.</p>
@@ -95,7 +95,7 @@ export function SemanticSearchTest() {
             </div>
             
             <div className="text-sm text-gray-400">
-              Available chunks: {allEmbeddings.length} from {new Set(allEmbeddings.map(e => e.documentId)).size} documents
+              Available chunks: {Array.from(allEmbeddings.values()).flat().length} from {allEmbeddings.size} documents
             </div>
           </div>
 

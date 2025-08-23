@@ -44,7 +44,7 @@ export const UploadPage: React.FC = () => {
               </p>
             </div>
 
-            <FileUpload onUploadComplete={(success, message, document) => {
+            <FileUpload onUploadComplete={(success, _message, document) => {
               if (success && document) {
                 navigate('/');
               }

@@ -49,7 +49,7 @@ export class ChatEngine {
       // Get all available embeddings
       const allEmbeddings = getAllEmbeddings();
       
-      if (allEmbeddings.length === 0) {
+      if (allEmbeddings.size === 0) {
         const noDataResponse = this.createNoDataResponse(query, startTime);
         addLog({
           level: 'warn',
@@ -61,7 +61,7 @@ export class ChatEngine {
       }
 
       // Retrieve relevant chunks
-      const retrievalContext = await this.retrieveRelevantChunks(query, allEmbeddings);
+      const retrievalContext = await this.retrieveRelevantChunks(query, Array.from(allEmbeddings.values()).flat());
       
       // Log retrieval results
       addLog({

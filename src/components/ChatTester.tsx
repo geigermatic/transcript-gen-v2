@@ -13,7 +13,7 @@ export function ChatTester() {
   const allEmbeddings = getAllEmbeddings();
 
   const runTest = async () => {
-    if (!query.trim() || allEmbeddings.length === 0) return;
+    if (!query.trim() || allEmbeddings.size === 0) return;
 
     setIsTesting(true);
     setError(null);
@@ -44,7 +44,7 @@ export function ChatTester() {
     <div className="glass-panel p-6">
       <h3 className="text-lg font-semibold text-white mb-4">Chat System Test</h3>
       
-      {allEmbeddings.length === 0 ? (
+      {allEmbeddings.size === 0 ? (
         <div className="text-gray-400 text-center py-8">
           <p className="mb-2">No embeddings available for chat testing.</p>
           <p className="text-sm">Upload documents and generate embeddings first.</p>
@@ -73,7 +73,7 @@ export function ChatTester() {
             </div>
             
             <div className="text-sm text-gray-400">
-              Available embeddings: {allEmbeddings.length} chunks from {new Set(allEmbeddings.map(e => e.documentId)).size} documents
+              Available embeddings: {Array.from(allEmbeddings.values()).flat().length} chunks from {allEmbeddings.size} documents
             </div>
           </div>
 

@@ -57,8 +57,8 @@ export function DevConsolePage() {
   const totalWords = documents.reduce((total, doc) => total + (doc.metadata.wordCount || 0), 0);
   const totalSize = documents.reduce((total, doc) => total + doc.metadata.fileSize, 0);
   const allEmbeddings = getAllEmbeddings();
-  const totalEmbeddings = allEmbeddings.length;
-  const documentsWithEmbeddings = new Set(allEmbeddings.map(e => e.documentId)).size;
+  const totalEmbeddings = Array.from(allEmbeddings.values()).flat().length;
+  const documentsWithEmbeddings = allEmbeddings.size;
 
   return (
     <AppShell>
