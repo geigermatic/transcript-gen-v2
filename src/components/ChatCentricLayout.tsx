@@ -450,7 +450,7 @@ export const ChatCentricLayout: React.FC = () => {
         </div>
 
         {/* Chat Input - Fixed at Bottom */}
-        <div className="border-t border-gray-200 p-6">
+        <div className="p-6">
           <ChatInput
             inputValue={inputValue}
             onInputChange={setInputValue}
