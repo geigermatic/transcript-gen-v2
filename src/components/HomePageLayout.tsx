@@ -30,7 +30,7 @@ export const HomePageLayout: React.FC<HomePageLayoutProps> = ({
                 className="w-full h-full object-contain"
               />
             </div>
-            <h1 className="text-3xl font-semibold text-gray-800">Elira</h1>
+            <h1 className="text-5xl font-semibold text-gray-800">Elira</h1>
           </div>
 
           {/* Tag Line and Instructions */}
