@@ -19,7 +19,7 @@ export const HomePageLayout: React.FC<HomePageLayoutProps> = ({
   return (
     <div className="flex-1 flex flex-col items-center justify-center bg-white px-8 py-12">
               {/* Content Container */}
-        <div className="w-full max-w-4xl space-y-sections">
+        <div className="w-full max-w-4xl space-y-8">
           {/* Logo */}
           <div className="text-center space-y-4">
             <div className="w-16 h-16 mx-auto">

@@ -37,7 +37,7 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-components max-h-96 overflow-y-auto">
+    <div className="w-full max-w-4xl mx-auto space-y-4 max-h-96 overflow-y-auto">
         {messages.map((message) => (
           <div
             key={message.id}

@@ -25,7 +25,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   placeholder = "Add a document to get started..."
 }) => {
   return (
-    <div className="w-full max-w-2xl mx-auto flex items-center gap-3 component-padding border border-gray-300 rounded-2xl bg-white">
+    <div className="w-full max-w-2xl mx-auto flex items-center gap-3 p-4 border border-gray-300 rounded-2xl bg-white">
         <input
           type="text"
           value={inputValue}
