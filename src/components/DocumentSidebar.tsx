@@ -168,7 +168,7 @@ export const DocumentSidebar: React.FC<DocumentSidebarProps> = ({ className = ''
               {getSelectedDocumentSummary() ? (
                 <CompactSummaryViewer
                   document={selectedDocument}
-                  summary={getSelectedDocumentSummary()!}
+                  summary={getSelectedDocumentSummary()!.summaryA}
                   activeTab={activeTab}
                   compact={true}
                 />

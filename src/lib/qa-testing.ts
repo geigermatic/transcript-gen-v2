@@ -116,7 +116,7 @@ export class QATester {
           fileType: 'text/plain',
           fileSize: 100,
           wordCount: 10,
-          uploadedAt: new Date().toISOString()
+          dateAdded: new Date().toISOString()
         },
         uploadedAt: new Date().toISOString()
       };
@@ -188,7 +188,7 @@ export class QATester {
       // Test acceptable size
       const goodFile = new File(['x'.repeat(200 * 1024)], 'good.txt', { type: 'text/plain' });
       const result = await DocumentProcessor.processFile(goodFile);
-      if (!result || !result.content) {
+      if (!result || !result.text) {
         throw new Error('Failed to process acceptable file');
       }
 
@@ -213,10 +213,10 @@ export class QATester {
         const file = new File([text], 'test.txt', { type: 'text/plain' });
         const processed = await DocumentProcessor.processFile(file);
         
-        if (processed.content.trim() !== text.trim()) {
-          throw new Error(`Text parsing mismatch: expected "${text}", got "${processed.content}"`);
+        if (processed.text.trim() !== text.trim()) {
+          throw new Error(`Text parsing mismatch: expected "${text}", got "${processed.text}"`);
         }
-        results.push({ original: text.length, processed: processed.content.length });
+        results.push({ original: text.length, processed: processed.text.length });
       }
 
       return { testCases: results.length, allPassed: true };
@@ -231,7 +231,7 @@ export class QATester {
         throw new Error('Text splitting produced no chunks');
       }
 
-      const reassembled = chunks.map(c => c.content).join(' ').trim();
+              const reassembled = chunks.map(c => c.text).join(' ').trim();
       const originalWords = testText.split(/\s+/).filter(w => w.length > 0);
       const reassembledWords = reassembled.split(/\s+/).filter(w => w.length > 0);
 
@@ -242,7 +242,7 @@ export class QATester {
       return { 
         originalLength: testText.length,
         chunks: chunks.length,
-        avgChunkSize: chunks.reduce((sum, c) => sum + c.content.length, 0) / chunks.length
+        avgChunkSize: chunks.reduce((sum, c) => sum + c.text.length, 0) / chunks.length
       };
     }));
 
@@ -325,16 +325,16 @@ export class QATester {
         embedding: [] as number[] // Will be filled by generateEmbeddings
       }));
 
-      const embeddedChunks = await this.embeddingEngine.generateEmbeddings(chunks);
-      const query = 'artificial intelligence and machine learning';
-      const results = await this.embeddingEngine.search(query, embeddedChunks, 2);
+      const embeddedChunks = await EmbeddingEngine.generateDocumentEmbeddings(document.id, document.text);
+              const query = 'artificial intelligence and machine learning';
+        const results = await EmbeddingEngine.performHybridSearch(query, embeddedChunks, 2);
 
       if (results.length === 0) {
         throw new Error('Search returned no results');
       }
 
       // First result should be the ML document
-      if (!results[0].chunk.content.includes('machine learning')) {
+      if (!results[0].chunk.text.includes('machine learning')) {
         throw new Error('Search did not return most relevant result first');
       }
 
@@ -342,7 +342,7 @@ export class QATester {
         queryLength: query.length,
         resultsCount: results.length,
         topScore: results[0].score,
-        topContent: results[0].chunk.content.substring(0, 50)
+        topContent: results[0].chunk.text.substring(0, 50)
       };
     }));
 
@@ -365,7 +365,7 @@ export class QATester {
 
     const testDoc: Document = {
       id: 'test-summarization',
-      content: `
+      text: `
 Teaching Effective Presentation Skills
 
 In today's lesson, we covered three key presentation techniques:
@@ -388,13 +388,13 @@ Action items:
 
 The most important thing to remember is that presentation skills improve with practice and feedback.
       `.trim(),
-      metadata: {
-        filename: 'presentation-skills.txt',
-        fileType: 'text/plain',
-        fileSize: 1000,
-        wordCount: 150,
-        uploadedAt: new Date().toISOString()
-      },
+              metadata: {
+          filename: 'presentation-skills.txt',
+          fileType: 'text/plain',
+          fileSize: 1000,
+          wordCount: 150,
+          dateAdded: new Date().toISOString()
+        },
       uploadedAt: new Date().toISOString()
     };
 
@@ -759,8 +759,7 @@ The most important thing to remember is that presentation skills improve with pr
       await offlineStorage.saveDocument(document);
       
       // 4. Generate embeddings
-      const chunks = this.textSplitter.splitText(document.content);
-      const embeddedChunks = await this.embeddingEngine.generateEmbeddings(chunks);
+      const embeddedChunks = await EmbeddingEngine.generateDocumentEmbeddings(document.id, document.text);
       await offlineStorage.saveEmbeddings(document.id, embeddedChunks);
       
       // 5. Generate summary
@@ -794,7 +793,7 @@ The most important thing to remember is that presentation skills improve with pr
       await offlineStorage.removeDocument(document.id);
       
       return {
-        documentProcessed: !!document.content,
+        documentProcessed: !!document.text,
         embeddingsGenerated: embeddedChunks.length > 0,
         summaryGenerated: !!summary.summary,
         chatWorking: !!chatResponse.answer,
@@ -823,13 +822,13 @@ The most important thing to remember is that presentation skills improve with pr
       // Create test data
       const testDoc: Document = {
         id: 'persistence-test',
-        content: 'Test persistence',
+        text: 'Test persistence',
         metadata: {
           filename: 'persistence.txt',
           fileType: 'text/plain',
           fileSize: 100,
           wordCount: 2,
-          uploadedAt: new Date().toISOString()
+          dateAdded: new Date().toISOString()
         },
         uploadedAt: new Date().toISOString()
       };
@@ -840,7 +839,7 @@ The most important thing to remember is that presentation skills improve with pr
       // Verify persistence across "sessions" (simulate page reload)
       const retrievedDoc = await offlineStorage.getDocument(testDoc.id);
       
-      if (!retrievedDoc || retrievedDoc.content !== testDoc.content) {
+      if (!retrievedDoc || retrievedDoc.text !== testDoc.text) {
         throw new Error('Data persistence failed');
       }
       
@@ -849,7 +848,7 @@ The most important thing to remember is that presentation skills improve with pr
       
       return {
         dataPersisted: true,
-        dataIntegrity: retrievedDoc.content === testDoc.content
+        dataIntegrity: retrievedDoc.text === testDoc.text
       };
     }));
 
