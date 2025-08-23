@@ -351,12 +351,30 @@ This style guide captures the distinctive voice and approach for creating engagi
           recommended: false
         },
         {
-          id: 'llama3.1:8b',
-          name: 'Llama 3.1 8B',
-          description: 'Standard 8B model, slightly larger but better quality',
-          size: '8B parameters',
-          expectedSpeed: '2-3 minutes',
-          ramUsage: '4.9GB',
+          id: 'gemma3:4b',
+          name: 'Gemma 3 4B (Multimodal)',
+          description: '🔥 RECOMMENDED: 128K context, no chunking needed, multimodal support',
+          size: '4B parameters',
+          expectedSpeed: '1-2 minutes',
+          ramUsage: '3.3GB',
+          recommended: true
+        },
+        {
+          id: 'gemma3:12b',
+          name: 'Gemma 3 12B (Multimodal)',
+          description: 'Premium performance with 128K context, excellent for complex analysis',
+          size: '12B parameters',
+          expectedSpeed: '30-60 seconds',
+          ramUsage: '8.1GB',
+          recommended: true
+        },
+        {
+          id: 'gemma3:1b',
+          name: 'Gemma 3 1B (Text)',
+          description: 'Ultra-fast for simple summarization tasks',
+          size: '1B parameters',
+          expectedSpeed: '30-45 seconds',
+          ramUsage: '815MB',
           recommended: false
         },
         {
@@ -366,7 +384,7 @@ This style guide captures the distinctive voice and approach for creating engagi
           size: '8x7B parameters',
           expectedSpeed: '30-60 seconds',
           ramUsage: '26GB',
-          recommended: true
+          recommended: false
         }
       ],
       getAvailableModels: () => get().availableModels,
