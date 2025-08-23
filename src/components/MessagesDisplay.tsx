@@ -6,7 +6,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Virtuoso } from 'react-virtuoso';
 import { ProcessingIndicator } from './ProcessingIndicator';
 import { ChevronDown, MessageSquare } from 'lucide-react';
 
@@ -36,9 +35,7 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
   messages,
   isProcessing
 }) => {
-  const virtuosoRef = useRef<{ scrollToIndex: (options: { index: number; behavior?: 'auto' | 'smooth'; align?: 'start' | 'center' | 'end' }) => void } | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [isAtBottom, setIsAtBottom] = useState(true);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [showNewDivider, setShowNewDivider] = useState<string | null>(null);
   const [lastMessageCount, setLastMessageCount] = useState(0);
@@ -53,44 +50,32 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
     return atBottom;
   }, []);
 
-  // Handle scroll events
-  const handleScroll = useCallback(() => {
-    const atBottom = checkIfAtBottom();
-    setIsAtBottom(atBottom);
-    
-    if (atBottom) {
-      setShowJumpToLatest(false);
-      setShowNewDivider(null);
-    }
-  }, [checkIfAtBottom]);
+
 
   // Jump to latest messages
   const jumpToLatest = useCallback(() => {
-    if (virtuosoRef.current) {
-      virtuosoRef.current.scrollToIndex({
-        index: messages.length - 1,
-        behavior: 'smooth',
-        align: 'end'
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: 'smooth'
       });
     }
     setShowJumpToLatest(false);
     setShowNewDivider(null);
-  }, [messages.length]);
+  }, []);
 
-  // Auto-scroll to bottom when new content arrives and user is at bottom
+  // Auto-scroll to bottom when new content arrives
   useEffect(() => {
     if (messages.length > lastMessageCount) {
-      const wasAtBottom = isAtBottom;
       const atBottom = checkIfAtBottom();
       
-      if (atBottom || wasAtBottom) {
+      if (atBottom) {
         // Auto-scroll to bottom
         setTimeout(() => {
-          if (virtuosoRef.current) {
-            virtuosoRef.current.scrollToIndex({
-              index: messages.length - 1,
-              behavior: 'smooth',
-              align: 'end'
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+              top: scrollContainerRef.current.scrollHeight,
+              behavior: 'smooth'
             });
           }
         }, 100);
@@ -106,7 +91,7 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
       
       setLastMessageCount(messages.length);
     }
-  }, [messages.length, lastMessageCount, isAtBottom, checkIfAtBottom]);
+  }, [messages.length, lastMessageCount, checkIfAtBottom]);
 
   // Render individual message
   const renderMessage = useCallback((message: ChatMessage) => (
@@ -172,19 +157,8 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
       {renderNewDivider()}
       
       {/* Messages List with Virtualization */}
-      <div className="max-h-96" ref={scrollContainerRef}>
-        <Virtuoso
-          ref={virtuosoRef}
-          data={messages}
-          itemContent={(_index, message) => renderMessage(message)}
-          onScroll={handleScroll}
-          followOutput={isAtBottom}
-          alignToBottom={true}
-          initialTopMostItemIndex={messages.length - 1}
-          role="log"
-          aria-live={isAtBottom ? 'polite' : 'off'}
-          className="chat-scrollbar"
-        />
+      <div className="max-h-96 overflow-y-auto chat-scrollbar" ref={scrollContainerRef}>
+        {messages.map((message) => renderMessage(message))}
       </div>
       
       {/* Processing Indicator */}
