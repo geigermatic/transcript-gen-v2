@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import { ChatEngine } from '../lib/chatEngine';
@@ -20,6 +20,7 @@ import { ChatInput } from './ChatInput';
 
 export const ChatCentricLayout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, embeddings, isHydrated } = useAppStore();
   
   // Navigation state
@@ -92,6 +93,31 @@ export const ChatCentricLayout: React.FC = () => {
       }
     };
   }, [showProgress, processingStartTime]);
+
+  // Handle return from summary view - show document completion state
+  useEffect(() => {
+    if (location.state?.returnFromSummary && location.state?.document) {
+      const document = location.state.document;
+      
+      // Add a completion message to show the document was processed
+      const completionMessage = {
+        id: `completion-${Date.now()}`,
+        role: 'assistant' as const,
+        content: `✅ Document "${document.title || document.filename}" has been successfully processed and summarized. You can now ask questions about this document or upload another one.`,
+        timestamp: new Date().toISOString(),
+        type: 'document' as const,
+        metadata: {
+          documentId: document.id,
+          filename: document.filename
+        }
+      };
+      
+      setMessages(prev => [...prev, completionMessage]);
+      
+      // Clear the navigation state to prevent re-triggering
+      navigate('/', { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
 
   // Handle document upload and add to chat
   const handleDocumentUpload = async (success: boolean, message: string, document?: Document) => {

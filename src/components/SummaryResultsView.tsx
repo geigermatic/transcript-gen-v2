@@ -83,7 +83,14 @@ export const SummaryResultsView: React.FC = () => {
   }, [location.state, navigate, documents, getDocumentSummary, fetchDocumentSummary]);
 
   const handleBack = () => {
-    navigate('/');
+    // Navigate back to chat with document info to preserve upload completion state
+    navigate('/', { 
+      state: { 
+        returnFromSummary: true,
+        document: document,
+        summary: summary
+      } 
+    });
   };
 
   const handleCopy = async () => {
