@@ -11,7 +11,7 @@ import { ExportEngine } from './exportEngine';
 import { offlineStorage } from './storage';
 import { logInfo, logError } from './logger';
 import { ollama } from './ollama';
-import type { Document, StyleGuide, TextChunk } from '../types';
+import type { Document, StyleGuide, TextChunk, ChatContext } from '../types';
 
 export interface QATestResult {
   testName: string;
@@ -673,66 +673,127 @@ The most important thing to remember is that presentation skills improve with pr
 
     // Test 1: Markdown export
     results.push(await this.runTest('Markdown Export', async () => {
-      const markdown = ExportEngine.generateMarkdown({
-        metadata: { filename: 'test.txt', fileType: 'text/plain', fileSize: 100, wordCount: 50, uploadedAt: new Date().toISOString() },
+      const testDoc: Document = {
         id: 'test-doc',
-        content: 'Test content',
+        filename: 'test.txt',
+        title: 'Test Document',
+        tags: ['test'],
+        text: 'Test content',
+        metadata: { filename: 'test.txt', fileType: 'text/plain', fileSize: 100, wordCount: 50, dateAdded: new Date().toISOString() },
         uploadedAt: new Date().toISOString()
-      }, testSummary);
+      };
 
-      if (!markdown.includes('# Test Summary')) {
-        throw new Error('Markdown export missing summary content');
-      }
+      const testSummaryResult: SummarizationResult = {
+        document: testDoc,
+        chunkFacts: [],
+        mergedFacts: {
+          key_takeaways: ['Test takeaway'],
+          topics: ['Test topic'],
+          techniques: ['Test technique']
+        },
+        markdownSummary: '# Test Summary\n\nThis is a test summary.',
+        processingStats: {
+          totalChunks: 1,
+          successfulChunks: 1,
+          failedChunks: 0,
+          processingTime: 1000
+        }
+      };
 
-      if (!markdown.includes('## Key Takeaways')) {
-        throw new Error('Markdown export missing facts section');
+      const result = ExportEngine.exportSummary(testSummaryResult, 'markdown');
+
+      if (!result.content.includes('# Test Document')) {
+        throw new Error('Markdown export missing document title');
       }
 
       return {
-        markdownLength: markdown.length,
-        includesMetadata: markdown.includes('Document Information'),
-        includesFacts: markdown.includes('Key Takeaways')
+        markdownLength: result.content.length,
+        includesMetadata: result.content.includes('Document Information'),
+        includesFacts: result.content.includes('Key Takeaways')
       };
     }));
 
     // Test 2: HTML export
     results.push(await this.runTest('HTML Export', async () => {
-      const html = ExportEngine.generateHtml({
-        metadata: { filename: 'test.txt', fileType: 'text/plain', fileSize: 100, wordCount: 50, uploadedAt: new Date().toISOString() },
+      const testDoc: Document = {
         id: 'test-doc',
-        content: 'Test content',
+        filename: 'test.txt',
+        title: 'Test Document',
+        tags: ['test'],
+        text: 'Test content',
+        metadata: { filename: 'test.txt', fileType: 'text/plain', fileSize: 100, wordCount: 50, dateAdded: new Date().toISOString() },
         uploadedAt: new Date().toISOString()
-      }, testSummary);
+      };
 
-      if (!html.includes('<!DOCTYPE html>')) {
+      const testSummaryResult: SummarizationResult = {
+        document: testDoc,
+        chunkFacts: [],
+        mergedFacts: {
+          key_takeaways: ['Test takeaway'],
+          topics: ['Test topic'],
+          techniques: ['Test technique']
+        },
+        markdownSummary: '# Test Summary\n\nThis is a test summary.',
+        processingStats: {
+          totalChunks: 1,
+          successfulChunks: 1,
+          failedChunks: 0,
+          processingTime: 1000
+        }
+      };
+
+      const result = ExportEngine.exportSummary(testSummaryResult, 'html');
+
+      if (!result.content.includes('<!DOCTYPE html>')) {
         throw new Error('HTML export missing DOCTYPE');
       }
 
-      if (!html.includes('<h1>Test Summary</h1>')) {
+      if (!result.content.includes('<h1>Test Document</h1>')) {
         throw new Error('HTML export missing formatted content');
       }
 
-      if (!html.includes('<style>')) {
+      if (!result.content.includes('<style>')) {
         throw new Error('HTML export missing CSS styles');
       }
 
       return {
-        htmlLength: html.length,
-        validHtml: html.includes('<!DOCTYPE html>'),
-        includesStyles: html.includes('<style>')
+        htmlLength: result.content.length,
+        validHtml: result.content.includes('<!DOCTYPE html>'),
+        includesStyles: result.content.includes('<style>')
       };
     }));
 
     // Test 3: JSON export
     results.push(await this.runTest('JSON Export', async () => {
-      const jsonStr = ExportEngine.generateJson({
-        metadata: { filename: 'test.txt', fileType: 'text/plain', fileSize: 100, wordCount: 50, uploadedAt: new Date().toISOString() },
+      const testDoc: Document = {
         id: 'test-doc',
-        content: 'Test content',
+        filename: 'test.txt',
+        title: 'Test Document',
+        tags: ['test'],
+        text: 'Test content',
+        metadata: { filename: 'test.txt', fileType: 'text/plain', fileSize: 100, wordCount: 50, dateAdded: new Date().toISOString() },
         uploadedAt: new Date().toISOString()
-      }, testSummary);
+      };
 
-      const jsonData = JSON.parse(jsonStr);
+      const testSummaryResult: SummarizationResult = {
+        document: testDoc,
+        chunkFacts: [],
+        mergedFacts: {
+          key_takeaways: ['Test takeaway'],
+          topics: ['Test topic'],
+          techniques: ['Test technique']
+        },
+        markdownSummary: '# Test Summary\n\nThis is a test summary.',
+        processingStats: {
+          totalChunks: 1,
+          successfulChunks: 1,
+          failedChunks: 0,
+          processingTime: 1000
+        }
+      };
+
+      const result = ExportEngine.exportSummary(testSummaryResult, 'json');
+      const jsonData = JSON.parse(result.content);
 
       if (!jsonData.extractedFacts) {
         throw new Error('JSON export missing extractedFacts');
@@ -747,7 +808,7 @@ The most important thing to remember is that presentation skills improve with pr
       }
 
       return {
-        jsonSize: jsonStr.length,
+        jsonSize: result.content.length,
         validJson: true,
         hasRequiredFields: !!(jsonData.extractedFacts.key_takeaways && jsonData.extractedFacts.topics)
       };
@@ -821,7 +882,7 @@ The most important thing to remember is that presentation skills improve with pr
       );
       
       // 7. Export summary
-      const exportedMarkdown = ExportEngine.generateMarkdown(document, summary);
+      const exportedMarkdown = ExportEngine.exportSummary(summary, 'markdown');
       
       // 8. Cleanup
       await offlineStorage.removeDocument(document.id);
@@ -829,9 +890,9 @@ The most important thing to remember is that presentation skills improve with pr
       return {
         documentProcessed: !!document.text,
         embeddingsGenerated: embeddedChunks.length > 0,
-        summaryGenerated: !!summary.summary,
+        summaryGenerated: !!summary.markdownSummary,
         chatWorking: !!chatResponse.message.content,
-        exportWorking: exportedMarkdown.length > 0,
+        exportWorking: exportedMarkdown.content.length > 0,
         workflowComplete: true
       };
     }));
@@ -856,6 +917,9 @@ The most important thing to remember is that presentation skills improve with pr
       // Create test data
       const testDoc: Document = {
         id: 'persistence-test',
+        filename: 'persistence.txt',
+        title: 'Test Persistence Document',
+        tags: ['test', 'persistence'],
         text: 'Test persistence',
         metadata: {
           filename: 'persistence.txt',
