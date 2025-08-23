@@ -32,7 +32,7 @@ export function SummarizationManager({ document }: SummarizationManagerProps) {
   const generateSummary = async () => {
     setError(null);
     setIsGenerating(true);
-    setProgress({ current: 0, total: 0 });
+    setProgress({ current: 0, total: 0, status: '' });
 
     try {
       // Check if Ollama is available
@@ -46,7 +46,7 @@ export function SummarizationManager({ document }: SummarizationManagerProps) {
         document,
         styleGuide,
         (current: number, total: number, status?: string) => {
-          setProgress({ current, total, status });
+          setProgress({ current, total, status: status || '' });
         }
       );
 
@@ -57,7 +57,7 @@ export function SummarizationManager({ document }: SummarizationManagerProps) {
       setError(error instanceof Error ? error.message : 'Failed to generate summary');
     } finally {
       setIsGenerating(false);
-      setProgress({ current: 0, total: 0 });
+      setProgress({ current: 0, total: 0, status: '' });
     }
   };
 

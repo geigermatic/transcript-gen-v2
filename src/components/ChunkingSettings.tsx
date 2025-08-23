@@ -24,6 +24,12 @@ export const ChunkingSettings: React.FC<ChunkingSettingsProps> = ({
     description: string;
   } | null>(null);
 
+  const updateEstimation = useCallback((presetKey: string) => {
+    ChunkingConfigManager.setConfig(presetKey as keyof typeof PROCESSING_PRESETS);
+    const est = ChunkingConfigManager.getEstimatedProcessingTime(documentWordCount);
+    setEstimation(est);
+  }, [documentWordCount]);
+
   useEffect(() => {
     if (isOpen) {
       const currentConfig = ChunkingConfigManager.getCurrentConfig();
@@ -37,12 +43,6 @@ export const ChunkingSettings: React.FC<ChunkingSettingsProps> = ({
       updateEstimation(preset?.[0] || 'balanced');
     }
   }, [isOpen, updateEstimation]);
-
-  const updateEstimation = useCallback((presetKey: string) => {
-    ChunkingConfigManager.setConfig(presetKey as keyof typeof PROCESSING_PRESETS);
-    const est = ChunkingConfigManager.getEstimatedProcessingTime(documentWordCount);
-    setEstimation(est);
-  }, [documentWordCount]);
 
   const handlePresetChange = (presetKey: string) => {
     setSelectedPreset(presetKey);

@@ -100,6 +100,8 @@ export const SummaryResultsView: React.FC = () => {
   };
 
   const renderSummaryContent = () => {
+    if (!summary) return 'No summary available';
+    
     if (activeTab === 'stylized') {
       return summary.styledSummary || 'No stylized summary available';
     } else {

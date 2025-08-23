@@ -7,6 +7,7 @@ import { useAppStore } from '../store';
 import { ChatEngine } from '../lib/chatEngine';
 import { EmbeddingManager } from './EmbeddingManager';
 import { logInfo } from '../lib/logger';
+import type { ChatContext } from '../types';
 import type { Document, ChatMessage, EmbeddedChunk } from '../types';
 
 interface ChatWorkspaceProps {
@@ -18,7 +19,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
   selectedDocument,
   onDocumentSelect
 }) => {
-  const { documents, styleGuide, getAllEmbeddings } = useAppStore();
+  const { documents, getAllEmbeddings } = useAppStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -26,7 +27,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const chatEngine = new ChatEngine();
+
 
   // Load embeddings when document changes
   useEffect(() => {

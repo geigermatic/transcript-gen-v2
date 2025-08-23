@@ -33,8 +33,7 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
   const [selectedTab, setSelectedTab] = useState<'summary' | 'facts' | 'details'>('summary');
   const [showChunkingSettings, setShowChunkingSettings] = useState(false);
 
-  const summarizationEngine = new SummarizationEngine();
-  const abSummaryEngine = new ABSummaryEngine();
+
 
   // Clear summary when document changes
   useEffect(() => {
@@ -48,15 +47,15 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
     const stopTimer = logTime('SUMMARIZE', 'Summary generation');
 
     try {
-      const result = await summarizationEngine.summarizeDocument(selectedDocument, styleGuide);
+      const result = await SummarizationEngine.summarizeDocument(selectedDocument, styleGuide);
       setSummaryResult(result);
       onSummaryGenerated?.();
       
       stopTimer();
       logInfo('SUMMARIZE', 'Summary generated successfully', {
         documentId: selectedDocument.id,
-        processingTime: result.processingTime,
-        chunkCount: result.chunkCount
+        processingTime: result.processingStats.processingTime,
+        chunkCount: result.processingStats.totalChunks
       });
     } catch (error) {
       console.error('Summary generation failed:', error);
@@ -71,7 +70,7 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
     
     setIsGenerating(true);
     try {
-      await abSummaryEngine.generateABSummaryPair(selectedDocument, styleGuide);
+      await ABSummaryEngine.generateABSummaryPair(selectedDocument, styleGuide);
       logInfo('AB_TEST', 'A/B summary pair generated', { documentId: selectedDocument.id });
     } catch (error) {
       console.error('A/B summary generation failed:', error);
@@ -134,7 +133,7 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <EmbeddingManager document={selectedDocument} compact />
+            <EmbeddingManager document={selectedDocument} />
             <button
               onClick={() => setShowChunkingSettings(true)}
               className="glass-button text-gray-400 hover:text-white flex items-center space-x-2"
@@ -179,12 +178,12 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
             <div className="flex px-6">
               {[
                 { id: 'summary', label: '📝 Summary', count: null },
-                { id: 'facts', label: '🎯 Key Facts', count: summaryResult.facts.key_takeaways?.length || 0 },
+                { id: 'facts', label: '🎯 Key Facts', count: Object.keys(summaryResult.mergedFacts).length || 0 },
                 { id: 'details', label: '📊 Details', count: null }
               ].map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setSelectedTab(tab.id)}
+                  onClick={() => setSelectedTab(tab.id as 'summary' | 'facts' | 'details')}
                   className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
                     selectedTab === tab.id
                       ? 'text-teal-400 border-teal-400'
@@ -282,11 +281,11 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
 
             {selectedTab === 'facts' && (
               <div className="space-y-6">
-                {summaryResult.facts.key_takeaways && summaryResult.facts.key_takeaways.length > 0 && (
+                {summaryResult.mergedFacts.key_takeaways && summaryResult.mergedFacts.key_takeaways.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-3">🎯 Key Takeaways</h3>
                     <ul className="space-y-2">
-                      {summaryResult.facts.key_takeaways.map((item, index) => (
+                      {summaryResult.mergedFacts.key_takeaways.map((item, index) => (
                         <li key={index} className="flex items-start space-x-3">
                           <span className="text-teal-400 mt-1">•</span>
                           <span className="text-body">{item}</span>
@@ -296,11 +295,11 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
                   </div>
                 )}
 
-                {summaryResult.facts.techniques && summaryResult.facts.techniques.length > 0 && (
+                {summaryResult.mergedFacts.techniques && summaryResult.mergedFacts.techniques.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-3">🛠️ Techniques</h3>
                     <ul className="space-y-2">
-                      {summaryResult.facts.techniques.map((item, index) => (
+                      {summaryResult.mergedFacts.techniques.map((item, index) => (
                         <li key={index} className="flex items-start space-x-3">
                           <span className="text-teal-400 mt-1">•</span>
                           <span className="text-body">{item}</span>
@@ -310,11 +309,11 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
                   </div>
                 )}
 
-                {summaryResult.facts.action_items && summaryResult.facts.action_items.length > 0 && (
+                {summaryResult.mergedFacts.action_items && summaryResult.mergedFacts.action_items.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-3">✅ Action Items</h3>
                     <ul className="space-y-2">
-                      {summaryResult.facts.action_items.map((item, index) => (
+                      {summaryResult.mergedFacts.action_items.map((item, index) => (
                         <li key={index} className="flex items-start space-x-3">
                           <span className="text-teal-400 mt-1">•</span>
                           <span className="text-body">{item}</span>
@@ -330,15 +329,15 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="glass-panel p-4">
                   <h4 className="text-white font-medium mb-2">Processing Time</h4>
-                  <p className="text-2xl text-teal-400">{(summaryResult.processingTime / 1000).toFixed(1)}s</p>
+                  <p className="text-2xl text-teal-400">{(summaryResult.processingStats.processingTime / 1000).toFixed(1)}s</p>
                 </div>
                 <div className="glass-panel p-4">
                   <h4 className="text-white font-medium mb-2">Chunks Processed</h4>
-                  <p className="text-2xl text-teal-400">{summaryResult.chunkCount}</p>
+                  <p className="text-2xl text-teal-400">{summaryResult.processingStats.totalChunks}</p>
                 </div>
                 <div className="glass-panel p-4">
                   <h4 className="text-white font-medium mb-2">Model Used</h4>
-                  <p className="text-sm text-gray-300">{summaryResult.model}</p>
+                  <p className="text-sm text-gray-300">Ollama</p>
                 </div>
               </div>
             )}
