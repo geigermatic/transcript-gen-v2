@@ -33,7 +33,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
   useEffect(() => {
     if (selectedDocument) {
       const allEmbeddings = getAllEmbeddings();
-      const docEmbeddings = allEmbeddings.get(selectedDocument.id) || [];
+      const docEmbeddings = (allEmbeddings as Map<string, EmbeddedChunk[]>).get(selectedDocument.id) || [];
       setEmbeddings(docEmbeddings);
       
       // Clear chat when switching documents

@@ -77,7 +77,7 @@ export class QATester {
         testName,
         status: 'PASS',
         duration,
-        details: result || {}
+        details: result || { testResult: 'No details available' }
       };
     } catch (error) {
       const duration = performance.now() - startTime;
@@ -110,7 +110,10 @@ export class QATester {
     results.push(await this.runTest('Document Storage CRUD', async () => {
       const testDoc: Document = {
         id: 'test-doc-qa',
-        content: 'This is a test document for QA validation.',
+        filename: 'test-qa.txt',
+        title: 'Test QA Document',
+        tags: ['test', 'qa'],
+        text: 'This is a test document for QA validation.',
         metadata: {
           filename: 'test-qa.txt',
           fileType: 'text/plain',
@@ -131,7 +134,7 @@ export class QATester {
       }
 
       // Update (via re-save)
-      const updated = { ...testDoc, content: 'Updated content' };
+      const updated = { ...testDoc, text: 'Updated content' };
       await offlineStorage.saveDocument(updated);
       
       // Delete
@@ -225,25 +228,25 @@ export class QATester {
     // Test 3: Text splitting consistency
     results.push(await this.runTest('Text Splitting Consistency', async () => {
       const testText = 'Paragraph one.\n\nParagraph two.\n\nParagraph three with more content to test chunk sizing.';
-      const chunks = this.textSplitter.splitText(testText);
+              const chunks = TextSplitter.splitText(testText);
       
       if (chunks.length === 0) {
         throw new Error('Text splitting produced no chunks');
       }
 
-              const reassembled = chunks.map(c => c.text).join(' ').trim();
-      const originalWords = testText.split(/\s+/).filter(w => w.length > 0);
-      const reassembledWords = reassembled.split(/\s+/).filter(w => w.length > 0);
-
-      if (originalWords.length !== reassembledWords.length) {
-        throw new Error('Text splitting lost content');
-      }
-
-      return { 
-        originalLength: testText.length,
-        chunks: chunks.length,
-        avgChunkSize: chunks.reduce((sum, c) => sum + c.text.length, 0) / chunks.length
-      };
+                      const reassembled = chunks.map((c: TextChunk) => c.text).join(' ').trim();
+        const originalWords = testText.split(/\s+/).filter((w: string) => w.length > 0);
+        const reassembledWords = reassembled.split(/\s+/).filter((w: string) => w.length > 0);
+        
+        if (originalWords.length !== reassembledWords.length) {
+          throw new Error('Text splitting lost content');
+        }
+        
+        return { 
+          originalLength: testText.length,
+          chunks: chunks.length,
+          avgChunkSize: chunks.reduce((sum: number, c: TextChunk) => sum + c.text.length, 0) / chunks.length
+        };
     }));
 
     const totalDuration = performance.now() - startTime;
