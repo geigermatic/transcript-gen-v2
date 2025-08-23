@@ -156,6 +156,17 @@ export interface SummaryVariant {
   promptStrategy: string;
 }
 
+// Model options for Ollama
+export interface ModelOption {
+  id: string;
+  name: string;
+  description: string;
+  size: string;
+  expectedSpeed: string;
+  ramUsage: string;
+  recommended: boolean;
+}
+
 // Application settings
 export interface AppSettings {
   default_model: string;

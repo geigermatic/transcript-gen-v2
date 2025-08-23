@@ -10,7 +10,8 @@ import type {
   EmbeddedChunk,
   EmbeddingProgress,
   ABSummaryPair,
-  SummarizationResult
+  SummarizationResult,
+  ModelOption
 } from '../types';
 
 interface AppState {
@@ -39,6 +40,11 @@ interface AppState {
   // Settings
   settings: AppSettings;
   updateSettings: (updates: Partial<AppSettings>) => void;
+  
+  // Model Selection
+  availableModels: ModelOption[];
+  getAvailableModels: () => ModelOption[];
+  getCurrentModel: () => ModelOption;
   
   // Chat
   chatMessages: ChatMessage[];
@@ -330,8 +336,44 @@ This style guide captures the distinctive voice and approach for creating engagi
       },
       updateSettings: (updates) =>
         set((state) => ({
-          settings: { ...state.settings, ...updates },
+          settings: { ...state.settings, ...updates }
         })),
+      
+      // Model Selection
+      availableModels: [
+        {
+          id: 'llama3.1:8b-instruct-q4_K_M',
+          name: 'Llama 3.1 8B Instruct',
+          description: 'Fast, lightweight model good for basic tasks',
+          size: '8B parameters',
+          expectedSpeed: '2-3 minutes',
+          ramUsage: '4-5GB',
+          recommended: false
+        },
+        {
+          id: 'llama3.1:13b-instruct-q4_K_M',
+          name: 'Llama 3.1 13B Instruct',
+          description: 'Balanced performance and quality, recommended upgrade',
+          size: '13B parameters',
+          expectedSpeed: '45-75 seconds',
+          ramUsage: '6-7GB',
+          recommended: true
+        },
+        {
+          id: 'mixtral:8x7b-instruct-q4_K_M',
+          name: 'Mixtral 8x7B Instruct',
+          description: 'High performance with excellent reasoning capabilities',
+          size: '8x7B parameters',
+          expectedSpeed: '30-60 seconds',
+          ramUsage: '7-8GB',
+          recommended: true
+        }
+      ],
+      getAvailableModels: () => get().availableModels,
+      getCurrentModel: () => {
+        const currentModelId = get().settings.chat_default;
+        return get().availableModels.find(model => model.id === currentModelId) || get().availableModels[0];
+      },
 
       // Chat
       chatMessages: [],
