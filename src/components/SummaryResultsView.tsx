@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Search, Grid3X3, HelpCircle, Globe, Paperclip, Mic, Send, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Send, Copy, Check } from 'lucide-react';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import ReactMarkdown from 'react-markdown';
@@ -277,19 +277,6 @@ export const SummaryResultsView: React.FC = () => {
             <div className="max-w-4xl mx-auto">
               <form onSubmit={handleFollowUpSubmit} className="relative">
                 <div className="flex items-center bg-gray-50 border border-gray-300 rounded-2xl px-4 py-3">
-                  {/* Left Icons */}
-                  <div className="flex items-center gap-3 mr-3">
-                    <button type="button" className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-                      <Search size={18} />
-                    </button>
-                    <button type="button" className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-                      <Grid3X3 size={18} />
-                    </button>
-                    <button type="button" className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-                      <HelpCircle size={18} />
-                    </button>
-                  </div>
-
                   {/* Input Field */}
                   <input
                     type="text"
@@ -299,25 +286,14 @@ export const SummaryResultsView: React.FC = () => {
                     className="flex-1 bg-transparent border-none outline-none text-gray-800 placeholder-gray-500"
                   />
 
-                  {/* Right Icons */}
-                  <div className="flex items-center gap-3 ml-3">
-                    <button type="button" className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-                      <Globe size={18} />
-                    </button>
-                    <button type="button" className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-                      <Paperclip size={18} />
-                    </button>
-                    <button type="button" className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-                      <Mic size={18} />
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!followUpQuery.trim()}
-                      className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Send size={18} />
-                    </button>
-                  </div>
+                  {/* Send Button */}
+                  <button
+                    type="submit"
+                    disabled={!followUpQuery.trim()}
+                    className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Send size={18} />
+                  </button>
                 </div>
               </form>
             </div>
