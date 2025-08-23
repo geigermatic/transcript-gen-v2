@@ -385,6 +385,9 @@ export class QATester {
 
     const testDoc: Document = {
       id: 'test-summarization',
+      filename: 'presentation-skills.txt',
+      title: 'Teaching Effective Presentation Skills',
+      tags: ['presentation', 'skills', 'training'],
       text: `
 Teaching Effective Presentation Skills
 
@@ -408,22 +411,25 @@ Action items:
 
 The most important thing to remember is that presentation skills improve with practice and feedback.
       `.trim(),
-              metadata: {
-          filename: 'presentation-skills.txt',
-          fileType: 'text/plain',
-          fileSize: 1000,
-          wordCount: 150,
-          dateAdded: new Date().toISOString()
-        },
+      metadata: {
+        filename: 'presentation-skills.txt',
+        fileType: 'text/plain',
+        fileSize: 1000,
+        wordCount: 150,
+        dateAdded: new Date().toISOString()
+      },
       uploadedAt: new Date().toISOString()
     };
 
     // Test 1: Summary generation
     results.push(await this.runTest('Summary Generation', async () => {
       const styleGuide: StyleGuide = {
-        tone_formal: 50,
-        tone_enthusiastic: 70,
-        tone_technical: 30,
+        instructions_md: 'Generate a comprehensive summary with key insights and techniques.',
+        tone_settings: {
+          formality: 50,
+          enthusiasm: 70,
+          technicality: 30
+        },
         keywords: ['presentation', 'skills', 'practice'],
         example_phrases: {
           preferred_openings: ['In this lesson'],
@@ -433,34 +439,37 @@ The most important thing to remember is that presentation skills improve with pr
         }
       };
 
-      const summary = await this.summarizationEngine.summarizeDocument(testDoc, styleGuide);
+      const summary = await SummarizationEngine.summarizeDocument(testDoc, styleGuide);
 
-      if (!summary.summary || summary.summary.length < 100) {
+      if (!summary.markdownSummary || summary.markdownSummary.length < 100) {
         throw new Error('Summary too short or empty');
       }
 
-      if (!summary.facts || !summary.facts.techniques || summary.facts.techniques.length === 0) {
+      if (!summary.mergedFacts || !summary.mergedFacts.techniques || summary.mergedFacts.techniques.length === 0) {
         throw new Error('No techniques extracted');
       }
 
-      if (!summary.facts.key_takeaways || summary.facts.key_takeaways.length === 0) {
+      if (!summary.mergedFacts.key_takeaways || summary.mergedFacts.key_takeaways.length === 0) {
         throw new Error('No key takeaways extracted');
       }
 
       return {
-        summaryLength: summary.summary.length,
-        techniquesCount: summary.facts.techniques?.length || 0,
-        takeawaysCount: summary.facts.key_takeaways?.length || 0,
-        processingTime: summary.processingTime
+        summaryLength: summary.markdownSummary.length,
+        techniquesCount: summary.mergedFacts.techniques?.length || 0,
+        takeawaysCount: summary.mergedFacts.key_takeaways?.length || 0,
+        processingTime: summary.processingStats.processingTime
       };
     }));
 
     // Test 2: Style guide application
     results.push(await this.runTest('Style Guide Application', async () => {
       const styleGuide: StyleGuide = {
-        tone_formal: 90,
-        tone_enthusiastic: 10,
-        tone_technical: 80,
+        instructions_md: 'Generate a formal, technical analysis with systematic methodology.',
+        tone_settings: {
+          formality: 90,
+          enthusiasm: 10,
+          technicality: 80
+        },
         keywords: ['methodology', 'framework', 'systematic'],
         example_phrases: {
           preferred_openings: ['This analysis demonstrates'],
@@ -470,16 +479,16 @@ The most important thing to remember is that presentation skills improve with pr
         }
       };
 
-      const summary = await this.summarizationEngine.summarizeDocument(testDoc, styleGuide);
+      const summary = await SummarizationEngine.summarizeDocument(testDoc, styleGuide);
 
       // Check if style guide keywords are reflected in output
-      const summaryText = summary.summary.toLowerCase();
+      const summaryText = summary.markdownSummary.toLowerCase();
       const hasKeywords = styleGuide.keywords.some(keyword => 
         summaryText.includes(keyword.toLowerCase())
       );
 
       return {
-        formalTone: styleGuide.tone_formal,
+        formalTone: styleGuide.tone_settings.formality,
         keywordsFound: hasKeywords,
         summaryStyle: 'formal'
       };
@@ -488,9 +497,12 @@ The most important thing to remember is that presentation skills improve with pr
     // Test 3: Fact extraction accuracy
     results.push(await this.runTest('Fact Extraction Accuracy', async () => {
       const styleGuide: StyleGuide = {
-        tone_formal: 50,
-        tone_enthusiastic: 50,
-        tone_technical: 50,
+        instructions_md: 'Default style guide',
+        tone_settings: {
+          formality: 50,
+          enthusiasm: 50,
+          technicality: 50
+        },
         keywords: [],
         example_phrases: {
           preferred_openings: [],
@@ -500,8 +512,8 @@ The most important thing to remember is that presentation skills improve with pr
         }
       };
 
-      const summary = await this.summarizationEngine.summarizeDocument(testDoc, styleGuide);
-      const facts = summary.facts;
+      const summary = await SummarizationEngine.summarizeDocument(testDoc, styleGuide);
+      const facts = summary.mergedFacts;
 
       // Verify required fields are present
       const requiredFields = ['techniques', 'key_takeaways'];
@@ -566,7 +578,7 @@ The most important thing to remember is that presentation skills improve with pr
       const response = await this.chatEngine.chatWithDocument(
         'What are the types of machine learning?',
         testChunks,
-        { tone_formal: 50, tone_enthusiastic: 50, tone_technical: 50, keywords: [], example_phrases: { preferred_openings: [], preferred_transitions: [], preferred_conclusions: [], avoid_phrases: [] } },
+        { instructions_md: 'Default style guide', tone_settings: { formality: 50, enthusiasm: 50, technicality: 50 }, keywords: [], example_phrases: { preferred_openings: [], preferred_transitions: [], preferred_conclusions: [], avoid_phrases: [] } },
         []
       );
 
@@ -594,7 +606,7 @@ The most important thing to remember is that presentation skills improve with pr
       const response = await this.chatEngine.chatWithDocument(
         'What is the capital of France?', // Unrelated question
         testChunks,
-        { tone_formal: 50, tone_enthusiastic: 50, tone_technical: 50, keywords: [], example_phrases: { preferred_openings: [], preferred_transitions: [], preferred_conclusions: [], avoid_phrases: [] } },
+        { instructions_md: 'Default style guide', tone_settings: { formality: 50, enthusiasm: 50, technicality: 50 }, keywords: [], example_phrases: { preferred_openings: [], preferred_transitions: [], preferred_conclusions: [], avoid_phrases: [] } },
         []
       );
 
@@ -620,7 +632,7 @@ The most important thing to remember is that presentation skills improve with pr
       const response = await this.chatEngine.chatWithDocument(
         'What about neural networks?',
         testChunks,
-        { tone_formal: 50, tone_enthusiastic: 50, tone_technical: 50, keywords: [], example_phrases: { preferred_openings: [], preferred_transitions: [], preferred_conclusions: [], avoid_phrases: [] } },
+        { instructions_md: 'Default style guide', tone_settings: { formality: 50, enthusiasm: 50, technicality: 50 }, keywords: [], example_phrases: { preferred_openings: [], preferred_transitions: [], preferred_conclusions: [], avoid_phrases: [] } },
         history
       );
 
@@ -784,9 +796,12 @@ The most important thing to remember is that presentation skills improve with pr
       
       // 5. Generate summary
       const styleGuide: StyleGuide = {
-        tone_formal: 50,
-        tone_enthusiastic: 50,
-        tone_technical: 50,
+        instructions_md: 'Generate a workflow summary with processing details.',
+        tone_settings: {
+          formality: 50,
+          enthusiasm: 50,
+          technicality: 50
+        },
         keywords: ['workflow', 'processing'],
         example_phrases: {
           preferred_openings: ['This test demonstrates'],
