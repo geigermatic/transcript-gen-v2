@@ -343,29 +343,29 @@ This style guide captures the distinctive voice and approach for creating engagi
       availableModels: [
         {
           id: 'llama3.1:8b-instruct-q4_K_M',
-          name: 'Llama 3.1 8B Instruct',
-          description: 'Fast, lightweight model good for basic tasks',
+          name: 'Llama 3.1 8B Instruct (Q4_K_M)',
+          description: 'Your current model - good balance of speed and quality',
           size: '8B parameters',
           expectedSpeed: '2-3 minutes',
           ramUsage: '4-5GB',
           recommended: false
         },
         {
-          id: 'llama3.1:13b-instruct-q4_K_M',
-          name: 'Llama 3.1 13B Instruct',
-          description: 'Balanced performance and quality, recommended upgrade',
-          size: '13B parameters',
-          expectedSpeed: '45-75 seconds',
-          ramUsage: '6-7GB',
-          recommended: true
+          id: 'llama3.1:8b',
+          name: 'Llama 3.1 8B',
+          description: 'Standard 8B model, slightly larger but better quality',
+          size: '8B parameters',
+          expectedSpeed: '2-3 minutes',
+          ramUsage: '4.9GB',
+          recommended: false
         },
         {
-          id: 'mixtral:8x7b-instruct-q4_K_M',
-          name: 'Mixtral 8x7B Instruct',
-          description: 'High performance with excellent reasoning capabilities',
+          id: 'mixtral:8x7b',
+          name: 'Mixtral 8x7B',
+          description: 'High performance mixture-of-experts model, excellent for complex tasks',
           size: '8x7B parameters',
           expectedSpeed: '30-60 seconds',
-          ramUsage: '7-8GB',
+          ramUsage: '26GB',
           recommended: true
         }
       ],
