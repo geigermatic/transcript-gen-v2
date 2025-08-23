@@ -296,8 +296,8 @@ export class OfflineStorage {
       await abTestStore.setItem(pair.id, pair);
       logInfo('AB_TEST', `A/B summary pair saved: ${pair.id}`, {
         documentId: pair.documentId,
-        variantA: pair.variantA.name,
-        variantB: pair.variantB.name
+        variantA: pair.variantDetails.variantA.name,
+        variantB: pair.variantDetails.variantB.name
       });
     } catch (error) {
       logError('AB_TEST', 'Failed to save A/B summary pair', { error });
@@ -448,7 +448,14 @@ export class OfflineStorage {
 
   // Health check
   async healthCheck(): Promise<{ status: 'healthy' | 'degraded' | 'failed'; details: Record<string, unknown> }> {
-    const results = {
+    const results: {
+      documentsStore: boolean;
+      embeddingsStore: boolean;
+      preferencesStore: boolean;
+      settingsStore: boolean;
+      abTestStore: boolean;
+      quota: { available: number; used: number };
+    } = {
       documentsStore: false,
       embeddingsStore: false,
       preferencesStore: false,

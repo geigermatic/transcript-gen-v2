@@ -11,7 +11,7 @@ import { ExportEngine } from './exportEngine';
 import { offlineStorage } from './storage';
 import { logInfo, logError } from './logger';
 import { ollama } from './ollama';
-import type { Document, StyleGuide, TextChunk, ChatContext } from '../types';
+import type { Document, StyleGuide, TextChunk, ChatContext, SummarizationResult } from '../types';
 
 export interface QATestResult {
   testName: string;
@@ -104,7 +104,7 @@ export class QATester {
         testName,
         status: 'FAIL',
         duration,
-        details: {},
+        details: { testResult: 'Test failed' } as Record<string, unknown>,
         error: error instanceof Error ? error.message : String(error)
       };
     }
@@ -612,8 +612,18 @@ The most important thing to remember is that presentation skills improve with pr
     // Test 3: Multi-turn conversation
     results.push(await this.runTest('Multi-turn Conversation', async () => {
       const history = [
-        { role: 'user' as const, content: 'Tell me about machine learning.' },
-        { role: 'assistant' as const, content: 'Machine learning involves supervised, unsupervised, and reinforcement learning algorithms.' }
+        { 
+          id: 'msg-1', 
+          role: 'user' as const, 
+          content: 'Tell me about machine learning.',
+          timestamp: new Date().toISOString()
+        },
+        { 
+          id: 'msg-2', 
+          role: 'assistant' as const, 
+          content: 'Machine learning involves supervised, unsupervised, and reinforcement learning algorithms.',
+          timestamp: new Date().toISOString()
+        }
       ];
 
       const context: ChatContext = {
@@ -656,20 +666,7 @@ The most important thing to remember is that presentation skills improve with pr
     const startTime = performance.now();
     const results: QATestResult[] = [];
 
-    const testSummary = {
-      summary: '# Test Summary\n\nThis is a test summary with **bold** text.',
-      facts: {
-        class_title: 'Test Class',
-        audience: 'Students',
-        learning_objectives: ['Learn testing'],
-        key_takeaways: ['Testing is important'],
-        topics: ['QA', 'Testing'],
-        techniques: ['Unit testing']
-      },
-      processingTime: 1000,
-      chunkCount: 5,
-      model: 'test-model'
-    };
+    // testSummary variable removed as it's no longer used
 
     // Test 1: Markdown export
     results.push(await this.runTest('Markdown Export', async () => {
