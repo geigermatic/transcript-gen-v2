@@ -30,16 +30,7 @@ export interface QATestSuite {
 }
 
 export class QATester {
-  private embeddingEngine: EmbeddingEngine;
-  private summarizationEngine: SummarizationEngine;
-  private chatEngine: ChatEngine;
-  private textSplitter: TextSplitter;
-
   constructor() {
-    this.embeddingEngine = new EmbeddingEngine();
-    this.summarizationEngine = new SummarizationEngine();
-    this.chatEngine = new ChatEngine();
-
   }
 
   async runAllTests(): Promise<QATestSuite[]> {
@@ -555,38 +546,28 @@ The most important thing to remember is that presentation skills improve with pr
     const startTime = performance.now();
     const results: QATestResult[] = [];
 
-    // Setup test data
-    const testChunks = [
-      {
-        id: 'chunk-1',
-        content: 'Machine learning algorithms can be supervised, unsupervised, or reinforcement learning.',
-        documentId: 'test-doc',
-        index: 0,
-        embedding: await this.embeddingEngine.generateEmbedding('Machine learning algorithms')
-      },
-      {
-        id: 'chunk-2', 
-        content: 'Neural networks are composed of layers of interconnected nodes called neurons.',
-        documentId: 'test-doc',
-        index: 1,
-        embedding: await this.embeddingEngine.generateEmbedding('Neural networks neurons')
-      }
-    ];
+
 
     // Test 1: Question answering
     results.push(await this.runTest('Question Answering', async () => {
-      const response = await this.chatEngine.chatWithDocument(
+      const context: ChatContext = {
+        messages: [],
+        documentIds: ['test-doc'],
+        activeDocument: null,
+        selectedDocumentSummary: undefined,
+        maxContextLength: 4000
+      };
+      
+      const response = await ChatEngine.processQuery(
         'What are the types of machine learning?',
-        testChunks,
-        { instructions_md: 'Default style guide', tone_settings: { formality: 50, enthusiasm: 50, technicality: 50 }, keywords: [], example_phrases: { preferred_openings: [], preferred_transitions: [], preferred_conclusions: [], avoid_phrases: [] } },
-        []
+        context
       );
 
-      if (!response.answer || response.answer.length < 10) {
+      if (!response.message.content || response.message.content.length < 10) {
         throw new Error('Chat response too short or empty');
       }
 
-      if (!response.answer.toLowerCase().includes('supervised')) {
+      if (!response.message.content.toLowerCase().includes('supervised')) {
         throw new Error('Chat response did not include expected content');
       }
 
@@ -595,24 +576,30 @@ The most important thing to remember is that presentation skills improve with pr
       }
 
       return {
-        responseLength: response.answer.length,
+        responseLength: response.message.content.length,
         sourcesCount: response.sources.length,
-        confidence: response.confidence
+        confidence: response.responseMetrics.topSimilarity
       };
     }));
 
     // Test 2: Grounding validation
     results.push(await this.runTest('Response Grounding', async () => {
-      const response = await this.chatEngine.chatWithDocument(
+      const context: ChatContext = {
+        messages: [],
+        documentIds: ['test-doc'],
+        activeDocument: null,
+        selectedDocumentSummary: undefined,
+        maxContextLength: 4000
+      };
+      
+      const response = await ChatEngine.processQuery(
         'What is the capital of France?', // Unrelated question
-        testChunks,
-        { instructions_md: 'Default style guide', tone_settings: { formality: 50, enthusiasm: 50, technicality: 50 }, keywords: [], example_phrases: { preferred_openings: [], preferred_transitions: [], preferred_conclusions: [], avoid_phrases: [] } },
-        []
+        context
       );
 
       // Should refuse to answer unrelated questions
-      if (!response.answer.toLowerCase().includes("don't know") && 
-          !response.answer.toLowerCase().includes("information provided")) {
+      if (!response.message.content.toLowerCase().includes("don't know") && 
+          !response.message.content.toLowerCase().includes("information provided")) {
         throw new Error('Chat should refuse to answer unrelated questions');
       }
 
@@ -629,14 +616,20 @@ The most important thing to remember is that presentation skills improve with pr
         { role: 'assistant' as const, content: 'Machine learning involves supervised, unsupervised, and reinforcement learning algorithms.' }
       ];
 
-      const response = await this.chatEngine.chatWithDocument(
+      const context: ChatContext = {
+        messages: history,
+        documentIds: ['test-doc'],
+        activeDocument: null,
+        selectedDocumentSummary: undefined,
+        maxContextLength: 4000
+      };
+      
+      const response = await ChatEngine.processQuery(
         'What about neural networks?',
-        testChunks,
-        { instructions_md: 'Default style guide', tone_settings: { formality: 50, enthusiasm: 50, technicality: 50 }, keywords: [], example_phrases: { preferred_openings: [], preferred_transitions: [], preferred_conclusions: [], avoid_phrases: [] } },
-        history
+        context
       );
 
-      if (!response.answer.toLowerCase().includes('neural networks')) {
+      if (!response.message.content.toLowerCase().includes('neural networks')) {
         throw new Error('Follow-up question not handled properly');
       }
 
@@ -811,14 +804,20 @@ The most important thing to remember is that presentation skills improve with pr
         }
       };
       
-      const summary = await this.summarizationEngine.summarizeDocument(document, styleGuide);
+      const summary = await SummarizationEngine.summarizeDocument(document, styleGuide);
       
       // 6. Test chat
-      const chatResponse = await this.chatEngine.chatWithDocument(
+      const context: ChatContext = {
+        messages: [],
+        documentIds: [document.id],
+        activeDocument: document,
+        selectedDocumentSummary: undefined,
+        maxContextLength: 4000
+      };
+      
+      const chatResponse = await ChatEngine.processQuery(
         'What is this document about?',
-        embeddedChunks,
-        styleGuide,
-        []
+        context
       );
       
       // 7. Export summary
@@ -831,7 +830,7 @@ The most important thing to remember is that presentation skills improve with pr
         documentProcessed: !!document.text,
         embeddingsGenerated: embeddedChunks.length > 0,
         summaryGenerated: !!summary.summary,
-        chatWorking: !!chatResponse.answer,
+        chatWorking: !!chatResponse.message.content,
         exportWorking: exportedMarkdown.length > 0,
         workflowComplete: true
       };
