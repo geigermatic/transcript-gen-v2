@@ -10,7 +10,8 @@ import { ChatEngine } from './chatEngine';
 import { ExportEngine } from './exportEngine';
 import { offlineStorage } from './storage';
 import { logInfo, logError } from './logger';
-import type { Document, StyleGuide } from '../types';
+import { ollama } from './ollama';
+import type { Document, StyleGuide, TextChunk } from '../types';
 
 export interface QATestResult {
   testName: string;
@@ -38,7 +39,7 @@ export class QATester {
     this.embeddingEngine = new EmbeddingEngine();
     this.summarizationEngine = new SummarizationEngine();
     this.chatEngine = new ChatEngine();
-    this.textSplitter = new TextSplitter();
+
   }
 
   async runAllTests(): Promise<QATestSuite[]> {
@@ -66,6 +67,31 @@ export class QATester {
     return testSuites;
   }
 
+  private cosineSimilarity(vectorA: number[], vectorB: number[]): number {
+    if (vectorA.length !== vectorB.length) {
+      throw new Error('Vectors must have the same length');
+    }
+    
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+    
+    for (let i = 0; i < vectorA.length; i++) {
+      dotProduct += vectorA[i] * vectorB[i];
+      normA += vectorA[i] * vectorA[i];
+      normB += vectorB[i] * vectorB[i];
+    }
+    
+    normA = Math.sqrt(normA);
+    normB = Math.sqrt(normB);
+    
+    if (normA === 0 || normB === 0) {
+      return 0;
+    }
+    
+    return dotProduct / (normA * normB);
+  }
+
   private async runTest(testName: string, testFn: () => Promise<unknown>): Promise<QATestResult> {
     const startTime = performance.now();
     
@@ -77,7 +103,7 @@ export class QATester {
         testName,
         status: 'PASS',
         duration,
-        details: result || { testResult: 'No details available' }
+        details: result || { testResult: 'No details available' } as Record<string, unknown>
       };
     } catch (error) {
       const duration = performance.now() - startTime;
@@ -228,7 +254,7 @@ export class QATester {
     // Test 3: Text splitting consistency
     results.push(await this.runTest('Text Splitting Consistency', async () => {
       const testText = 'Paragraph one.\n\nParagraph two.\n\nParagraph three with more content to test chunk sizing.';
-              const chunks = TextSplitter.splitText(testText);
+              const chunks = TextSplitter.splitText(testText, 'test-doc');
       
       if (chunks.length === 0) {
         throw new Error('Text splitting produced no chunks');
@@ -269,7 +295,7 @@ export class QATester {
     // Test 1: Embedding generation
     results.push(await this.runTest('Embedding Generation', async () => {
       const testText = 'This is a test sentence for embedding generation.';
-      const embedding = await this.embeddingEngine.generateEmbedding(testText);
+      const embedding = await ollama.generateEmbedding(testText);
       
       if (!Array.isArray(embedding) || embedding.length === 0) {
         throw new Error('Invalid embedding generated');
@@ -292,13 +318,14 @@ export class QATester {
       const text3 = 'The weather is sunny today.';
 
       const [emb1, emb2, emb3] = await Promise.all([
-        this.embeddingEngine.generateEmbedding(text1),
-        this.embeddingEngine.generateEmbedding(text2),
-        this.embeddingEngine.generateEmbedding(text3)
+        ollama.generateEmbedding(text1),
+        ollama.generateEmbedding(text2),
+        ollama.generateEmbedding(text3)
       ]);
 
-      const sim12 = this.embeddingEngine.cosineSimilarity(emb1, emb2);
-      const sim13 = this.embeddingEngine.cosineSimilarity(emb1, emb3);
+      // Calculate cosine similarity manually since it's a private method
+      const sim12 = this.cosineSimilarity(emb1, emb2);
+      const sim13 = this.cosineSimilarity(emb1, emb3);
 
       if (sim12 <= sim13) {
         throw new Error('Similar texts should have higher similarity than dissimilar texts');
@@ -313,24 +340,14 @@ export class QATester {
 
     // Test 3: Search functionality
     results.push(await this.runTest('Embedding Search', async () => {
-      const documents = [
-        'Machine learning is a subset of artificial intelligence.',
-        'Natural language processing helps computers understand text.',
-        'The weather forecast predicts rain tomorrow.',
-        'Deep learning uses neural networks for pattern recognition.'
-      ];
+      const testDoc = {
+        id: 'test-doc',
+        text: 'Machine learning is a subset of artificial intelligence. Natural language processing helps computers understand text. The weather forecast predicts rain tomorrow. Deep learning uses neural networks for pattern recognition.'
+      };
 
-      const chunks = documents.map((content, index) => ({
-        id: `chunk-${index}`,
-        content,
-        documentId: 'test-doc',
-        index,
-        embedding: [] as number[] // Will be filled by generateEmbeddings
-      }));
-
-      const embeddedChunks = await EmbeddingEngine.generateDocumentEmbeddings(document.id, document.text);
-              const query = 'artificial intelligence and machine learning';
-        const results = await EmbeddingEngine.performHybridSearch(query, embeddedChunks, 2);
+      const embeddedChunks = await EmbeddingEngine.generateDocumentEmbeddings(testDoc.id, testDoc.text);
+      const query = 'artificial intelligence and machine learning';
+      const results = await EmbeddingEngine.performHybridSearch(query, embeddedChunks, 2);
 
       if (results.length === 0) {
         throw new Error('Search returned no results');
@@ -344,7 +361,7 @@ export class QATester {
       return { 
         queryLength: query.length,
         resultsCount: results.length,
-        topScore: results[0].score,
+        topScore: results[0].similarity,
         topContent: results[0].chunk.text.substring(0, 50)
       };
     }));
