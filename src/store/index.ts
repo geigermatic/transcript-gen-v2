@@ -24,7 +24,7 @@ interface AppState {
   embeddings: Map<string, EmbeddedChunk[]>; // documentId -> embedded chunks
   addEmbeddings: (documentId: string, chunks: EmbeddedChunk[]) => void;
   removeEmbeddings: (documentId: string) => void;
-  getAllEmbeddings: () => EmbeddedChunk[];
+  getAllEmbeddings: () => Map<string, EmbeddedChunk[]>;
   
   // Embedding progress tracking
   embeddingProgress: Map<string, EmbeddingProgress>; // documentId -> progress
