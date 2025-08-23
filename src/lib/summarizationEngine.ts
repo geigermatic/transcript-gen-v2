@@ -120,13 +120,21 @@ export class SummarizationEngine {
   static async summarizeDocument(
     document: Document,
     styleGuide: StyleGuide,
-    onProgress?: (current: number, total: number, status?: string) => void
+    onProgress?: (current: number, total: number, status?: string) => void,
+    modelId?: string
   ): Promise<SummarizationResult> {
     const startTime = Date.now();
     
+    // Update the Ollama client to use the selected model if provided
+    if (modelId) {
+      ollama.updateModel(modelId);
+      logInfo('SUMMARIZE', `Using selected model: ${modelId}`);
+    }
+    
     logInfo('SUMMARIZE', `Starting summarization for document: ${document.title}`, {
       documentId: document.id, 
-      textLength: document.text.length
+      textLength: document.text.length,
+      selectedModel: modelId || 'default'
     });
 
     try {

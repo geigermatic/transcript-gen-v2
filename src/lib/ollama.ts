@@ -38,6 +38,11 @@ export class OllamaClient {
     };
   }
 
+  // Update the model dynamically
+  updateModel(modelId: string) {
+    this.config.chatModel = modelId;
+  }
+
   async isAvailable(): Promise<boolean> {
     try {
       const controller = new AbortController();

@@ -21,7 +21,7 @@ import { ChatInput } from './ChatInput';
 export const ChatCentricLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, embeddings, isHydrated } = useAppStore();
+  const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, embeddings, isHydrated, settings } = useAppStore();
   
   // Navigation state
   const [isNavExpanded, setIsNavExpanded] = useState(false);
@@ -183,7 +183,8 @@ export const ChatCentricLayout: React.FC = () => {
           styleGuide,
           (current: number, total: number, status?: string) => {
             setProgress({ current, total, status: status || 'Processing...' });
-          }
+          },
+          settings.chat_default
         );
         
         // Create AB summary pair to store the result for future access
