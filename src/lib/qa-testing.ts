@@ -684,6 +684,7 @@ The most important thing to remember is that presentation skills improve with pr
         document: testDoc,
         chunkFacts: [],
         mergedFacts: {
+          learning_objectives: ['Learn testing'],
           key_takeaways: ['Test takeaway'],
           topics: ['Test topic'],
           techniques: ['Test technique']
@@ -726,6 +727,7 @@ The most important thing to remember is that presentation skills improve with pr
         document: testDoc,
         chunkFacts: [],
         mergedFacts: {
+          learning_objectives: ['Learn testing'],
           key_takeaways: ['Test takeaway'],
           topics: ['Test topic'],
           techniques: ['Test technique']
@@ -776,6 +778,7 @@ The most important thing to remember is that presentation skills improve with pr
         document: testDoc,
         chunkFacts: [],
         mergedFacts: {
+          learning_objectives: ['Learn testing'],
           key_takeaways: ['Test takeaway'],
           topics: ['Test topic'],
           techniques: ['Test technique']

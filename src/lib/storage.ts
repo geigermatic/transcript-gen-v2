@@ -482,7 +482,11 @@ export class OfflineStorage {
           await store.setItem(testKey, testValue);
           await store.getItem(testKey);
           await store.removeItem(testKey);
-          results[name as keyof typeof results] = true;
+          if (name === 'documentsStore') results.documentsStore = true;
+          else if (name === 'embeddingsStore') results.embeddingsStore = true;
+          else if (name === 'preferencesStore') results.preferencesStore = true;
+          else if (name === 'settingsStore') results.settingsStore = true;
+          else if (name === 'abTestStore') results.abTestStore = true;
         } catch (error) {
           logError('SYSTEM', `Health check failed for ${name}`, { error });
         }
