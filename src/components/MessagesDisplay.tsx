@@ -7,7 +7,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Virtuoso } from 'react-virtuoso';
-import type { VirtuosoHandle } from 'react-virtuoso';
 import { ProcessingIndicator } from './ProcessingIndicator';
 import { ChevronDown, MessageSquare } from 'lucide-react';
 
@@ -37,7 +36,7 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
   messages,
   isProcessing
 }) => {
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const virtuosoRef = useRef<{ scrollToIndex: (options: { index: number; behavior?: 'auto' | 'smooth'; align?: 'start' | 'center' | 'end' }) => void } | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
