@@ -45,7 +45,7 @@ export class SummarizationEngine {
     styleGuide: StyleGuide,
     regenerationCount: number = 1
   ): Promise<string> {
-    logInfo('SUMMARIZATION', `Regenerating stylized summary for: ${document.title || document.filename || 'Unknown Document'}`);
+    logInfo('SUMMARIZE', `Regenerating stylized summary for: ${document.title || document.filename || 'Unknown Document'}`);
     
     try {
       // Use the special regeneration prompt for variation
@@ -63,7 +63,7 @@ export class SummarizationEngine {
         regenerationCount: regenerationCount.toString()
       });
 
-      logInfo('SUMMARIZATION', 'About to call Ollama for regeneration', {
+      logInfo('SUMMARIZE', 'About to call Ollama for regeneration', {
         promptLength: regenerationPrompt.length,
         regenerationCount,
         timestamp,
@@ -97,19 +97,19 @@ export class SummarizationEngine {
         isIdentical: false // We'll check this in the calling code
       });
       
-      logInfo('SUMMARIZATION', 'Ollama response received', {
+      logInfo('SUMMARIZE', 'Ollama response received', {
         responseLength: response.length,
         responsePreview: response.substring(0, 200) + '...',
         fullResponse: response // Log the full response for debugging
       });
       
-      logInfo('SUMMARIZATION', `Stylized summary regenerated for: ${document.title || document.filename || 'Unknown Document'}`, {
+      logInfo('SUMMARIZE', `Stylized summary regenerated for: ${document.title || document.filename || 'Unknown Document'}`, {
         summaryLength: response.length
       });
       
       return response;
     } catch (error) {
-      logError('SUMMARIZATION', `Failed to regenerate stylized summary for: ${document.title || document.filename || 'Unknown Document'}`, error);
+      logError('SUMMARIZE', `Failed to regenerate stylized summary for: ${document.title || document.filename || 'Unknown Document'}`, error);
       throw error;
     }
   }

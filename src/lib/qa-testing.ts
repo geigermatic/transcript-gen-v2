@@ -94,7 +94,7 @@ export class QATester {
         testName,
         status: 'PASS',
         duration,
-        details: result || { testResult: 'No details available' } as Record<string, unknown>
+        details: (result as Record<string, unknown>) || { testResult: 'No details available' }
       };
     } catch (error) {
       const duration = performance.now() - startTime;
