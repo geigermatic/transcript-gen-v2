@@ -22,7 +22,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onKeyPress,
   isProcessing,
   isHydrated,
-  placeholder = "Add a document to get started..."
+  placeholder = "Ask about your uploaded documents..."
 }) => {
   return (
     <div className="max-w-4xl mx-auto">
