@@ -17,14 +17,12 @@ export const HomePageLayout: React.FC<HomePageLayoutProps> = ({
   onUploadComplete
 }) => {
   return (
-    <div className="flex-1 flex flex-col bg-white">
-      {/* Centered Content Layout */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 py-12">
-        {/* Content Container */}
+    <div className="flex-1 flex flex-col items-center justify-center bg-white px-8 py-12">
+              {/* Content Container */}
         <div className="w-full max-w-4xl space-y-8">
           {/* Logo */}
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 mx-auto">
               <img 
                 src={eliraIcon} 
                 alt="Elira" 
@@ -36,8 +34,8 @@ export const HomePageLayout: React.FC<HomePageLayoutProps> = ({
 
           {/* Tag Line and Instructions */}
           <div className="text-center">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50">
-              <p className="text-lg text-gray-700 mb-4">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 space-y-4">
+              <p className="text-lg text-gray-700">
                 Transform your transcripts into powerful insights with AI-powered summarization, 
                 analysis, and conversational Q&A using your local AI instance.
               </p>
@@ -55,7 +53,6 @@ export const HomePageLayout: React.FC<HomePageLayoutProps> = ({
           {/* Dynamic Content Area */}
           {children}
         </div>
-      </div>
     </div>
   );
 };

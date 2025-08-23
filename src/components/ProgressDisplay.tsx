@@ -33,8 +33,7 @@ export const ProgressDisplay: React.FC<ProgressDisplayProps> = ({
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto mb-6">
-      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+    <div className="w-full max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-medium text-gray-800">Processing Document</h3>
           <div className="flex items-center space-x-2">
@@ -63,7 +62,6 @@ export const ProgressDisplay: React.FC<ProgressDisplayProps> = ({
             <span>Elapsed: {formatTime(elapsedTime)}</span>
           </div>
         </div>
-      </div>
     </div>
   );
 };
