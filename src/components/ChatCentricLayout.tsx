@@ -5,17 +5,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
-import { FileUpload } from './FileUpload';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import { ChatEngine } from '../lib/chatEngine';
 import { EmbeddingEngine } from '../lib/embeddingEngine';
 import type { ABSummaryPair, Document } from '../types';
 import { LeftNavigation } from './LeftNavigation';
+import { HomePageLayout } from './HomePageLayout';
+import { ProgressDisplay } from './ProgressDisplay';
+import { MessagesDisplay } from './MessagesDisplay';
+import { ChatInput } from './ChatInput';
 
 
 
@@ -52,12 +51,7 @@ export const ChatCentricLayout: React.FC = () => {
 
 
 
-  // Format elapsed time as MM:SS
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+
 
   
   // Handle navigation hover
@@ -436,163 +430,31 @@ export const ChatCentricLayout: React.FC = () => {
         currentDocumentId={undefined}
         showNewChatButton={true}
       />
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col bg-white">
-        <div className="flex-1 flex flex-col bg-white">
-          {/* Centered Content Layout */}
-          <div className="flex-1 flex flex-col items-center justify-center px-8 py-12">
-            {/* Content Container */}
-            <div className="w-full max-w-4xl space-y-8">
-              {/* Logo */}
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4">
-                  <img 
-                    src={eliraIcon} 
-                    alt="Elira" 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <h1 className="text-3xl font-semibold text-gray-800">Elira</h1>
-              </div>
+      {/* Main Content Area */}
+      <HomePageLayout onUploadComplete={handleDocumentUpload}>
+        {/* Progress Display */}
+        <ProgressDisplay
+          showProgress={showProgress}
+          progress={progress}
+          elapsedTime={elapsedTime}
+        />
 
-              {/* Tag Line and Instructions */}
-              <div className="text-center">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50">
-                  <p className="text-lg text-gray-700 mb-4">
-                    Transform your transcripts into powerful insights with AI-powered summarization, 
-                    analysis, and conversational Q&A using your local AI instance.
-                  </p>
-                  <p className="text-gray-600">
-                    Upload documents and start chatting with your AI assistant.
-                  </p>
-                </div>
-              </div>
+        {/* Messages Display */}
+        <MessagesDisplay
+          messages={messages}
+          isProcessing={isProcessing}
+        />
 
-              {/* Drop Zone */}
-              <div className="text-center">
-                <FileUpload onUploadComplete={handleDocumentUpload} />
-              </div>
-
-              {/* Progress Display Area */}
-              {showProgress && (
-                <div className="w-full max-w-4xl mx-auto mb-6">
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-lg font-medium text-gray-800">Processing Document</h3>
-                      <div className="flex items-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                        <span className="text-sm text-gray-600">
-                          {progress.total > 0 ? `${Math.round((progress.current / progress.total) * 100)}%` : '...'}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {progress.total > 0 && (
-                      <div className="mb-3">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div 
-                            className="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
-                            style={{ width: `${(progress.current / progress.total) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <span>{progress.status || 'Processing...'}</span>
-                      <div className="flex items-center gap-2">
-                        <Clock size={14} />
-                        <span>Elapsed: {formatTime(elapsedTime)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Messages Display Area */}
-              {messages.length > 0 && (
-                <div className="w-full max-w-4xl mx-auto">
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-3xl rounded-2xl px-4 py-3 ${
-                            message.role === 'user'
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-50 text-gray-800 border border-gray-200'
-                          }`}
-                        >
-                          <div className="text-sm prose prose-sm max-w-none">
-                            <ReactMarkdown 
-                              remarkPlugins={[remarkGfm]}
-                              components={{
-                                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                                strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
-                                em: ({ children }) => <em className="italic">{children}</em>,
-                                ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                                ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                                li: ({ children }) => <li className="text-gray-700">{children}</li>,
-                                blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-2">{children}</blockquote>,
-                              }}
-                            >
-                              {message.content}
-                            </ReactMarkdown>
-                          </div>
-                          <div className={`text-xs mt-2 ${
-                            message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
-                          }`}>
-                            {new Date(message.timestamp).toLocaleTimeString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {isProcessing && (
-                      <div className="flex justify-start">
-                        <div className="bg-gray-50 text-gray-800 border border-gray-200 rounded-2xl px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                            <span className="text-sm">Processing...</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Chat Input Field */}
-              <div className="w-full max-w-2xl mx-auto">
-                <div className="flex items-center gap-3 p-4 border border-gray-300 rounded-2xl bg-white">
-                  <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Add a document to get started..."
-                    className="flex-1 px-4 py-3 border-none outline-none focus:ring-0 text-gray-800 placeholder-gray-500"
-                  />
-                  <button 
-                    onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || isProcessing || !isHydrated}
-                    className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {!isHydrated ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    ) : (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        {/* Chat Input */}
+        <ChatInput
+          inputValue={inputValue}
+          onInputChange={setInputValue}
+          onSendMessage={handleSendMessage}
+          onKeyPress={handleKeyPress}
+          isProcessing={isProcessing}
+          isHydrated={isHydrated}
+        />
+      </HomePageLayout>
     </div>
   );
 };
