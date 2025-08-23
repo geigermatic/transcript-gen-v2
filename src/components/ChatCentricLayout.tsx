@@ -432,27 +432,35 @@ export const ChatCentricLayout: React.FC = () => {
       />
       
       {/* Main Content Area */}
-      <HomePageLayout onUploadComplete={handleDocumentUpload}>
-        <ProgressDisplay
-          showProgress={showProgress}
-          progress={progress}
-          elapsedTime={elapsedTime}
-        />
+      <div className="flex-1 flex flex-col">
+        {/* Main Content */}
+        <div className="flex-1 px-6 py-8 overflow-y-auto">
+          <HomePageLayout onUploadComplete={handleDocumentUpload}>
+            <ProgressDisplay
+              showProgress={showProgress}
+              progress={progress}
+              elapsedTime={elapsedTime}
+            />
 
-        <MessagesDisplay
-          messages={messages}
-          isProcessing={isProcessing}
-        />
+            <MessagesDisplay
+              messages={messages}
+              isProcessing={isProcessing}
+            />
+          </HomePageLayout>
+        </div>
 
-        <ChatInput
-          inputValue={inputValue}
-          onInputChange={setInputValue}
-          onSendMessage={handleSendMessage}
-          onKeyPress={handleKeyPress}
-          isProcessing={isProcessing}
-          isHydrated={isHydrated}
-        />
-      </HomePageLayout>
+        {/* Chat Input - Fixed at Bottom */}
+        <div className="border-t border-gray-200 p-6">
+          <ChatInput
+            inputValue={inputValue}
+            onInputChange={setInputValue}
+            onSendMessage={handleSendMessage}
+            onKeyPress={handleKeyPress}
+            isProcessing={isProcessing}
+            isHydrated={isHydrated}
+          />
+        </div>
+      </div>
     </div>
   );
 };

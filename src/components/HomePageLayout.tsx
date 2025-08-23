@@ -17,9 +17,10 @@ export const HomePageLayout: React.FC<HomePageLayoutProps> = ({
   onUploadComplete
 }) => {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center bg-white px-8 py-12">
-              {/* Content Container */}
-        <div className="w-full max-w-4xl space-y-8">
+    <div className="flex-1 flex flex-col bg-white">
+      {/* Main Content */}
+      <div className="flex-1 px-6 py-8 overflow-y-auto">
+        <div className="w-full max-w-4xl mx-auto space-y-8">
           {/* Logo */}
           <div className="text-center space-y-4">
             <div className="w-16 h-16 mx-auto">
@@ -53,6 +54,7 @@ export const HomePageLayout: React.FC<HomePageLayoutProps> = ({
           {/* Dynamic Content Area */}
           {children}
         </div>
+      </div>
     </div>
   );
 };
