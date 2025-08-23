@@ -430,22 +430,20 @@ export const ChatCentricLayout: React.FC = () => {
         currentDocumentId={undefined}
         showNewChatButton={true}
       />
+      
       {/* Main Content Area */}
       <HomePageLayout onUploadComplete={handleDocumentUpload}>
-        {/* Progress Display */}
         <ProgressDisplay
           showProgress={showProgress}
           progress={progress}
           elapsedTime={elapsedTime}
         />
 
-        {/* Messages Display */}
         <MessagesDisplay
           messages={messages}
           isProcessing={isProcessing}
         />
 
-        {/* Chat Input */}
         <ChatInput
           inputValue={inputValue}
           onInputChange={setInputValue}

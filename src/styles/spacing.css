@@ -1,0 +1,52 @@
+/**
+ * Spacing System - CSS Custom Properties for consistent spacing
+ * Provides standardized spacing values across all components
+ */
+
+:root {
+  /* Base spacing units */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-12: 3rem;    /* 48px */
+  
+  /* Component spacing */
+  --component-gap: var(--space-6);      /* 24px - space between components */
+  --component-padding: var(--space-4);  /* 16px - internal component padding */
+  --section-gap: var(--space-8);       /* 32px - space between major sections */
+  
+  /* Border radius */
+  --radius-sm: 0.5rem;   /* 8px */
+  --radius-md: 1rem;     /* 16px */
+  --radius-lg: 1.5rem;   /* 24px */
+  --radius-xl: 2rem;     /* 32px */
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Utility classes for consistent spacing */
+.space-y-components {
+  display: flex;
+  flex-direction: column;
+  gap: var(--component-gap);
+}
+
+.space-y-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-gap);
+}
+
+.component-padding {
+  padding: var(--component-padding);
+}
+
+.section-padding {
+  padding: var(--section-gap);
+}

@@ -6,6 +6,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { ProcessingIndicator } from './ProcessingIndicator';
 
 interface ChatMessage {
   id: string;
@@ -36,7 +37,7 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-4 max-h-96 overflow-y-auto">
+    <div className="w-full max-w-4xl mx-auto space-y-components max-h-96 overflow-y-auto">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -73,16 +74,7 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
             </div>
           </div>
         ))}
-        {isProcessing && (
-          <div className="flex justify-start">
-            <div className="bg-gray-50 text-gray-800 border border-gray-200 rounded-2xl px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                <span className="text-sm">Processing...</span>
-              </div>
-            </div>
-          </div>
-        )}
+        <ProcessingIndicator isProcessing={isProcessing} />
     </div>
   );
 };

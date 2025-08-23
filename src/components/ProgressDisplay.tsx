@@ -33,7 +33,7 @@ export const ProgressDisplay: React.FC<ProgressDisplayProps> = ({
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+    <div className="w-full max-w-4xl mx-auto bg-white border border-gray-200 rounded-lg component-padding shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-medium text-gray-800">Processing Document</h3>
           <div className="flex items-center space-x-2">
@@ -44,7 +44,7 @@ export const ProgressDisplay: React.FC<ProgressDisplayProps> = ({
           </div>
         </div>
         
-        {progress.total > 0 && (
+        {progress.total > 0 ? (
           <div className="mb-3">
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div 
@@ -53,7 +53,7 @@ export const ProgressDisplay: React.FC<ProgressDisplayProps> = ({
               />
             </div>
           </div>
-        )}
+        ) : null}
         
         <div className="flex items-center justify-between text-sm text-gray-600">
           <span>{progress.status || 'Processing...'}</span>
