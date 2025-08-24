@@ -60,6 +60,17 @@ export const ChatCentricLayout: React.FC = () => {
   // Handle navigation hover
   const handleNavMouseEnter = () => setIsNavExpanded(true);
   const handleNavMouseLeave = () => setIsNavExpanded(false);
+  
+  // Handle new chat - clear chat history
+  const handleNewChat = () => {
+    setMessages([]);
+    setInputValue('');
+    setIsProcessing(false);
+    setShowProgress(false);
+    setProcessingStartTime(null);
+    setElapsedTime(0);
+    setProgress({ current: 0, total: 0, status: '' });
+  };
 
   // Ensure page starts at top on component mount
   useEffect(() => {
@@ -467,6 +478,7 @@ export const ChatCentricLayout: React.FC = () => {
         onNavMouseLeave={handleNavMouseLeave}
         currentDocumentId={undefined}
         showNewChatButton={true}
+        onNewChat={handleNewChat}
       />
       
       {/* Main Content Area */}

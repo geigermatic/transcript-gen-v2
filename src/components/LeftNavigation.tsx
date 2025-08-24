@@ -15,6 +15,7 @@ interface LeftNavigationProps {
   onNavMouseLeave: () => void;
   currentDocumentId?: string; // For highlighting current document
   showNewChatButton?: boolean; // Whether to show "New Chat" or "Back to Chat"
+  onNewChat?: () => void; // Callback for new chat functionality
 }
 
 export const LeftNavigation: React.FC<LeftNavigationProps> = ({
@@ -22,7 +23,8 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
   onNavMouseEnter,
   onNavMouseLeave,
   currentDocumentId,
-  showNewChatButton = true
+  showNewChatButton = true,
+  onNewChat
 }) => {
   const navigate = useNavigate();
   const { documents, clearAllData, abSummaryPairs } = useAppStore();
@@ -97,7 +99,13 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
         {/* Action Buttons */}
         <div className="p-4 space-y-3">
           <button 
-            onClick={() => navigate('/')}
+            onClick={() => {
+              if (onNewChat && showNewChatButton) {
+                onNewChat();
+              } else {
+                navigate('/');
+              }
+            }}
             className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <Plus className="w-5 h-5 text-gray-600" />
