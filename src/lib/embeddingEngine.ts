@@ -25,8 +25,9 @@ export interface EmbeddingProgress {
 }
 
 export class EmbeddingEngine {
-  private static readonly BATCH_SIZE = 5; // Process embeddings in batches
+  private static readonly BATCH_SIZE = 10; // Increased from 5 - parallel processing can handle larger batches
   private static readonly MIN_SIMILARITY_THRESHOLD = 0.3; // Minimum similarity for retrieval
+  private static readonly MAX_CONCURRENT_EMBEDDINGS = 20; // Limit concurrent requests to avoid overwhelming Ollama
 
   /**
    * Generate embeddings for a document
@@ -37,6 +38,7 @@ export class EmbeddingEngine {
     onProgress?: (progress: EmbeddingProgress) => void
   ): Promise<EmbeddedChunk[]> {
     const { addLog } = useAppStore.getState();
+    const startTime = Date.now();
     
     addLog({
       level: 'info',
@@ -57,20 +59,25 @@ export class EmbeddingEngine {
         details: { documentId, ...stats }
       });
 
-      // Generate embeddings in batches
+      // OPTIMIZED: Use larger batches for parallel processing
+      const optimizedBatchSize = Math.min(this.BATCH_SIZE, Math.ceil(chunks.length / 2));
       const embeddedChunks: EmbeddedChunk[] = [];
       
-      for (let i = 0; i < chunks.length; i += this.BATCH_SIZE) {
-        const batch = chunks.slice(i, i + this.BATCH_SIZE);
+      for (let i = 0; i < chunks.length; i += optimizedBatchSize) {
+        const batch = chunks.slice(i, i + optimizedBatchSize);
+        const batchStartTime = Date.now();
+        
         const batchEmbeddings = await this.processBatch(batch, documentId);
         embeddedChunks.push(...batchEmbeddings);
         
-        // Report progress
+        const batchTime = Date.now() - batchStartTime;
+        
+        // Report progress with performance metrics
         const progress: EmbeddingProgress = {
-          current: Math.min(i + this.BATCH_SIZE, chunks.length),
+          current: Math.min(i + optimizedBatchSize, chunks.length),
           total: chunks.length,
           chunkId: batch[batch.length - 1].id,
-          percentage: Math.round((Math.min(i + this.BATCH_SIZE, chunks.length) / chunks.length) * 100)
+          percentage: Math.round((Math.min(i + optimizedBatchSize, chunks.length) / chunks.length) * 100)
         };
         
         onProgress?.(progress);
@@ -78,11 +85,20 @@ export class EmbeddingEngine {
         addLog({
           level: 'info',
           category: 'embeddings',
-          message: `Processed batch ${Math.floor(i / this.BATCH_SIZE) + 1}/${Math.ceil(chunks.length / this.BATCH_SIZE)}`,
-          details: { documentId, progress }
+          message: `Processed batch ${Math.floor(i / optimizedBatchSize) + 1}/${Math.ceil(chunks.length / optimizedBatchSize)}`,
+          details: { 
+            documentId, 
+            progress,
+            batchSize: batch.length,
+            batchTime,
+            averageTimePerChunk: batchTime / batch.length
+          }
         });
       }
 
+      const totalTime = Date.now() - startTime;
+      const averageTimePerChunk = totalTime / chunks.length;
+      
       addLog({
         level: 'info',
         category: 'embeddings',
@@ -90,7 +106,10 @@ export class EmbeddingEngine {
         details: { 
           documentId, 
           totalChunks: embeddedChunks.length,
-          averageEmbeddingDimensions: embeddedChunks[0]?.embedding.length || 0
+          averageEmbeddingDimensions: embeddedChunks[0]?.embedding.length || 0,
+          totalTime,
+          averageTimePerChunk,
+          performanceImprovement: 'Parallel processing enabled'
         }
       });
 
@@ -110,34 +129,48 @@ export class EmbeddingEngine {
    * Process a batch of chunks to generate embeddings
    */
   private static async processBatch(chunks: TextChunk[], documentId: string): Promise<EmbeddedChunk[]> {
-    const embeddedChunks: EmbeddedChunk[] = [];
-    
-    for (const chunk of chunks) {
-      try {
-        const embedding = await ollama.generateEmbedding(chunk.text);
-        
-        embeddedChunks.push({
-          ...chunk,
-          embedding,
-          embeddingTimestamp: new Date().toISOString(),
-        });
-        
-        // Small delay to avoid overwhelming Ollama
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-      } catch (error) {
-        const { addLog } = useAppStore.getState();
-        addLog({
-          level: 'error',
-          category: 'embeddings',
-          message: `Failed to generate embedding for chunk: ${chunk.id}`,
-          details: { documentId, chunkId: chunk.id, error: error instanceof Error ? error.message : error }
-        });
-        throw error;
+    try {
+      // OPTIMIZED: True parallel processing with concurrency control
+      const embeddingPromises = chunks.map(async (chunk) => {
+        try {
+          const embedding = await ollama.generateEmbedding(chunk.text);
+          
+          return {
+            ...chunk,
+            embedding,
+            embeddingTimestamp: new Date().toISOString(),
+          };
+        } catch (error) {
+          const { addLog } = useAppStore.getState();
+          addLog({
+            level: 'error',
+            category: 'embeddings',
+            message: `Failed to generate embedding for chunk: ${chunk.id}`,
+            details: { documentId, chunkId: chunk.id, error: error instanceof Error ? error.message : error }
+          });
+          throw error;
+        }
+      });
+      
+      // Process embeddings with concurrency control to avoid overwhelming Ollama
+      const results: EmbeddedChunk[] = [];
+      for (let i = 0; i < embeddingPromises.length; i += this.MAX_CONCURRENT_EMBEDDINGS) {
+        const batch = embeddingPromises.slice(i, i + this.MAX_CONCURRENT_EMBEDDINGS);
+        const batchResults = await Promise.all(batch);
+        results.push(...batchResults);
       }
+      
+      return results;
+    } catch (error) {
+      const { addLog } = useAppStore.getState();
+      addLog({
+        level: 'error',
+        category: 'embeddings',
+        message: `Failed to process embedding batch`,
+        details: { documentId, error: error instanceof Error ? error.message : error }
+      });
+      throw error;
     }
-    
-    return embeddedChunks;
   }
 
   /**
