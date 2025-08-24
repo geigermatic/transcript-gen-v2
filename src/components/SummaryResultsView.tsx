@@ -3,7 +3,7 @@
  * Similar to Perplexity.ai's query results page layout
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Send, Copy, Check } from 'lucide-react';
 import { useAppStore } from '../store';
@@ -36,6 +36,11 @@ export const SummaryResultsView: React.FC = () => {
   const [copyFeedback, setCopyFeedback] = useState<{ versionId: string; message: string } | null>(null);
   const [regenerationProgress, setRegenerationProgress] = useState<{ step: string; progress: number } | null>(null);
   const [scrollToVersion, setScrollToVersion] = useState<string | null>(null);
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [selectedVersions, setSelectedVersions] = useState<{ left: string | null; right: string | null }>({
+    left: null,
+    right: null
+  });
 
   // Handle navigation hover
   const handleNavMouseEnter = () => setIsNavExpanded(true);
@@ -63,6 +68,163 @@ export const SummaryResultsView: React.FC = () => {
       behavior: 'smooth' 
     });
   };
+
+  // Version comparison functions
+  const toggleComparisonMode = () => {
+    setComparisonMode(!comparisonMode);
+    if (comparisonMode) {
+      // Reset selections when exiting comparison mode
+      setSelectedVersions({ left: null, right: null });
+    }
+  };
+
+  const selectVersionForComparison = (versionId: string, side: 'left' | 'right') => {
+    setSelectedVersions(prev => ({
+      ...prev,
+      [side]: prev[side] === versionId ? null : versionId
+    }));
+  };
+
+  const canCompare = selectedVersions.left && selectedVersions.right && selectedVersions.left !== selectedVersions.right;
+
+  // Export and sharing functions
+  const exportVersion = useCallback(async (version: any, format: 'markdown' | 'text' | 'html') => {
+    try {
+      let content = '';
+      let filename = '';
+      
+      switch (format) {
+        case 'markdown':
+          content = version.summary;
+          filename = `summary-v${version.versionNumber}-${new Date(version.timestamp).toISOString().split('T')[0]}.md`;
+          break;
+        case 'text':
+          content = version.summary.replace(/[#*`]/g, ''); // Remove markdown formatting
+          filename = `summary-v${version.versionNumber}-${new Date(version.timestamp).toISOString().split('T')[0]}.txt`;
+          break;
+        case 'html':
+          // Convert markdown to HTML (basic conversion)
+          content = `<html><head><title>Summary v${version.versionNumber}</title></head><body>${version.summary.replace(/\n/g, '<br>')}</body></html>`;
+          filename = `summary-v${version.versionNumber}-${new Date(version.timestamp).toISOString().split('T')[0]}.html`;
+          break;
+      }
+      
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      window.document.body.appendChild(a);
+      a.click();
+      window.document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      // Show success feedback
+      setCopyFeedback({ versionId: version.id, message: `Exported as ${format.toUpperCase()}` });
+      setTimeout(() => setCopyFeedback(null), 2000);
+      
+    } catch (error) {
+      console.error('Failed to export version:', error);
+      setCopyFeedback({ versionId: version.id, message: 'Export failed' });
+      setTimeout(() => setCopyFeedback(null), 2000);
+    }
+  }, []);
+
+  const shareVersion = useCallback(async (version: any) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Summary v${version.versionNumber}`,
+          text: version.summary.substring(0, 100) + '...',
+          url: window.location.href
+        });
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(version.summary);
+        setCopyFeedback({ versionId: version.id, message: 'Shared to clipboard' });
+        setTimeout(() => setCopyFeedback(null), 2000);
+      }
+    } catch (error) {
+      console.error('Failed to share version:', error);
+      // Fallback to clipboard
+      try {
+        await navigator.clipboard.writeText(version.summary);
+        setCopyFeedback({ versionId: version.id, message: 'Shared to clipboard' });
+        setTimeout(() => setCopyFeedback(null), 2000);
+      } catch (clipboardError) {
+        setCopyFeedback({ versionId: version.id, message: 'Share failed' });
+        setTimeout(() => setCopyFeedback(null), 2000);
+      }
+    }
+  }, []);
+
+  // Memoized values for performance
+  const allVersions = useMemo(() => {
+    return getAllVersions(document?.id || '') || [];
+  }, [document?.id, summary?.regenerationCount]);
+
+  const hasMultipleVersions = useMemo(() => allVersions.length > 1, [allVersions.length]);
+
+  const currentVersion = useMemo(() => {
+    return allVersions[0] || null;
+  }, [allVersions]);
+
+  // Optimized functions
+  const handleCopyVersion = useCallback(async (versionSummary: string, versionId: string) => {
+    try {
+      await navigator.clipboard.writeText(versionSummary);
+      setCopyFeedback({ versionId, message: 'Copied!' });
+      setTimeout(() => setCopyFeedback(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy version summary:', error);
+      // Fallback for older browsers or clipboard issues
+      try {
+        const textArea = window.document.createElement('textarea');
+        textArea.value = versionSummary;
+        window.document.body.appendChild(textArea);
+        textArea.select();
+        window.document.execCommand('copy');
+        window.document.body.removeChild(textArea);
+        setCopyFeedback({ versionId, message: 'Copied!' });
+        setTimeout(() => setCopyFeedback(null), 2000);
+      } catch (fallbackError) {
+        console.error('Fallback copy also failed:', fallbackError);
+        setCopyFeedback({ versionId, message: 'Copy failed' });
+        setTimeout(() => setCopyFeedback(null), 2000);
+      }
+    }
+  }, []);
+
+  const handleCopy = useCallback(async () => {
+    const content = activeTab === 'stylized' 
+      ? (summary?.styledSummary || 'No stylized summary available')
+      : (summary?.rawSummary || 'No raw summary available');
+    
+    if (!content) return;
+    
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopyFeedback({ versionId: 'current', message: 'Copied!' });
+      setTimeout(() => setCopyFeedback(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy summary:', error);
+      // Fallback for older browsers or clipboard issues
+      try {
+        const textArea = window.document.createElement('textarea');
+        textArea.value = content;
+        window.document.body.appendChild(textArea);
+        textArea.select();
+        window.document.execCommand('copy');
+        window.document.body.removeChild(textArea);
+        setCopyFeedback({ versionId: 'current', message: 'Copied!' });
+        setTimeout(() => setCopyFeedback(null), 2000);
+      } catch (fallbackError) {
+        console.error('Fallback copy also failed:', fallbackError);
+        setCopyFeedback({ versionId: 'current', message: 'Copy failed' });
+        setTimeout(() => setCopyFeedback(null), 2000);
+      }
+    }
+  }, [activeTab, summary?.styledSummary, summary?.rawSummary]);
 
   // Fetch summary for a document
   const fetchDocumentSummary = useCallback(async (doc: Document) => {
@@ -159,65 +321,6 @@ export const SummaryResultsView: React.FC = () => {
         summary: summary
       } 
     });
-  };
-
-  const handleCopyVersion = async (versionSummary: string, versionId: string) => {
-    try {
-      await navigator.clipboard.writeText(versionSummary);
-      setCopyFeedback({ versionId, message: 'Copied!' });
-      setTimeout(() => setCopyFeedback(null), 2000);
-    } catch (error) {
-      console.error('Failed to copy version summary:', error);
-      // Fallback for older browsers or clipboard issues
-      try {
-        const textArea = window.document.createElement('textarea');
-        textArea.value = versionSummary;
-        window.document.body.appendChild(textArea);
-        textArea.select();
-        window.document.execCommand('copy');
-        window.document.body.removeChild(textArea);
-        setCopyFeedback({ versionId, message: 'Copied!' });
-        setTimeout(() => setCopyFeedback(null), 2000);
-      } catch (fallbackError) {
-        console.error('Fallback copy also failed:', fallbackError);
-        setCopyFeedback({ versionId, message: 'Copy failed' });
-        setTimeout(() => setCopyFeedback(null), 2000);
-      }
-    }
-  };
-
-  const handleCopy = async () => {
-    const content = activeTab === 'stylized' 
-      ? (summary?.styledSummary || 'No stylized summary available')
-      : (summary?.rawSummary || 'No raw summary available');
-    
-    if (!content) return;
-    
-    try {
-      await navigator.clipboard.writeText(content);
-      // setCopied(true); // This state variable was removed
-      setTimeout(() => {
-        // setCopied(false); // This state variable was removed
-      }, 2000);
-    } catch (error) {
-      console.error('Failed to copy summary:', error);
-      // Fallback for older browsers or clipboard issues
-      try {
-        const textArea = window.document.createElement('textarea');
-        textArea.value = content;
-        window.document.body.appendChild(textArea);
-        textArea.select();
-        window.document.execCommand('copy');
-        window.document.body.removeChild(textArea);
-        // setCopied(true); // This state variable was removed
-        setTimeout(() => {
-          // setCopied(false); // This state variable was removed
-        }, 2000);
-      } catch (fallbackError) {
-        console.error('Fallback copy also failed:', fallbackError);
-        // Could show an error toast here
-      }
-    }
   };
 
   const handleRegenerate = async () => {
@@ -417,12 +520,12 @@ export const SummaryResultsView: React.FC = () => {
     return (
       <div className="space-y-6">
         {/* Version Navigation */}
-        {allVersions.length > 1 && (
+        {hasMultipleVersions && (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-medium text-gray-700">Version Navigation</h3>
               <span className="text-xs text-gray-500">
-                {allVersions.length} versions • {allVersions[0]?.regenerationCount || 0} regenerations
+                {allVersions.length} versions • {currentVersion?.regenerationCount || 0} regenerations
               </span>
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
@@ -449,47 +552,211 @@ export const SummaryResultsView: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Comparison Interface */}
+        {comparisonMode && (
+          <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-purple-800">Version Comparison</h3>
+              <span className="text-sm text-purple-600">
+                Select two versions to compare
+              </span>
+            </div>
+            
+            {/* Version Selection */}
+            <div className="grid grid-cols-2 gap-6 mb-6">
+              {/* Left Version Selection */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-purple-700">Left Version</h4>
+                <div className="space-y-2">
+                  {allVersions.map((version) => (
+                    <button
+                      key={`left-${version.id}`}
+                      onClick={() => selectVersionForComparison(version.id, 'left')}
+                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                        selectedVersions.left === version.id
+                          ? 'border-purple-400 bg-purple-100 text-purple-800'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">
+                          {version.isOriginal ? '🌱 Original' : `🔵 v${version.versionNumber}`}
+                        </span>
+                        {selectedVersions.left === version.id && (
+                          <span className="text-purple-600">✓</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {new Date(version.timestamp).toLocaleString()} • {version.characterCount} chars
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Version Selection */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-purple-700">Right Version</h4>
+                <div className="space-y-2">
+                  {allVersions.map((version) => (
+                    <button
+                      key={`right-${version.id}`}
+                      onClick={() => selectVersionForComparison(version.id, 'right')}
+                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                        selectedVersions.right === version.id
+                          ? 'border-purple-400 bg-purple-100 text-purple-800'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">
+                          {version.isOriginal ? '🌱 Original' : `🔵 v${version.versionNumber}`}
+                        </span>
+                        {selectedVersions.right === version.id && (
+                          <span className="text-purple-600">✓</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {new Date(version.timestamp).toLocaleString()} • {version.characterCount} chars
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Comparison Actions */}
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={() => setSelectedVersions({ left: null, right: null })}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Clear Selection
+              </button>
+              <button
+                onClick={toggleComparisonMode}
+                className="px-4 py-2 text-sm text-purple-600 hover:text-purple-800"
+              >
+                Exit Comparison
+              </button>
+            </div>
+
+            {/* Side-by-Side Comparison View */}
+            {canCompare && (
+              <div className="mt-6 border-t border-purple-200 pt-6">
+                <h4 className="text-lg font-semibold text-purple-800 mb-4 text-center">
+                  Side-by-Side Comparison
+                </h4>
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Left Version */}
+                  <div className="bg-white border-2 border-purple-300 rounded-lg p-4">
+                    <h5 className="font-semibold text-purple-800 mb-3">
+                      {allVersions.find(v => v.id === selectedVersions.left)?.isOriginal ? '🌱 Original' : `🔵 v${allVersions.find(v => v.id === selectedVersions.left)?.versionNumber}`}
+                    </h5>
+                    <div className="prose prose-sm max-h-96 overflow-y-auto">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {allVersions.find(v => v.id === selectedVersions.left)?.summary || ''}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                  
+                  {/* Right Version */}
+                  <div className="bg-white border-2 border-purple-300 rounded-lg p-4">
+                    <h5 className="font-semibold text-purple-800 mb-3">
+                      {allVersions.find(v => v.id === selectedVersions.right)?.isOriginal ? '🌱 Original' : `🔵 v${allVersions.find(v => v.id === selectedVersions.right)?.versionNumber}`}
+                    </h5>
+                    <div className="prose prose-sm max-h-96 overflow-y-auto">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {allVersions.find(v => v.id === selectedVersions.right)?.summary || ''}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         
         {allVersions.map((version) => (
           <div key={version.id} id={`version-${version.id}`} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             {/* Version Header */}
             <div className="flex items-center justify-between bg-gray-50 px-6 py-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <span className={`text-sm font-medium ${
-                  version.isOriginal ? 'text-green-700' : 'text-gray-700'
-                }`}>
-                  {version.isOriginal ? '🌱 Original Version' : `🔵 Version ${version.versionNumber}`}
-                </span>
-                <span className="text-xs text-gray-500">
-                  {new Date(version.timestamp).toLocaleString()}
-                </span>
-                <span className="text-xs text-gray-500">
-                  {version.characterCount.toLocaleString()} characters
-                </span>
-                {version.modelUsed && (
-                  <span className="text-xs text-gray-500 font-mono">
-                    {version.modelUsed}
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">
+                    {version.isOriginal ? '🌱' : '🔵'}
                   </span>
-                )}
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {version.isOriginal ? 'Original Version' : `Version ${version.versionNumber}`}
+                    </h3>
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <span>{new Date(version.timestamp).toLocaleString()}</span>
+                      <span>{version.characterCount.toLocaleString()} characters</span>
+                      {version.modelUsed && <span>Model: {version.modelUsed}</span>}
+                    </div>
+                  </div>
+                </div>
               </div>
               
-              {/* Inline Copy Button */}
-              <button
-                onClick={() => handleCopyVersion(version.summary, version.id)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm rounded-md transition-colors"
-              >
-                {copyFeedback?.versionId === version.id ? (
-                  <>
-                    <Check size={14} className="text-green-600" />
-                    <span className="text-green-600 text-xs">{copyFeedback.message}</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} />
-                    <span>Copy</span>
-                  </>
-                )}
-              </button>
+              {/* Version Actions */}
+              <div className="flex items-center gap-2">
+                {/* Export Dropdown */}
+                <div className="relative group">
+                  <button className="flex items-center gap-2 px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 text-sm rounded-md transition-colors">
+                    <span>📤</span>
+                    <span>Export</span>
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[120px]">
+                    <button
+                      onClick={() => exportVersion(version, 'markdown')}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
+                    >
+                      📄 Markdown (.md)
+                    </button>
+                    <button
+                      onClick={() => exportVersion(version, 'text')}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      📝 Plain Text (.txt)
+                    </button>
+                    <button
+                      onClick={() => exportVersion(version, 'html')}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg"
+                    >
+                      🌐 HTML (.html)
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Share Button */}
+                <button
+                  onClick={() => shareVersion(version)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 text-sm rounded-md transition-colors"
+                >
+                  <span>📤</span>
+                  <span>Share</span>
+                </button>
+                
+                {/* Inline Copy Button */}
+                <button
+                  onClick={() => handleCopyVersion(version.summary, version.id)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm rounded-md transition-colors"
+                >
+                  {copyFeedback?.versionId === version.id ? (
+                    <>
+                      <Check size={14} className="text-green-600" />
+                      <span className="text-green-600 text-xs">{copyFeedback.message}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
             
             {/* Version Content */}
@@ -652,22 +919,37 @@ export const SummaryResultsView: React.FC = () => {
                   
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3">
+                    {/* Comparison Mode Toggle */}
+                    {allVersions.length > 1 && (
+                      <button
+                        onClick={toggleComparisonMode}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                          comparisonMode
+                            ? 'bg-purple-100 text-purple-700 border-2 border-purple-300'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        }`}
+                      >
+                        <span className="text-sm">🔍</span>
+                        <span className="text-sm font-medium">
+                          {comparisonMode ? 'Exit Compare' : 'Compare Versions'}
+                        </span>
+                      </button>
+                    )}
+                    
                     {/* Regenerate Button */}
                     <button
                       onClick={handleRegenerate}
-                      disabled={!summary || isRegenerating}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isRegenerating || !document || !summary}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isRegenerating ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                           <span>Regenerating...</span>
                         </>
                       ) : (
                         <>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
+                          <span>🔄</span>
                           <span>Regenerate</span>
                         </>
                       )}
