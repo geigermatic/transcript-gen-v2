@@ -823,47 +823,59 @@ Generate ONLY the markdown summary, no other text:`;
 
   /**
    * Build optimized prompt for ultra-fast summary generation
-   * Shorter, more focused prompt for faster processing
+   * Enhanced to actually apply the voice style guide
    */
   private static buildUltraFastSummaryPrompt(
     document: Document,
     styleGuide: StyleGuide
   ): string {
     const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
+    const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
     
-    return `Summarize this transcript in the specified style:
+    return `You are a professional transcript summarizer. Create a summary that matches the EXACT voice and style specified below.
 
-TITLE: ${document.title}
-STYLE: ${styleInstructions}
+DOCUMENT: ${document.title}
+
+VOICE STYLE GUIDE:
+- Instructions: ${styleInstructions}
+- Formality Level: ${styleGuide.tone_settings.formality}
+- Enthusiasm Level: ${styleGuide.tone_settings.enthusiasm}
+- Technicality Level: ${styleGuide.tone_settings.technicality}
+- Keywords to Use: ${styleGuide.keywords.join(', ') || 'None specified'}
+
+EXAMPLE PHRASES (use similar style):
+${examplePhrasesSection}
 
 TRANSCRIPT:
 ${document.text}
 
-FORMAT:
+REQUIRED FORMAT (follow exactly):
 # ${document.title}
 
 ## Synopsis
-[4 sentences on benefits and value]
+[Exactly 4 sentences emphasizing WHY and WHAT benefits - compelling and benefit-focused]
 
 ## Learning Objectives
-- [bullet points]
+[What students will learn - bulleted list]
 
-## Key Takeaways  
-- [bullet points]
+## Key Takeaways
+[Main insights and lessons - bulleted list]
 
 ## Topics
-- [bullet points]
+[Subject areas covered - bulleted list]
 
 ## Techniques
-- [bullet points]
+[Specific methods, practices, exercises taught - bulleted list]
 
 ## Notable Quotes
-- [bullet points]
+[Memorable quotes from the lesson - bulleted list]
 
 ## Open Questions
-- [bullet points]
+[Questions for reflection or further exploration - bulleted list]
 
-Apply the style and generate the summary:`;
+CRITICAL: Apply the voice style guide above to EVERY section. The tone, formality, enthusiasm, and technicality must match exactly. Use the example phrases as a guide for the writing style.
+
+Generate the styled summary now:`;
   }
 
 
