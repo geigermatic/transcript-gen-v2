@@ -43,6 +43,7 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
   // Helper function to get processing time for a document
   const getDocumentProcessingTime = (documentId: string): number | null => {
     const summaryPair = abSummaryPairs.find(pair => pair.documentId === documentId);
+    console.log('Looking for processing time for doc:', documentId, 'Found summary pair:', summaryPair);
     if (summaryPair?.summaryA?.processingStats?.processingTime) {
       return summaryPair.summaryA.processingStats.processingTime;
     }
@@ -52,6 +53,7 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
   // Helper function to get model used for a document
   const getDocumentModel = (documentId: string): string | null => {
     const summaryPair = abSummaryPairs.find(pair => pair.documentId === documentId);
+    console.log('Looking for model for doc:', documentId, 'Found summary pair:', summaryPair);
     if (summaryPair?.summaryA?.processingStats?.modelUsed) {
       return summaryPair.summaryA.processingStats.modelUsed;
     }
@@ -166,12 +168,10 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
                           {doc.title || doc.filename}
                         </h4>
                         <div className="flex items-center gap-3 text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
-                            📅
+                          <span>
                             {new Date(doc.uploadedAt).toLocaleDateString()}
                           </span>
-                          <span className="flex items-center gap-1">
-                            📊
+                          <span>
                             {doc.text ? `${Math.round(doc.text.length / 1000)}k chars` : 'Unknown size'}
                           </span>
                           {/* Processing Time */}
