@@ -96,6 +96,9 @@ export interface SummarizationResult {
   styledSummary?: string; // Summary with style guide applied
   regenerationCount?: number; // Track how many times this summary has been regenerated
   currentVersionId?: string; // ID of the currently displayed version
+  // New fields for stacked version view (optional for backward compatibility)
+  versions?: SummaryVersion[]; // Array of all summary versions
+  currentVersionIndex?: number; // Index of currently displayed version
   processingStats: {
     totalChunks: number;
     successfulChunks: number;
@@ -108,18 +111,23 @@ export interface SummarizationResult {
 // Summary version history for restore functionality
 export interface SummaryVersion {
   id: string;
-  summary: string;
-  timestamp: number;
-  regenerationCount: number;
+  versionNumber: number; // Display version number (1, 2, 3, etc.)
+  summary: string; // The actual summary content
+  timestamp: number; // Creation timestamp
+  regenerationCount: number; // How many regenerations at this point
   isOriginal: boolean; // Track if this is the first generated version
+  characterCount: number; // Character count for display
+  modelUsed?: string; // Which model was used for this version
+  styleGuideVersion?: string; // Hash or version of style guide used
 }
 
 export interface SummaryHistory {
   documentId: string;
   versions: SummaryVersion[];
-  maxVersions: number; // Configurable limit (default: 5)
+  maxVersions: number; // Configurable limit (default: 10 for stacked view)
   lastAccessed: number;
   totalSize: number; // Track memory usage
+  currentVersionIndex: number; // Index of currently displayed version
 }
 
 // Style guide and preferences

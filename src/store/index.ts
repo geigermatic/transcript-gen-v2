@@ -67,8 +67,11 @@ interface AppState {
   
   // Summary History Management
   summaryHistory: Map<string, SummaryHistory>; // documentId -> version history
-  addSummaryVersion: (documentId: string, summary: string, isOriginal?: boolean) => void;
+  addSummaryVersion: (documentId: string, summary: string, isOriginal?: boolean, modelUsed?: string) => void;
   getSummaryHistory: (documentId: string) => SummaryHistory | undefined;
+  getAllVersions: (documentId: string) => SummaryVersion[]; // Get all versions for a document
+  setCurrentVersion: (documentId: string, versionIndex: number) => void; // Set current version index
+  clearVersionHistory: (documentId: string) => void; // Clear to original only
   restoreSummaryVersion: (documentId: string, versionId: string) => SummarizationResult | undefined;
   clearSummaryHistory: (documentId: string) => void;
   cleanupSummaryHistory: () => void; // Memory management
@@ -468,7 +471,7 @@ This style guide captures the distinctive voice and approach for creating engagi
 
       // Summary History Management
       summaryHistory: new Map<string, SummaryHistory>(),
-      addSummaryVersion: (documentId, summary, isOriginal = false) =>
+      addSummaryVersion: (documentId, summary, isOriginal = false, modelUsed?: string) =>
         set((state) => {
           // Ensure summaryHistory is a Map (handle rehydration from persistence)
           const summaryHistory = state.summaryHistory instanceof Map 
@@ -476,28 +479,33 @@ This style guide captures the distinctive voice and approach for creating engagi
             : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
           
           const existingHistory = summaryHistory.get(documentId);
+          const nextVersionNumber = (existingHistory?.versions.length || 0) + 1;
+          
           const newVersion: SummaryVersion = {
             id: crypto.randomUUID(),
+            versionNumber: nextVersionNumber,
             summary,
             timestamp: Date.now(),
             regenerationCount: existingHistory?.versions.length || 0,
             isOriginal,
+            characterCount: summary.length,
+            modelUsed,
           };
           
           const updatedHistory: SummaryHistory = {
             documentId,
-            versions: [...(existingHistory?.versions || []), newVersion],
-            maxVersions: 5, // Keep last 5 versions
+            versions: [newVersion, ...(existingHistory?.versions || [])], // Prepend new version at top
+            maxVersions: 10, // Increased limit for stacked view
             lastAccessed: Date.now(),
             totalSize: (existingHistory?.totalSize || 0) + summary.length,
+            currentVersionIndex: 0, // New version is always at index 0
           };
           
-          // Enforce max versions limit
+          // Enforce max versions limit (remove oldest versions from bottom)
           if (updatedHistory.versions.length > updatedHistory.maxVersions) {
-            const removedVersion = updatedHistory.versions.shift();
-            if (removedVersion) {
-              updatedHistory.totalSize -= removedVersion.summary.length;
-            }
+            const removedVersions = updatedHistory.versions.splice(updatedHistory.maxVersions);
+            const removedSize = removedVersions.reduce((total, version) => total + version.characterCount, 0);
+            updatedHistory.totalSize -= removedSize;
           }
           
           const newHistory = new Map<string, SummaryHistory>(summaryHistory);
@@ -512,6 +520,61 @@ This style guide captures the distinctive voice and approach for creating engagi
           ? state.summaryHistory 
           : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
         return summaryHistory.get(documentId);
+      },
+      
+      // New methods for stacked version view
+      getAllVersions: (documentId) => {
+        const state = get();
+        const history = state.summaryHistory.get(documentId);
+        return history?.versions || [];
+      },
+      
+      setCurrentVersion: (documentId, versionIndex) => {
+        set((state) => {
+          const summaryHistory = state.summaryHistory instanceof Map 
+            ? state.summaryHistory 
+            : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
+          
+          const history = summaryHistory.get(documentId);
+          if (!history || versionIndex < 0 || versionIndex >= history.versions.length) {
+            return state;
+          }
+          
+          const updatedHistory = { ...history, currentVersionIndex: versionIndex, lastAccessed: Date.now() };
+          const newHistory = new Map<string, SummaryHistory>(summaryHistory);
+          newHistory.set(documentId, updatedHistory);
+          
+          return { summaryHistory: newHistory };
+        });
+      },
+      
+      clearVersionHistory: (documentId) => {
+        set((state) => {
+          const summaryHistory = state.summaryHistory instanceof Map 
+            ? state.summaryHistory 
+            : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
+          
+          // Keep only the original version
+          const history = summaryHistory.get(documentId);
+          if (!history) return state;
+          
+          const originalVersion = history.versions.find(v => v.isOriginal);
+          if (!originalVersion) return state;
+          
+          const clearedHistory: SummaryHistory = {
+            documentId,
+            versions: [originalVersion],
+            maxVersions: 10,
+            lastAccessed: Date.now(),
+            totalSize: originalVersion.characterCount,
+            currentVersionIndex: 0,
+          };
+          
+          const newHistory = new Map<string, SummaryHistory>(summaryHistory);
+          newHistory.set(documentId, clearedHistory);
+          
+          return { summaryHistory: newHistory };
+        });
       },
       restoreSummaryVersion: (documentId, versionId) => {
         const state = get();
@@ -541,6 +604,8 @@ This style guide captures the distinctive voice and approach for creating engagi
           styledSummary: version.summary,
           regenerationCount: version.regenerationCount,
           currentVersionId: version.id,
+          versions: [version], // Include the restored version
+          currentVersionIndex: 0, // Set as current version
           processingStats: {
             totalChunks: 0,
             successfulChunks: 0,
