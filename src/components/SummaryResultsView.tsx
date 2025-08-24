@@ -24,6 +24,7 @@ export const SummaryResultsView: React.FC = () => {
   const [summary, setSummary] = useState<SummarizationResult | null>(null);
   const [isNavExpanded, setIsNavExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Handle navigation hover
@@ -103,6 +104,39 @@ export const SummaryResultsView: React.FC = () => {
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy summary:', error);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (!document || !summary) return;
+    
+    setIsRegenerating(true);
+    try {
+      // Use the existing chunked content to regenerate just the styled summary
+      const regeneratedSummary = await SummarizationEngine.regenerateStyledSummary(
+        document,
+        summary.mergedFacts,
+        styleGuide,
+        summary.regenerationCount ? summary.regenerationCount + 1 : 1
+      );
+      
+      // Update the summary with the new styled version
+      const updatedSummary: SummarizationResult = {
+        ...summary,
+        styledSummary: regeneratedSummary,
+        regenerationCount: (summary.regenerationCount || 0) + 1
+      };
+      
+      setSummary(updatedSummary);
+      
+      // Switch to stylized tab to show the new summary
+      setActiveTab('stylized');
+      
+    } catch (error) {
+      console.error('Failed to regenerate summary:', error);
+      // Could show error message here
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
@@ -199,24 +233,48 @@ export const SummaryResultsView: React.FC = () => {
                     </button>
                   </div>
                   
-                  {/* Copy Button */}
-                  <button
-                    onClick={handleCopy}
-                    disabled={!summary}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {copied ? (
-                      <>
-                        <Check size={16} className="text-green-600" />
-                        <span className="text-green-600">Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={16} />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-3">
+                    {/* Regenerate Button */}
+                    <button
+                      onClick={handleRegenerate}
+                      disabled={!summary || isRegenerating}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isRegenerating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                          <span>Regenerating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span>Regenerate</span>
+                        </>
+                      )}
+                    </button>
+                    
+                    {/* Copy Button */}
+                    <button
+                      onClick={handleCopy}
+                      disabled={!summary}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {copied ? (
+                        <>
+                          <Check size={16} className="text-green-600" />
+                          <span className="text-green-600">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={16} />
+                          <span>Copy</span>
+                        </>
+                        )}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Compact Processing Metadata - Single line below tabs */}
@@ -226,6 +284,9 @@ export const SummaryResultsView: React.FC = () => {
                     <span>Time: <span className="text-gray-700">{summary.processingStats.processingTime ? `${Math.floor(summary.processingStats.processingTime / 1000)}s` : 'Unknown'}</span></span>
                     <span>Chunks: <span className="text-gray-700">{summary.processingStats.totalChunks || 0}</span></span>
                     <span>Date: <span className="text-gray-700">{document?.uploadedAt ? new Date(document.uploadedAt).toLocaleDateString() : 'Unknown'}</span></span>
+                    {summary.regenerationCount && summary.regenerationCount > 0 && (
+                      <span>Regenerated: <span className="text-gray-700">{summary.regenerationCount}x</span></span>
+                    )}
                   </div>
                   
                   {/* Fast Path Indicator - Subtle badge */}
