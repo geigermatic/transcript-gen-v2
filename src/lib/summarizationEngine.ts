@@ -172,10 +172,15 @@ export class SummarizationEngine {
           contextWindow
         });
         
-        onProgress?.(20, 100, 'Generating styled summary directly (ultra-fast path)...');
+        onProgress?.(20, 100, 'Generating raw summary (ultra-fast path)...');
         
-        // Generate styled summary directly from the full document in ONE LLM call
-        const styledSummary = await this.generateUltraFastSummary(document, styleGuide);
+        // Step 1: Generate basic factual summary without style guide
+        const rawSummary = await this.generateRawSummaryDirect(document);
+        
+        onProgress?.(60, 100, 'Applying voice style guide...');
+        
+        // Step 2: Apply style guide to create styled version
+        const styledSummary = await this.generateStyledSummaryFromRaw(document, rawSummary, styleGuide);
         
         // For backward compatibility, keep markdownSummary as the styled version
         const markdownSummary = styledSummary;
@@ -209,7 +214,7 @@ export class SummarizationEngine {
             audience: ''
           },
           markdownSummary,
-          rawSummary: styledSummary, // Use styledSummary as rawSummary for compatibility
+          rawSummary,
           styledSummary,
           processingStats: {
             totalChunks: 1,
@@ -797,15 +802,16 @@ Generate ONLY the markdown summary, no other text:`;
 
 
 
+
+
   /**
-   * Generate styled summary directly in ONE LLM call (ultra-fast path)
-   * Combines summary generation and style application for maximum speed
+   * Generate raw summary directly from document (ultra-fast path step 1)
+   * Basic factual summary without style guide applied
    */
-  private static async generateUltraFastSummary(
-    document: Document,
-    styleGuide: StyleGuide
+  private static async generateRawSummaryDirect(
+    document: Document
   ): Promise<string> {
-    const prompt = this.buildUltraFastSummaryPrompt(document, styleGuide);
+    const prompt = this.buildRawSummaryDirectPrompt(document);
     
     try {
       const response = await ollama.chat([{
@@ -816,35 +822,46 @@ Generate ONLY the markdown summary, no other text:`;
       return response.trim();
       
     } catch (error) {
-      logError('SUMMARIZE', 'Failed to generate ultra-fast summary', { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Ultra-fast summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logError('SUMMARIZE', 'Failed to generate raw summary directly', { error: error instanceof Error ? error.message : String(error) });
+      throw new Error(`Raw summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   /**
-   * Build optimized prompt for ultra-fast summary generation
-   * Enhanced to actually apply the voice style guide
+   * Generate styled summary from raw summary (ultra-fast path step 2)
+   * Applies style guide to the raw summary
    */
-  private static buildUltraFastSummaryPrompt(
+  private static async generateStyledSummaryFromRaw(
     document: Document,
+    rawSummary: string,
     styleGuide: StyleGuide
-  ): string {
-    const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
-    const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
+  ): Promise<string> {
+    const prompt = this.buildStyleApplicationPrompt(document, rawSummary, styleGuide);
     
-    return `You are a professional transcript summarizer. Create a summary that matches the EXACT voice and style specified below.
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: prompt
+      }]);
+      
+      return response.trim();
+      
+    } catch (error) {
+      logError('SUMMARIZE', 'Failed to apply style guide to summary', { error: error instanceof Error ? error.message : String(error) });
+      // Fallback: return raw summary if styling fails
+      return rawSummary;
+    }
+  }
+
+  /**
+   * Build prompt for raw summary generation (ultra-fast path step 1)
+   */
+  private static buildRawSummaryDirectPrompt(
+    document: Document
+  ): string {
+    return `You are a professional transcript summarizer. Create a clear, factual summary of the following lesson/teaching transcript.
 
 DOCUMENT: ${document.title}
-
-VOICE STYLE GUIDE:
-- Instructions: ${styleInstructions}
-- Formality Level: ${styleGuide.tone_settings.formality}
-- Enthusiasm Level: ${styleGuide.tone_settings.enthusiasm}
-- Technicality Level: ${styleGuide.tone_settings.technicality}
-- Keywords to Use: ${styleGuide.keywords.join(', ') || 'None specified'}
-
-EXAMPLE PHRASES (use similar style):
-${examplePhrasesSection}
 
 TRANSCRIPT:
 ${document.text}
@@ -873,10 +890,61 @@ REQUIRED FORMAT (follow exactly):
 ## Open Questions
 [Questions for reflection or further exploration - bulleted list]
 
-CRITICAL: Apply the voice style guide above to EVERY section. The tone, formality, enthusiasm, and technicality must match exactly. Use the example phrases as a guide for the writing style.
+INSTRUCTIONS:
+1. Follow the exact structure above - ALL sections must be included in this order
+2. Keep each section concise but comprehensive
+3. Focus on factual content and actionable insights
+4. Use clear, professional language
+5. No specific styling - just the facts and structure
 
-Generate the styled summary now:`;
+Generate the raw summary now:`;
   }
+
+  /**
+   * Build prompt for applying style guide to existing summary
+   */
+  private static buildStyleApplicationPrompt(
+    document: Document,
+    rawSummary: string,
+    styleGuide: StyleGuide
+  ): string {
+    const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
+    const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
+    
+    return `You are a professional content stylist. Rewrite the following summary to match the specified voice style guide.
+
+DOCUMENT: ${document.title}
+
+EXISTING SUMMARY:
+${rawSummary}
+
+VOICE STYLE GUIDE:
+- Instructions: ${styleInstructions}
+- Formality Level: ${styleGuide.tone_settings.formality}
+- Enthusiasm Level: ${styleGuide.tone_settings.enthusiasm}
+- Technicality Level: ${styleGuide.tone_settings.technicality}
+- Keywords to Use: ${styleGuide.keywords.join(', ') || 'None specified'}
+
+EXAMPLE PHRASES (use similar style):
+${examplePhrasesSection}
+
+TASK:
+Rewrite the summary to match the voice style guide while preserving ALL factual content and structure. Maintain the exact same sections and information, but transform the tone, language, and presentation to match the specified style.
+
+CRITICAL REQUIREMENTS:
+1. Keep all factual content exactly the same
+2. Maintain the exact same structure and sections
+3. Apply the voice style guide to EVERY section
+4. Use the specified keywords where appropriate
+5. Match the formality, enthusiasm, and technicality levels
+6. Use the example phrases as a guide for writing style
+
+The result should be dramatically different in tone and style while preserving all the facts.
+
+Apply the voice style guide now:`;
+  }
+
+
 
 
 }
