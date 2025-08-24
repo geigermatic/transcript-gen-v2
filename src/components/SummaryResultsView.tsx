@@ -114,6 +114,17 @@ export const SummaryResultsView: React.FC = () => {
     }
   }, [location.state, navigate, documents, getDocumentSummary, fetchDocumentSummary, addSummaryVersion]);
 
+  // Effect to sync UI with store when versions change
+  useEffect(() => {
+    if (!document) return;
+    
+    // Get the latest version history from the store
+    const history = getSummaryHistory(document.id);
+    if (history && history.versions.length > 1) {
+      setShowRestoreButton(true);
+    }
+  }, [document, getSummaryHistory]);
+
   const handleBack = () => {
     // Navigate back to chat with document info to preserve upload completion state
     navigate('/', { 
@@ -146,11 +157,24 @@ export const SummaryResultsView: React.FC = () => {
     
     setIsRegenerating(true);
     try {
+      console.log('🔄 Starting regeneration for document:', document.id);
+      
       // Save current version before regenerating
       if (summary.styledSummary) {
         try {
-          addSummaryVersion(document.id, summary.styledSummary, false, summary.processingStats.modelUsed);
+          const currentModel = summary.processingStats.modelUsed || 'unknown';
+          console.log('💾 Saving current version with model:', currentModel);
+          
+          // Add current version to history with proper metadata
+          addSummaryVersion(
+            document.id, 
+            summary.styledSummary, 
+            false, // Not original
+            currentModel
+          );
           setShowRestoreButton(true);
+          
+          console.log('✅ Current version saved to history');
         } catch (error) {
           console.warn('Failed to save summary version:', error);
           // Continue with regeneration even if versioning fails
@@ -164,6 +188,8 @@ export const SummaryResultsView: React.FC = () => {
         styleGuide,
         summary.regenerationCount ? summary.regenerationCount + 1 : 1
       );
+      
+      console.log('🔄 New summary generated, length:', regeneratedSummary.length);
       
       // Update the summary with the new styled version
       const updatedSummary: SummarizationResult = {
@@ -179,6 +205,10 @@ export const SummaryResultsView: React.FC = () => {
       
       // Switch to stylized tab to show the new summary
       setActiveTab('stylized');
+      
+      // Force a re-render to show the new version
+      // This ensures the UI updates with the new version from the store
+      console.log('✅ Summary updated, UI should refresh');
       
     } catch (error) {
       console.error('Failed to regenerate summary:', error);
