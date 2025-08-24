@@ -11,7 +11,9 @@ import type {
   EmbeddingProgress,
   ABSummaryPair,
   SummarizationResult,
-  ModelOption
+  SummaryHistory,
+  ModelOption,
+  SummaryVersion
 } from '../types';
 
 interface AppState {
@@ -62,6 +64,14 @@ interface AppState {
   updateABSummaryFeedback: (pairId: string, feedback: UserPreference) => void;
   getABSummaryPair: (pairId: string) => ABSummaryPair | undefined;
   getDocumentSummary: (documentId: string) => SummarizationResult | undefined;
+  
+  // Summary History Management
+  summaryHistory: Map<string, SummaryHistory>; // documentId -> version history
+  addSummaryVersion: (documentId: string, summary: string, isOriginal?: boolean) => void;
+  getSummaryHistory: (documentId: string) => SummaryHistory | undefined;
+  restoreSummaryVersion: (documentId: string, versionId: string) => SummarizationResult | undefined;
+  clearSummaryHistory: (documentId: string) => void;
+  cleanupSummaryHistory: () => void; // Memory management
   
   // Developer Console
   logs: LogEntry[];
@@ -456,6 +466,104 @@ This style guide captures the distinctive voice and approach for creating engagi
         return undefined;
       },
 
+      // Summary History Management
+      summaryHistory: new Map<string, SummaryHistory>(),
+      addSummaryVersion: (documentId, summary, isOriginal = false) =>
+        set((state) => {
+          const existingHistory = state.summaryHistory.get(documentId);
+          const newVersion: SummaryVersion = {
+            id: crypto.randomUUID(),
+            summary,
+            timestamp: Date.now(),
+            regenerationCount: existingHistory?.versions.length || 0,
+            isOriginal,
+          };
+          
+          const updatedHistory: SummaryHistory = {
+            documentId,
+            versions: [...(existingHistory?.versions || []), newVersion],
+            maxVersions: 5, // Keep last 5 versions
+            lastAccessed: Date.now(),
+            totalSize: (existingHistory?.totalSize || 0) + summary.length,
+          };
+          
+          // Enforce max versions limit
+          if (updatedHistory.versions.length > updatedHistory.maxVersions) {
+            const removedVersion = updatedHistory.versions.shift();
+            if (removedVersion) {
+              updatedHistory.totalSize -= removedVersion.summary.length;
+            }
+          }
+          
+          const newHistory = new Map(state.summaryHistory);
+          newHistory.set(documentId, updatedHistory);
+          
+          return { summaryHistory: newHistory };
+        }),
+      getSummaryHistory: (documentId) => {
+        const state = get();
+        return state.summaryHistory.get(documentId);
+      },
+      restoreSummaryVersion: (documentId, versionId) => {
+        const state = get();
+        const history = state.summaryHistory.get(documentId);
+        if (!history) return undefined;
+
+        const version = history.versions.find(v => v.id === versionId);
+        if (!version) return undefined;
+
+        // Update last accessed time
+        const updatedHistory = { ...history, lastAccessed: Date.now() };
+        const newHistory = new Map(state.summaryHistory);
+        newHistory.set(documentId, updatedHistory);
+        set({ summaryHistory: newHistory });
+
+        // Return the restored summary as a partial SummarizationResult
+        return {
+          document: state.documents.find(d => d.id === documentId)!,
+          chunkFacts: [],
+          mergedFacts: {} as any,
+          markdownSummary: version.summary,
+          styledSummary: version.summary,
+          regenerationCount: version.regenerationCount,
+          currentVersionId: version.id,
+          processingStats: {
+            totalChunks: 0,
+            successfulChunks: 0,
+            failedChunks: 0,
+            processingTime: 0
+          }
+        };
+      },
+      clearSummaryHistory: (documentId) =>
+        set((state) => {
+          const newHistory = new Map(state.summaryHistory);
+          newHistory.delete(documentId);
+          return { summaryHistory: newHistory };
+        }),
+      cleanupSummaryHistory: () => {
+        const state = get();
+        const now = Date.now();
+        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        const maxSize = 50 * 1024 * 1024; // 50MB total
+        
+        let totalSize = 0;
+        const newHistory = new Map<string, SummaryHistory>();
+        
+        // Keep only recent and small histories
+        for (const [docId, history] of state.summaryHistory.entries()) {
+          const age = now - history.lastAccessed;
+          const wouldExceedSize = totalSize + history.totalSize > maxSize;
+          
+          if (age < maxAge && !wouldExceedSize) {
+            newHistory.set(docId, history);
+            totalSize += history.totalSize;
+          }
+        }
+        
+        set({ summaryHistory: newHistory });
+      },
+
       // Developer Console
       logs: [],
       addLog: (log) => {
@@ -497,6 +605,7 @@ This style guide captures the distinctive voice and approach for creating engagi
           embeddings: new Map<string, EmbeddedChunk[]>(),
           embeddingProgress: new Map<string, EmbeddingProgress>(),
           abSummaryPairs: [],
+          summaryHistory: new Map<string, SummaryHistory>(), // Clear summary history
           
           // Clear chat data
           chatMessages: [],

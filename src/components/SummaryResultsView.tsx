@@ -16,7 +16,7 @@ import type { Document, SummarizationResult } from '../types';
 export const SummaryResultsView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { documents, styleGuide, getDocumentSummary } = useAppStore();
+  const { documents, styleGuide, getDocumentSummary, addSummaryVersion, getSummaryHistory } = useAppStore();
   
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
   const [followUpQuery, setFollowUpQuery] = useState('');
@@ -26,6 +26,7 @@ export const SummaryResultsView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showRestoreButton, setShowRestoreButton] = useState(false);
 
   // Handle navigation hover
   const handleNavMouseEnter = () => setIsNavExpanded(true);
@@ -68,11 +69,21 @@ export const SummaryResultsView: React.FC = () => {
       if (location.state?.summary) {
         // We have both document and summary
         setSummary(location.state.summary);
+        
+        // Initialize version history with the original summary
+        if (location.state.summary.styledSummary) {
+          addSummaryVersion(location.state.document.id, location.state.summary.styledSummary, true);
+        }
       } else {
         // We have document but no summary - check if we have it stored, otherwise fetch it
         const existingSummary = getDocumentSummary(location.state.document.id);
         if (existingSummary) {
           setSummary(existingSummary);
+          
+          // Initialize version history with the existing summary
+          if (existingSummary.styledSummary) {
+            addSummaryVersion(location.state.document.id, existingSummary.styledSummary, true);
+          }
         } else {
           fetchDocumentSummary(location.state.document);
         }
@@ -81,7 +92,7 @@ export const SummaryResultsView: React.FC = () => {
       // Fallback: redirect back to chat if no document data
       navigate('/');
     }
-  }, [location.state, navigate, documents, getDocumentSummary, fetchDocumentSummary]);
+  }, [location.state, navigate, documents, getDocumentSummary, fetchDocumentSummary, addSummaryVersion]);
 
   const handleBack = () => {
     // Navigate back to chat with document info to preserve upload completion state
@@ -112,6 +123,12 @@ export const SummaryResultsView: React.FC = () => {
     
     setIsRegenerating(true);
     try {
+      // Save current version before regenerating
+      if (summary.styledSummary) {
+        addSummaryVersion(document.id, summary.styledSummary, false);
+        setShowRestoreButton(true);
+      }
+      
       // Use the existing chunked content to regenerate just the styled summary
       const regeneratedSummary = await SummarizationEngine.regenerateStyledSummary(
         document,
@@ -124,7 +141,8 @@ export const SummaryResultsView: React.FC = () => {
       const updatedSummary: SummarizationResult = {
         ...summary,
         styledSummary: regeneratedSummary,
-        regenerationCount: (summary.regenerationCount || 0) + 1
+        regenerationCount: (summary.regenerationCount || 0) + 1,
+        currentVersionId: crypto.randomUUID()
       };
       
       setSummary(updatedSummary);
@@ -137,6 +155,32 @@ export const SummaryResultsView: React.FC = () => {
       // Could show error message here
     } finally {
       setIsRegenerating(false);
+    }
+  };
+
+  const handleRestore = () => {
+    if (!document || !summary) return;
+    
+    const history = getSummaryHistory(document.id);
+    if (!history || history.versions.length === 0) return;
+    
+    // Get the previous version (second to last, since last is current)
+    const previousVersion = history.versions[history.versions.length - 2];
+    if (!previousVersion) return;
+    
+    // Restore the previous version
+    const restoredSummary: SummarizationResult = {
+      ...summary,
+      styledSummary: previousVersion.summary,
+      regenerationCount: (summary.regenerationCount || 1) - 1,
+      currentVersionId: previousVersion.id
+    };
+    
+    setSummary(restoredSummary);
+    
+    // Check if we should hide restore button (back to original)
+    if (previousVersion.isOriginal) {
+      setShowRestoreButton(false);
     }
   };
 
@@ -255,6 +299,20 @@ export const SummaryResultsView: React.FC = () => {
                         </>
                       )}
                     </button>
+                    
+                    {/* Restore Button - Only show when there are previous versions */}
+                    {showRestoreButton && (
+                      <button
+                        onClick={handleRestore}
+                        disabled={!summary}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                        <span>Restore</span>
+                      </button>
+                    )}
                     
                     {/* Copy Button */}
                     <button
