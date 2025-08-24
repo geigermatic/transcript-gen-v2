@@ -101,7 +101,7 @@ export const ChatCentricLayout: React.FC = () => {
       
       // Add a completion message to show the document was processed
       const completionMessage = {
-        id: `completion-${Date.now()}`,
+        id: `completion-${crypto.randomUUID()}`,
         role: 'assistant' as const,
         content: `✅ Document "${document.title || document.filename}" has been successfully processed and summarized. You can now ask questions about this document or upload another one.`,
         timestamp: new Date().toISOString(),
@@ -124,7 +124,7 @@ export const ChatCentricLayout: React.FC = () => {
     if (success && document) {
       // Add upload message to chat
       const uploadMessage = {
-        id: `upload-${Date.now()}`,
+        id: `upload-${crypto.randomUUID()}`,
         role: 'user' as const,
         content: `📄 Uploaded: ${document.title || document.filename}`,
         timestamp: new Date().toISOString(),
@@ -136,7 +136,7 @@ export const ChatCentricLayout: React.FC = () => {
       
       // Add processing message
       const processingMessage = {
-        id: `processing-${Date.now()}`,
+        id: `processing-${crypto.randomUUID()}`,
         role: 'assistant' as const,
         content: '🔄 Processing your document... This may take a moment.',
         timestamp: new Date().toISOString()
@@ -253,7 +253,7 @@ export const ChatCentricLayout: React.FC = () => {
         setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id));
         
         const errorMessage = {
-          id: `error-${Date.now()}`,
+          id: `error-${crypto.randomUUID()}`,
           role: 'assistant' as const,
           content: `❌ Sorry, I encountered an error while processing your document. Please try again or check if your AI instance is running.`,
           timestamp: new Date().toISOString()
@@ -277,7 +277,7 @@ export const ChatCentricLayout: React.FC = () => {
       console.error('Upload failed:', message);
       
       const errorMessage = {
-        id: `upload-error-${Date.now()}`,
+        id: `upload-error-${crypto.randomUUID()}`,
         role: 'assistant' as const,
         content: `❌ Upload failed: ${message}`,
         timestamp: new Date().toISOString()
@@ -294,7 +294,7 @@ export const ChatCentricLayout: React.FC = () => {
     // Wait for store to be hydrated before processing
     if (!isHydrated) {
       const hydrationResponse = {
-        id: `ai-${Date.now()}`,
+        id: `ai-${crypto.randomUUID()}`,
         role: 'assistant' as const,
         content: 'Please wait a moment while I load your documents and data...',
         timestamp: new Date().toISOString(),
@@ -307,7 +307,7 @@ export const ChatCentricLayout: React.FC = () => {
     }
     
     const userMessage = {
-      id: `user-${Date.now()}`,
+      id: `user-${crypto.randomUUID()}`,
       role: 'user' as const,
       content: inputValue.trim(),
       timestamp: new Date().toISOString()
@@ -333,7 +333,7 @@ export const ChatCentricLayout: React.FC = () => {
       // Check if we have documents to work with
       if (documents.length === 0) {
         const noDocsResponse = {
-          id: `ai-${Date.now()}`,
+          id: `ai-${crypto.randomUUID()}`,
           role: 'assistant' as const,
           content: 'I don\'t have any documents to analyze yet. Please upload a document first, and then I\'ll be able to answer questions about it!',
           timestamp: new Date().toISOString(),
@@ -356,7 +356,7 @@ export const ChatCentricLayout: React.FC = () => {
       if (embeddings.size === 0) {
         console.log('❌ No embeddings found - showing processing message');
         const noEmbeddingsResponse = {
-          id: `ai-${Date.now()}`,
+          id: `ai-${crypto.randomUUID()}`,
           role: 'assistant' as const,
           content: 'Your documents are still being processed for search. I need to generate embeddings first before I can answer questions about the content. Please wait a moment and try again.',
           timestamp: new Date().toISOString(),
@@ -385,7 +385,7 @@ export const ChatCentricLayout: React.FC = () => {
       const aiResponse = await ChatEngine.processQuery(inputValue.trim(), chatContext);
       
       const responseMessage = {
-        id: `ai-${Date.now()}`,
+        id: `ai-${crypto.randomUUID()}`,
         role: 'assistant' as const,
         content: aiResponse.message.content,
         timestamp: new Date().toISOString(),
@@ -416,7 +416,7 @@ export const ChatCentricLayout: React.FC = () => {
       console.error('Chat processing failed:', error);
       
       const errorMessage = {
-        id: `ai-error-${Date.now()}`,
+        id: `ai-error-${crypto.randomUUID()}`,
         role: 'assistant' as const,
         content: `❌ Sorry, I encountered an error while processing your message. Please check if your AI instance is running and try again.`,
         timestamp: new Date().toISOString()
