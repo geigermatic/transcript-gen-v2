@@ -304,7 +304,51 @@ EXAMPLE JSON FORMAT (note: no trailing commas):
 IMPORTANT: Respond ONLY with valid JSON, no other text.
 
 Newsletter/Content Sample:
-{{contentSample}}`
+{{contentSample}}`,
+
+  'combined-summary-generation': `You are a professional transcript summarizer and content stylist. Your task is to generate BOTH a raw factual summary AND a stylized version in a single response.
+
+DOCUMENT: {{documentTitle}}
+
+TRANSCRIPT:
+{{documentText}}
+
+STYLE GUIDE:
+{{styleInstructions}}
+
+Tone Settings:
+- Formality: {{formalityLevel}}/100 (0=casual, 100=formal)
+- Enthusiasm: {{enthusiasmLevel}}/100 (0=calm, 100=energetic)
+- Technical Level: {{technicalityLevel}}/100 (0=simple, 100=technical)
+
+Keywords to emphasize: {{keywords}}
+
+{{examplePhrasesSection}}
+
+REQUIRED OUTPUT FORMAT:
+You must respond with ONLY valid JSON in this exact structure:
+
+{
+  "rawSummary": "# {{documentTitle}}\\n\\n## Synopsis\\n[Exactly 4 sentences emphasizing WHY and WHAT benefits - compelling and benefit-focused]\\n\\n## Learning Objectives\\n[What students will learn - bulleted list]\\n\\n## Key Takeaways\\n[Main insights and lessons - bulleted list]\\n\\n## Topics\\n[Subject areas covered - bulleted list]\\n\\n## Techniques\\n[Specific methods, practices, exercises taught - bulleted list]\\n\\n## Notable Quotes\\n[Memorable quotes from the lesson - bulleted list]\\n\\n## Open Questions\\n[Questions for reflection or further exploration - bulleted list]",
+  "styledSummary": "# {{documentTitle}}\\n\\n## Synopsis\\n[Exactly 4 sentences in the author's voice using the style guide - focus on benefits, transformation, and practical outcomes]\\n\\n## Learning Objectives\\n[What students will learn - bulleted list in author's voice]\\n\\n## Key Takeaways\\n[Main insights and lessons - bulleted list in author's voice]\\n\\n## Topics\\n[Subject areas covered - bulleted list in author's voice]\\n\\n## Techniques\\n[Specific methods, practices, exercises taught - bulleted list in author's voice]\\n\\n## Notable Quotes\\n[Memorable quotes from the lesson - bulleted list in author's voice]\\n\\n## Open Questions\\n[Questions for reflection or further exploration - bulleted list in author's voice]"
+}
+
+INSTRUCTIONS:
+1. Generate the rawSummary first - factual, clear, professional language without specific styling
+2. Generate the styledSummary second - apply the voice style guide to EVERY section, especially the synopsis
+3. Both summaries must have the exact same structure and factual content
+4. The styledSummary should sound dramatically different in tone while preserving all facts
+5. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching"
+6. Always refer to the instructor as "Caren" throughout
+7. Focus on benefits, transformation, and practical outcomes in the styled version
+
+CRITICAL REQUIREMENTS:
+- Respond with ONLY valid JSON - no markdown, no explanations
+- Use proper JSON escaping (\n for newlines)
+- Both summaries must be complete and well-structured
+- The styled version must reflect the author's voice while maintaining factual accuracy
+
+Generate both summaries now:`
 };
 
 export class PromptService {

@@ -172,15 +172,10 @@ export class SummarizationEngine {
           contextWindow
         });
         
-        onProgress?.(20, 100, 'Generating raw summary (ultra-fast path)...');
+        onProgress?.(20, 100, 'Generating combined summary (ultra-fast path)...');
         
-        // Step 1: Generate basic factual summary without style guide
-        const rawSummary = await this.generateRawSummaryDirect(document);
-        
-        onProgress?.(60, 100, 'Applying voice style guide...');
-        
-        // Step 2: Apply style guide to create styled version
-        const styledSummary = await this.generateStyledSummaryFromRaw(document, rawSummary, styleGuide);
+        // OPTIMIZED: Single Ollama call for both raw and styled summary
+        const { rawSummary, styledSummary } = await this.generateCombinedSummary(document, styleGuide);
         
         // For backward compatibility, keep markdownSummary as the styled version
         const markdownSummary = styledSummary;
@@ -944,7 +939,76 @@ The result should be dramatically different in tone and style while preserving a
 Apply the voice style guide now:`;
   }
 
+  /**
+   * Generate combined summary (raw + styled) directly from document (ultra-fast path)
+   */
+  private static async generateCombinedSummary(
+    document: Document,
+    styleGuide: StyleGuide
+  ): Promise<{ rawSummary: string; styledSummary: string }> {
+    const prompt = this.buildCombinedSummaryPrompt(document, styleGuide);
+    
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: prompt
+      }]);
+      
+      // Attempt to parse the JSON response
+      try {
+        const cleanedResponse = this.cleanJsonResponse(response);
+        const parsed = JSON.parse(cleanedResponse);
+        
+        // Validate the response structure
+        if (parsed.rawSummary && parsed.styledSummary) {
+          return { 
+            rawSummary: parsed.rawSummary.trim(), 
+            styledSummary: parsed.styledSummary.trim() 
+          };
+        } else {
+          throw new Error('Invalid response structure - missing rawSummary or styledSummary');
+        }
+      } catch (parseError) {
+        // If JSON parsing fails, fall back to generating both summaries separately
+        logInfo('SUMMARIZE', 'Combined summary JSON parsing failed, falling back to separate generation', {
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+          responsePreview: response.substring(0, 200) + '...'
+        });
+        
+        // Fallback: generate summaries separately (still faster than the old approach)
+        const rawSummary = await this.generateRawSummaryDirect(document);
+        const styledSummary = await this.generateStyledSummaryFromRaw(document, rawSummary, styleGuide);
+        
+        return { rawSummary, styledSummary };
+      }
+      
+    } catch (error) {
+      logError('SUMMARIZE', 'Failed to generate combined summary', { error: error instanceof Error ? error.message : String(error) });
+      throw new Error(`Combined summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 
+  /**
+   * Build prompt for combined summary generation (ultra-fast path)
+   */
+  private static buildCombinedSummaryPrompt(
+    document: Document,
+    styleGuide: StyleGuide
+  ): string {
+    const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
+    const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
+    
+    return PromptService.buildPrompt('combined-summary-generation', {
+      styleInstructions,
+      formalityLevel: styleGuide.tone_settings.formality.toString(),
+      enthusiasmLevel: styleGuide.tone_settings.enthusiasm.toString(),
+      technicalityLevel: styleGuide.tone_settings.technicality.toString(),
+      keywords: styleGuide.keywords.join(', ') || 'None specified',
+      examplePhrasesSection,
+      documentTitle: document.title,
+      documentText: document.text
+    });
+  }
 
 
 }
