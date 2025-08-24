@@ -16,7 +16,14 @@ import type { Document, SummarizationResult } from '../types';
 export const SummaryResultsView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { documents, styleGuide, getDocumentSummary, addSummaryVersion, getSummaryHistory } = useAppStore();
+  const { 
+    documents, 
+    styleGuide, 
+    getDocumentSummary, 
+    addSummaryVersion, 
+    getSummaryHistory,
+    getAllVersions
+  } = useAppStore();
   
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
   const [followUpQuery, setFollowUpQuery] = useState('');
@@ -119,7 +126,10 @@ export const SummaryResultsView: React.FC = () => {
   };
 
   const handleCopy = async () => {
-    const content = renderSummaryContent();
+    const content = activeTab === 'stylized' 
+      ? (summary?.styledSummary || 'No stylized summary available')
+      : (summary?.rawSummary || 'No raw summary available');
+    
     if (!content) return;
     
     try {
@@ -139,7 +149,7 @@ export const SummaryResultsView: React.FC = () => {
       // Save current version before regenerating
       if (summary.styledSummary) {
         try {
-          addSummaryVersion(document.id, summary.styledSummary, false);
+          addSummaryVersion(document.id, summary.styledSummary, false, summary.processingStats.modelUsed);
           setShowRestoreButton(true);
         } catch (error) {
           console.warn('Failed to save summary version:', error);
@@ -160,7 +170,9 @@ export const SummaryResultsView: React.FC = () => {
         ...summary,
         styledSummary: regeneratedSummary,
         regenerationCount: (summary.regenerationCount || 0) + 1,
-        currentVersionId: crypto.randomUUID()
+        currentVersionId: crypto.randomUUID(),
+        versions: summary.versions || [],
+        currentVersionIndex: 0
       };
       
       setSummary(updatedSummary);
@@ -202,13 +214,13 @@ export const SummaryResultsView: React.FC = () => {
     }
   };
 
-  const renderSummaryContent = () => {
-    if (!summary) return 'No summary available';
-    
-    if (activeTab === 'stylized') {
-      return summary.styledSummary || 'No stylized summary available';
-    } else {
-      return summary.rawSummary || 'No raw summary available';
+  const handleCopyVersion = async (versionSummary: string) => {
+    try {
+      await navigator.clipboard.writeText(versionSummary);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy version summary:', error);
     }
   };
 
@@ -219,6 +231,182 @@ export const SummaryResultsView: React.FC = () => {
       console.log('Follow-up query:', followUpQuery);
       setFollowUpQuery('');
     }
+  };
+
+  const renderStackedVersions = () => {
+    if (!summary || !document) return null;
+    
+    // Get all versions from the store
+    const allVersions = getAllVersions(document.id);
+    
+    // If no versions or only one version, show the current summary
+    if (allVersions.length <= 1) {
+      return (
+        <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8 min-h-96">
+          <div className="prose prose-lg max-w-none">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h1: ({ children }) => (
+                  <h1 className="text-xl font-bold text-gray-900 mb-3 mt-0">{children}</h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 className="text-xl font-bold text-gray-900 mb-3 mt-0">{children}</h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 className="text-base font-medium text-gray-800 mb-1 mt-2">{children}</h3>
+                ),
+                h4: ({ children }) => (
+                  <h4 className="text-sm font-medium text-gray-800 mb-1 mt-2">{children}</h4>
+                ),
+                p: ({ children }) => (
+                  <p className="text-gray-700 mb-3 leading-relaxed">{children}</p>
+                ),
+                ul: ({ children }) => (
+                  <ul className="text-gray-700 mb-3 space-y-1">{children}</ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="text-gray-700 mb-3 space-y-1 list-decimal list-inside">{children}</ol>
+                ),
+                li: ({ children }) => (
+                  <li className="text-gray-700 flex items-start">
+                    <span className="text-blue-500 mr-2">•</span>
+                    <span>{children}</span>
+                  </li>
+                ),
+                blockquote: ({ children }) => (
+                  <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-600 my-3 bg-blue-50 py-2">
+                    {children}
+                  </blockquote>
+                ),
+                strong: ({ children }) => (
+                  <strong className="text-gray-900 font-semibold">{children}</strong>
+                ),
+                em: ({ children }) => (
+                  <em className="text-gray-700 italic">{children}</em>
+                ),
+                code: ({ children }) => (
+                  <code className="bg-gray-100 text-blue-700 px-2 py-1 rounded text-sm font-mono">
+                    {children}
+                  </code>
+                ),
+                pre: ({ children }) => (
+                  <pre className="bg-gray-100 text-gray-800 p-3 rounded-lg overflow-x-auto mb-3 font-mono text-sm">
+                    {children}
+                  </pre>
+                ),
+              }}
+            >
+              {activeTab === 'stylized' 
+                ? (summary.styledSummary || 'No stylized summary available')
+                : (summary.rawSummary || 'No raw summary available')
+              }
+            </ReactMarkdown>
+          </div>
+        </div>
+      );
+    }
+    
+    // Render stacked versions
+    return (
+      <div className="space-y-6">
+        {allVersions.map((version) => (
+          <div key={version.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            {/* Version Header */}
+            <div className="flex items-center justify-between bg-gray-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <span className={`text-sm font-medium ${
+                  version.isOriginal ? 'text-green-700' : 'text-gray-700'
+                }`}>
+                  {version.isOriginal ? '🌱 Original Version' : `🔵 Version ${version.versionNumber}`}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {new Date(version.timestamp).toLocaleString()}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {version.characterCount.toLocaleString()} characters
+                </span>
+                {version.modelUsed && (
+                  <span className="text-xs text-gray-500 font-mono">
+                    {version.modelUsed}
+                  </span>
+                )}
+              </div>
+              
+              {/* Inline Copy Button */}
+              <button
+                onClick={() => handleCopyVersion(version.summary)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm rounded-md transition-colors"
+              >
+                <Copy size={14} />
+                <span>Copy</span>
+              </button>
+            </div>
+            
+            {/* Version Content */}
+            <div className="p-6">
+              <div className="prose prose-lg max-w-none">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ children }) => (
+                      <h1 className="text-xl font-bold text-gray-900 mb-3 mt-0">{children}</h1>
+                    ),
+                    h2: ({ children }) => (
+                      <h2 className="text-xl font-bold text-gray-900 mb-3 mt-0">{children}</h2>
+                    ),
+                    h3: ({ children }) => (
+                      <h3 className="text-base font-medium text-gray-800 mb-1 mt-2">{children}</h3>
+                    ),
+                    h4: ({ children }) => (
+                      <h4 className="text-sm font-medium text-gray-800 mb-1 mt-2">{children}</h4>
+                    ),
+                    p: ({ children }) => (
+                      <p className="text-gray-700 mb-3 leading-relaxed">{children}</p>
+                    ),
+                    ul: ({ children }) => (
+                      <ul className="text-gray-700 mb-3 space-y-1">{children}</ul>
+                    ),
+                    ol: ({ children }) => (
+                      <ol className="text-gray-700 mb-3 space-y-1 list-decimal list-inside">{children}</ol>
+                    ),
+                    li: ({ children }) => (
+                      <li className="text-gray-700 flex items-start">
+                        <span className="text-blue-500 mr-2">•</span>
+                        <span>{children}</span>
+                      </li>
+                    ),
+                    blockquote: ({ children }) => (
+                      <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-600 my-3 bg-blue-50 py-2">
+                        {children}
+                      </blockquote>
+                    ),
+                    strong: ({ children }) => (
+                      <strong className="text-gray-900 font-semibold">{children}</strong>
+                    ),
+                    em: ({ children }) => (
+                      <em className="text-gray-700 italic">{children}</em>
+                    ),
+                    code: ({ children }) => (
+                      <code className="bg-gray-100 text-blue-700 px-2 py-1 rounded text-sm font-mono">
+                        {children}
+                      </code>
+                    ),
+                    pre: ({ children }) => (
+                      <pre className="bg-gray-100 text-gray-800 p-3 rounded-lg overflow-x-auto mb-3 font-mono text-sm">
+                        {children}
+                      </pre>
+                    ),
+                  }}
+                >
+                  {version.summary}
+                </ReactMarkdown>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -376,65 +564,7 @@ export const SummaryResultsView: React.FC = () => {
                 </div>
 
                 {/* Summary Content */}
-                <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8 min-h-96">
-                  <div className="prose prose-lg max-w-none">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        h1: ({ children }) => (
-                          <h1 className="text-xl font-bold text-gray-900 mb-3 mt-0">{children}</h1>
-                        ),
-                        h2: ({ children }) => (
-                          <h2 className="text-xl font-bold text-gray-900 mb-3 mt-0">{children}</h2>
-                        ),
-                        h3: ({ children }) => (
-                          <h3 className="text-base font-medium text-gray-800 mb-1 mt-2">{children}</h3>
-                        ),
-                        h4: ({ children }) => (
-                          <h4 className="text-sm font-medium text-gray-800 mb-1 mt-2">{children}</h4>
-                        ),
-                        p: ({ children }) => (
-                          <p className="text-gray-700 mb-3 leading-relaxed">{children}</p>
-                        ),
-                        ul: ({ children }) => (
-                          <ul className="text-gray-700 mb-3 space-y-1">{children}</ul>
-                        ),
-                        ol: ({ children }) => (
-                          <ol className="text-gray-700 mb-3 space-y-1 list-decimal list-inside">{children}</ol>
-                        ),
-                        li: ({ children }) => (
-                          <li className="text-gray-700 flex items-start">
-                            <span className="text-blue-500 mr-2">•</span>
-                            <span>{children}</span>
-                          </li>
-                        ),
-                        blockquote: ({ children }) => (
-                          <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-600 my-3 bg-blue-50 py-2">
-                            {children}
-                          </blockquote>
-                        ),
-                        strong: ({ children }) => (
-                          <strong className="text-gray-900 font-semibold">{children}</strong>
-                        ),
-                        em: ({ children }) => (
-                          <em className="text-gray-700 italic">{children}</em>
-                        ),
-                        code: ({ children }) => (
-                          <code className="bg-gray-100 text-blue-700 px-2 py-1 rounded text-sm font-mono">
-                            {children}
-                          </code>
-                        ),
-                        pre: ({ children }) => (
-                          <pre className="bg-gray-100 text-gray-800 p-3 rounded-lg overflow-x-auto mb-3 font-mono text-sm">
-                            {children}
-                          </pre>
-                        ),
-                      }}
-                    >
-                      {renderSummaryContent()}
-                    </ReactMarkdown>
-                  </div>
-                </div>
+                {renderStackedVersions()}
               </>
             )}
 
