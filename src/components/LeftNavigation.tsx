@@ -143,7 +143,9 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
               </div>
             ) : (
               <div className="space-y-2">
-                {documents.map((doc) => (
+                {documents
+                  .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+                  .map((doc) => (
                   <div 
                     key={doc.id}
                     className={`p-2 rounded-lg cursor-pointer transition-colors ${
