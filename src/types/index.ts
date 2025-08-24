@@ -94,12 +94,13 @@ export interface SummarizationResult {
   markdownSummary: string;
   rawSummary?: string; // Summary without style guide applied
   styledSummary?: string; // Summary with style guide applied
-  processingStats: {
-    totalChunks: number;
-    successfulChunks: number;
-    failedChunks: number;
-    processingTime: number;
-  };
+        processingStats: {
+        totalChunks: number;
+        successfulChunks: number;
+        failedChunks: number;
+        processingTime: number;
+        modelUsed?: string; // Store which model was used
+      };
 }
 
 // Style guide and preferences

@@ -1,6 +1,7 @@
 import type { Document } from '../types';
 import { DocumentProcessor } from '../lib/documentProcessor';
 import { useAppStore } from '../store';
+import { Clock, Cpu } from 'lucide-react';
 
 interface DocumentCardProps {
   document: Document;
@@ -17,7 +18,38 @@ export function DocumentCard({
   onChat, 
   onDelete 
 }: DocumentCardProps) {
-  const { addLog } = useAppStore();
+  const { addLog, abSummaryPairs } = useAppStore();
+
+  // Helper function to format processing time
+  const formatProcessingTime = (milliseconds: number): string => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  };
+
+  // Helper function to get processing time for a document
+  const getDocumentProcessingTime = (documentId: string): number | null => {
+    const summaryPair = abSummaryPairs.find(pair => pair.documentId === documentId);
+    if (summaryPair?.summaryA?.processingStats?.processingTime) {
+      return summaryPair.summaryA.processingStats.processingTime;
+    }
+    return null;
+  };
+
+  // Helper function to get model used for a document
+  const getDocumentModel = (documentId: string): string | null => {
+    const summaryPair = abSummaryPairs.find(pair => pair.documentId === documentId);
+    if (summaryPair?.summaryA?.processingStats?.modelUsed) {
+      return summaryPair.summaryA.processingStats.modelUsed;
+    }
+    return null;
+  };
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
@@ -123,6 +155,20 @@ export function DocumentCard({
               <span className="flex items-center">
                 💾 {formatFileSize(document.metadata.fileSize)}
               </span>
+              {/* Processing Time */}
+              {getDocumentProcessingTime(document.id) && (
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {formatProcessingTime(getDocumentProcessingTime(document.id)!)}
+                </span>
+              )}
+              {/* Model Used */}
+              {getDocumentModel(document.id) && (
+                <span className="flex items-center gap-1">
+                  <Cpu className="w-3 h-3" />
+                  {getDocumentModel(document.id)}
+                </span>
+              )}
             </div>
             
             {/* Tags */}
