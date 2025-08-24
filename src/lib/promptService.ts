@@ -333,6 +333,27 @@ You must respond with ONLY valid JSON in this exact structure:
   "styledSummary": "# {{documentTitle}}\\n\\n## Synopsis\\n[Exactly 4 sentences in the author's voice using the style guide - focus on benefits, transformation, and practical outcomes]\\n\\n## Learning Objectives\\n[What students will learn - bulleted list in author's voice]\\n\\n## Key Takeaways\\n[Main insights and lessons - bulleted list in author's voice]\\n\\n## Topics\\n[Subject areas covered - bulleted list in author's voice]\\n\\n## Techniques\\n[Specific methods, practices, exercises taught - bulleted list in author's voice]\\n\\n## Notable Quotes\\n[Memorable quotes from the lesson - bulleted list in author's voice]\\n\\n## Open Questions\\n[Questions for reflection or further exploration - bulleted list in author's voice]"
 }
 
+CRITICAL EXTRACTION REQUIREMENTS:
+1. **NOTABLE QUOTES**: You MUST extract and include actual quotes from the transcript. Look for:
+   - Direct speech marked with quotation marks
+   - Memorable phrases or statements
+   - Key insights expressed by the instructor
+   - If no direct quotes exist, include paraphrased key statements
+   - NEVER leave this section empty - always find something quotable
+
+2. **DETAILED ANALYSIS**: Extract comprehensive information for each section:
+   - Learning Objectives: Specific, actionable learning outcomes
+   - Key Takeaways: Concrete insights and lessons learned
+   - Topics: All major subject areas discussed
+   - Techniques: Specific methods, practices, or exercises mentioned
+   - Action Items: Any tasks, homework, or follow-up activities
+
+3. **CONTENT PRESERVATION**: Both summaries must contain:
+   - The EXACT same factual information
+   - The EXACT same number of items in each section
+   - The EXACT same level of detail and specificity
+   - Only the tone and language style should differ
+
 INSTRUCTIONS:
 1. Generate the rawSummary first - factual, clear, professional language without specific styling
 2. Generate the styledSummary second - apply the voice style guide to EVERY section, especially the synopsis
@@ -347,6 +368,7 @@ CRITICAL REQUIREMENTS:
 - Use proper JSON escaping (\n for newlines)
 - Both summaries must be complete and well-structured
 - The styled version must reflect the author's voice while maintaining factual accuracy
+- **MOST IMPORTANT**: Extract the same level of detail as the original separate prompts
 
 Generate both summaries now:`
 };

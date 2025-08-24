@@ -961,10 +961,18 @@ Apply the voice style guide now:`;
         
         // Validate the response structure
         if (parsed.rawSummary && parsed.styledSummary) {
-          return { 
-            rawSummary: parsed.rawSummary.trim(), 
-            styledSummary: parsed.styledSummary.trim() 
-          };
+          // QUALITY CHECK: Ensure we have sufficient detail
+          if (this.hasSufficientDetail(parsed.rawSummary)) {
+            return { 
+              rawSummary: parsed.rawSummary.trim(), 
+              styledSummary: parsed.styledSummary.trim() 
+            };
+          } else {
+            logInfo('SUMMARIZE', 'Combined summary lacks sufficient detail, falling back to separate generation', {
+              documentId: document.id,
+              summaryLength: parsed.rawSummary.length
+            });
+          }
         } else {
           throw new Error('Invalid response structure - missing rawSummary or styledSummary');
         }
@@ -974,13 +982,17 @@ Apply the voice style guide now:`;
           error: parseError instanceof Error ? parseError.message : String(parseError),
           responsePreview: response.substring(0, 200) + '...'
         });
-        
-        // Fallback: generate summaries separately (still faster than the old approach)
-        const rawSummary = await this.generateRawSummaryDirect(document);
-        const styledSummary = await this.generateStyledSummaryFromRaw(document, rawSummary, styleGuide);
-        
-        return { rawSummary, styledSummary };
       }
+      
+      // Fallback: generate summaries separately (still faster than the old approach)
+      logInfo('SUMMARIZE', 'Using fallback separate generation for better detail', {
+        documentId: document.id
+      });
+      
+      const rawSummary = await this.generateRawSummaryDirect(document);
+      const styledSummary = await this.generateStyledSummaryFromRaw(document, rawSummary, styleGuide);
+      
+      return { rawSummary, styledSummary };
       
     } catch (error) {
       logError('SUMMARIZE', 'Failed to generate combined summary', { error: error instanceof Error ? error.message : String(error) });
@@ -1010,5 +1022,45 @@ Apply the voice style guide now:`;
     });
   }
 
+  /**
+   * Check if the raw summary has sufficient detail for the combined summary quality check.
+   * Looks for specific content indicators to ensure quality without additional LLM calls.
+   */
+  private static hasSufficientDetail(rawSummary: string): boolean {
+    // Basic length check
+    if (rawSummary.length < 200) {
+      return false;
+    }
+    
+    // Check for specific content indicators
+    const hasNotableQuotes = rawSummary.includes('## Notable Quotes') && 
+                             rawSummary.includes('## Notable Quotes') && 
+                             !rawSummary.includes('## Notable Quotes\n\n');
+    
+    const hasLearningObjectives = rawSummary.includes('## Learning Objectives') && 
+                                 rawSummary.includes('## Learning Objectives') && 
+                                 !rawSummary.includes('## Learning Objectives\n\n');
+    
+    const hasKeyTakeaways = rawSummary.includes('## Key Takeaways') && 
+                           rawSummary.includes('## Key Takeaways') && 
+                           !rawSummary.includes('## Key Takeaways\n\n');
+    
+    const hasTechniques = rawSummary.includes('## Techniques') && 
+                         rawSummary.includes('## Techniques') && 
+                         !rawSummary.includes('## Techniques\n\n');
+    
+    // Check if sections have actual content (not just headers)
+    const hasContentInQuotes = rawSummary.includes('## Notable Quotes') && 
+                               rawSummary.includes('## Notable Quotes') && 
+                               rawSummary.split('## Notable Quotes')[1]?.includes('-');
+    
+    const hasContentInObjectives = rawSummary.includes('## Learning Objectives') && 
+                                  rawSummary.includes('## Learning Objectives') && 
+                                  rawSummary.split('## Learning Objectives')[1]?.includes('-');
+    
+    // Return true only if we have sufficient content indicators
+    return hasNotableQuotes && hasLearningObjectives && hasKeyTakeaways && hasTechniques &&
+           hasContentInQuotes && hasContentInObjectives;
+  }
 
 }
