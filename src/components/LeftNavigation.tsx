@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Plus, Trash2 } from 'lucide-react';
+import { Settings, Plus, Trash2, Clock, Cpu } from 'lucide-react';
 import { useAppStore } from '../store';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 
@@ -25,7 +25,38 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
   showNewChatButton = true
 }) => {
   const navigate = useNavigate();
-  const { documents, clearAllData } = useAppStore();
+  const { documents, clearAllData, abSummaryPairs } = useAppStore();
+
+  // Helper function to format processing time
+  const formatProcessingTime = (milliseconds: number): string => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  };
+
+  // Helper function to get processing time for a document
+  const getDocumentProcessingTime = (documentId: string): number | null => {
+    const summaryPair = abSummaryPairs.find(pair => pair.documentId === documentId);
+    if (summaryPair?.summaryA?.processingStats?.processingTime) {
+      return summaryPair.summaryA.processingStats.processingTime;
+    }
+    return null;
+  };
+
+  // Helper function to get model used for a document
+  const getDocumentModel = (documentId: string): string | null => {
+    const summaryPair = abSummaryPairs.find(pair => pair.documentId === documentId);
+    if (summaryPair?.summaryA?.processingStats?.modelUsed) {
+      return summaryPair.summaryA.processingStats.modelUsed;
+    }
+    return null;
+  };
 
   const handleClearAllDocuments = () => {
     if (window.confirm('Are you sure you want to delete all documents? This action cannot be undone.')) {
@@ -141,6 +172,20 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
                             📊
                             {doc.text ? `${Math.round(doc.text.length / 1000)}k chars` : 'Unknown size'}
                           </span>
+                          {/* Processing Time */}
+                          {getDocumentProcessingTime(doc.id) && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {formatProcessingTime(getDocumentProcessingTime(doc.id)!)}
+                            </span>
+                          )}
+                          {/* Model Used */}
+                          {getDocumentModel(doc.id) && (
+                            <span className="flex items-center gap-1">
+                              <Cpu className="w-3 h-3" />
+                              {getDocumentModel(doc.id)}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
