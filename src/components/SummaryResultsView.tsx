@@ -704,7 +704,59 @@ export const SummaryResultsView: React.FC = () => {
                       {allVersions.find(v => v.id === selectedVersions.left)?.isOriginal ? '🌱 Original' : `🔵 v${allVersions.find(v => v.id === selectedVersions.left)?.versionNumber}`}
                     </h5>
                     <div className="prose prose-sm max-h-96 overflow-y-auto text-gray-800">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({ children }) => (
+                            <h1 className="text-lg font-bold text-gray-900 mb-2 mt-0">{children}</h1>
+                          ),
+                          h2: ({ children }) => (
+                            <h2 className="text-base font-bold text-gray-900 mb-2 mt-0">{children}</h2>
+                          ),
+                          h3: ({ children }) => (
+                            <h3 className="text-sm font-medium text-gray-800 mb-1 mt-2">{children}</h3>
+                          ),
+                          h4: ({ children }) => (
+                            <h4 className="text-xs font-medium text-gray-800 mb-1 mt-2">{children}</h4>
+                          ),
+                          p: ({ children }) => (
+                            <p className="text-gray-700 mb-2 leading-relaxed text-sm">{children}</p>
+                          ),
+                          ul: ({ children }) => (
+                            <ul className="text-gray-700 mb-2 space-y-1">{children}</ul>
+                          ),
+                          ol: ({ children }) => (
+                            <ol className="text-gray-700 mb-2 space-y-1 list-decimal list-inside">{children}</ol>
+                          ),
+                          li: ({ children }) => (
+                            <li className="text-gray-700 flex items-start text-sm">
+                              <span className="text-blue-500 mr-2">•</span>
+                              <span>{children}</span>
+                            </li>
+                          ),
+                          blockquote: ({ children }) => (
+                            <blockquote className="border-l-4 border-blue-400 pl-3 italic text-gray-600 my-2 bg-blue-50 py-2 text-sm">
+                              {children}
+                            </blockquote>
+                          ),
+                          strong: ({ children }) => (
+                            <strong className="text-gray-900 font-semibold">{children}</strong>
+                          ),
+                          em: ({ children }) => (
+                            <em className="text-gray-700 italic">{children}</em>
+                          ),
+                          code: ({ children }) => (
+                            <code className="bg-gray-100 text-blue-700 px-1.5 py-0.5 rounded text-xs font-mono">
+                              {children}
+                            </code>
+                          ),
+                          pre: ({ children }) => (
+                            <pre className="bg-gray-100 text-gray-800 p-2 rounded overflow-x-auto mb-2 font-mono text-xs">
+                              {children}
+                            </pre>
+                          ),
+                        }}
+                      >
                         {allVersions.find(v => v.id === selectedVersions.left)?.summary || ''}
                       </ReactMarkdown>
                     </div>
@@ -716,7 +768,59 @@ export const SummaryResultsView: React.FC = () => {
                       {allVersions.find(v => v.id === selectedVersions.right)?.isOriginal ? '🌱 Original' : `🔵 v${allVersions.find(v => v.id === selectedVersions.right)?.versionNumber}`}
                     </h5>
                     <div className="prose prose-sm max-h-96 overflow-y-auto text-gray-800">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({ children }) => (
+                            <h1 className="text-lg font-bold text-gray-900 mb-2 mt-0">{children}</h1>
+                          ),
+                          h2: ({ children }) => (
+                            <h2 className="text-base font-bold text-gray-900 mb-2 mt-0">{children}</h2>
+                          ),
+                          h3: ({ children }) => (
+                            <h3 className="text-sm font-medium text-gray-800 mb-1 mt-2">{children}</h3>
+                          ),
+                          h4: ({ children }) => (
+                            <h4 className="text-xs font-medium text-gray-800 mb-1 mt-2">{children}</h4>
+                          ),
+                          p: ({ children }) => (
+                            <p className="text-gray-700 mb-2 leading-relaxed text-sm">{children}</p>
+                          ),
+                          ul: ({ children }) => (
+                            <ul className="text-gray-700 mb-2 space-y-1">{children}</ul>
+                          ),
+                          ol: ({ children }) => (
+                            <ol className="text-gray-700 mb-2 space-y-1 list-decimal list-inside">{children}</ol>
+                          ),
+                          li: ({ children }) => (
+                            <li className="text-gray-700 flex items-start text-sm">
+                              <span className="text-blue-500 mr-2">•</span>
+                              <span>{children}</span>
+                            </li>
+                          ),
+                          blockquote: ({ children }) => (
+                            <blockquote className="border-l-4 border-blue-400 pl-3 italic text-gray-600 my-2 bg-blue-50 py-2 text-sm">
+                              {children}
+                            </blockquote>
+                          ),
+                          strong: ({ children }) => (
+                            <strong className="text-gray-900 font-semibold">{children}</strong>
+                          ),
+                          em: ({ children }) => (
+                            <em className="text-gray-700 italic">{children}</em>
+                          ),
+                          code: ({ children }) => (
+                            <code className="bg-gray-100 text-blue-700 px-1.5 py-0.5 rounded text-xs font-mono">
+                              {children}
+                            </code>
+                          ),
+                          pre: ({ children }) => (
+                            <pre className="bg-gray-100 text-gray-800 p-2 rounded overflow-x-auto mb-2 font-mono text-xs">
+                              {children}
+                            </pre>
+                          ),
+                        }}
+                      >
                         {allVersions.find(v => v.id === selectedVersions.right)?.summary || ''}
                       </ReactMarkdown>
                     </div>
