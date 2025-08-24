@@ -3,7 +3,7 @@
  * Features collapsible left navigation and focused chat interface
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
@@ -49,6 +49,9 @@ export const ChatCentricLayout: React.FC = () => {
   const [showProgress, setShowProgress] = useState(false);
   const [processingStartTime, setProcessingStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  
+  // Ref to track processed documents to prevent duplicate completion messages
+  const processedDocumentsRef = useRef<Set<string>>(new Set());
 
 
 
@@ -99,34 +102,35 @@ export const ChatCentricLayout: React.FC = () => {
     if (location.state?.returnFromSummary && location.state?.document) {
       const document = location.state.document;
       
-      // Check if we already have a completion message for this document
-      const existingCompletionMessage = messages.find(msg => 
-        msg.type === 'document' && 
-        msg.metadata?.documentId === document.id &&
-        msg.content.includes('has been successfully processed and summarized')
-      );
-      
-      // Only add completion message if one doesn't already exist
-      if (!existingCompletionMessage) {
-        const completionMessage = {
-          id: `completion-${crypto.randomUUID()}`,
-          role: 'assistant' as const,
-          content: `✅ Document "${document.title || document.filename}" has been successfully processed and summarized. You can now ask questions about this document or upload another one.`,
-          timestamp: new Date().toISOString(),
-          type: 'document' as const,
-          metadata: {
-            documentId: document.id,
-            filename: document.filename
-          }
-        };
-        
-        setMessages(prev => [...prev, completionMessage]);
+      // Check if we've already processed this document return
+      if (processedDocumentsRef.current.has(document.id)) {
+        // Clear the navigation state and return early
+        navigate('/', { replace: true, state: {} });
+        return;
       }
+      
+      // Mark this document as processed
+      processedDocumentsRef.current.add(document.id);
+      
+      // Add completion message
+      const completionMessage = {
+        id: `completion-${crypto.randomUUID()}`,
+        role: 'assistant' as const,
+        content: `✅ Document "${document.title || document.filename}" has been successfully processed and summarized. You can now ask questions about this document or upload another one.`,
+        timestamp: new Date().toISOString(),
+        type: 'document' as const,
+        metadata: {
+          documentId: document.id,
+          filename: document.filename
+        }
+      };
+      
+      setMessages(prev => [...prev, completionMessage]);
       
       // Clear the navigation state to prevent re-triggering
       navigate('/', { replace: true, state: {} });
     }
-  }, [location.state, navigate, messages]);
+  }, [location.state, navigate]);
 
   // Handle document upload and add to chat
   const handleDocumentUpload = async (success: boolean, message: string, document?: Document) => {
