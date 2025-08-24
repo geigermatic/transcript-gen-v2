@@ -159,6 +159,64 @@ export const SummaryResultsView: React.FC = () => {
               </h1>
             </div>
 
+            {/* Processing Metadata - Show when summary exists */}
+            {summary && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Processing Details</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  {/* Model Used */}
+                  <div className="flex flex-col">
+                    <span className="text-gray-500 font-medium">Model</span>
+                    <span className="text-gray-800 font-mono">
+                      {summary.processingStats.modelUsed || 'Unknown'}
+                    </span>
+                  </div>
+                  
+                  {/* Processing Time */}
+                  <div className="flex flex-col">
+                    <span className="text-gray-500 font-medium">Processing Time</span>
+                    <span className="text-gray-800">
+                      {summary.processingStats.processingTime ? 
+                        `${Math.floor(summary.processingStats.processingTime / 1000)}s` : 
+                        'Unknown'
+                      }
+                    </span>
+                  </div>
+                  
+                  {/* Chunks Processed */}
+                  <div className="flex flex-col">
+                    <span className="text-gray-500 font-medium">Chunks</span>
+                    <span className="text-gray-800">
+                      {summary.processingStats.totalChunks || 0}
+                    </span>
+                  </div>
+                  
+                  {/* Date Processed */}
+                  <div className="flex flex-col">
+                    <span className="text-gray-500 font-medium">Processed</span>
+                    <span className="text-gray-800">
+                      {document?.uploadedAt ? 
+                        new Date(document.uploadedAt).toLocaleDateString() : 
+                        'Unknown'
+                      }
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Fast Path Indicator */}
+                {summary.processingStats.totalChunks === 1 && 
+                 summary.processingStats.modelUsed && 
+                 ['gemma3:4b', 'gemma3:12b', 'gemma3:1b', 'mixtral:8x7b'].includes(summary.processingStats.modelUsed) && (
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-blue-700">
+                      <span className="text-sm font-medium">🚀 Ultra-Fast Path Used</span>
+                      <span className="text-xs">(Large-context model with single-chunk processing)</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Loading State */}
             {isLoading && (
               <div className="text-center py-12">
