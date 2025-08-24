@@ -46,8 +46,11 @@ export class TextSplitter {
     // Estimate text length in tokens (rough approximation: 1 token ≈ 4 characters)
     const estimatedTokens = Math.ceil(text.length / 4);
     
+    // OPTIMIZED: Increased threshold from 80% to 95% for better context utilization
+    const utilizationThreshold = this.getModelUtilizationThreshold(modelId);
+    
     // If text fits in model context, return as single chunk
-    if (estimatedTokens <= contextWindow * 0.8) { // 80% safety margin
+    if (estimatedTokens <= contextWindow * utilizationThreshold) {
       return [{
         id: `${documentId}-chunk-0`,
         documentId,
@@ -82,6 +85,8 @@ export class TextSplitter {
       'llama3.1:8b': 4096,
       'llama3.1:13b-instruct-q4_K_M': 4096,
       'llama3.1:13b': 4096,
+      'llama3.1:70b': 4096,
+      'llama3.1:70b-instruct': 4096,
       
       // Gemma models
       'gemma3:1b': 32768,
@@ -89,14 +94,67 @@ export class TextSplitter {
       'gemma3:12b': 131072,
       'gemma3:27b': 131072,
       
-      // Mixtral
+      // Mixtral models
       'mixtral:8x7b': 32768,
+      'mixtral:8x7b-instruct': 32768,
+      
+      // CodeLlama models
+      'codellama:7b': 16384,
+      'codellama:13b': 16384,
+      'codellama:34b': 16384,
+      
+      // Mistral models
+      'mistral:7b': 8192,
+      'mistral:7b-instruct': 8192,
+      
+      // Phi models
+      'phi:2.7b': 2048,
+      'phi:3.8b': 8192,
       
       // Default fallback
       'default': 4096
     };
     
     return contextWindows[modelId] || contextWindows['default'];
+  }
+
+  /**
+   * Get the optimal utilization threshold for a given model
+   * Higher thresholds = better context utilization but less safety margin
+   */
+  static getModelUtilizationThreshold(modelId: string): number {
+    // Model-specific optimization profiles
+    const utilizationProfiles: Record<string, number> = {
+      // Large context models - can use higher utilization (95%)
+      'gemma3:1b': 0.95,
+      'gemma3:4b': 0.95,
+      'gemma3:12b': 0.95,
+      'gemma3:27b': 0.95,
+      'mixtral:8x7b': 0.95,
+      'mixtral:8x7b-instruct': 0.95,
+      
+      // Medium context models - balanced approach (90%)
+      'llama3.1:13b': 0.90,
+      'llama3.1:13b-instruct-q4_K_M': 0.90,
+      'llama3.1:70b': 0.90,
+      'llama3.1:70b-instruct': 0.90,
+      'codellama:7b': 0.90,
+      'codellama:13b': 0.90,
+      'codellama:34b': 0.90,
+      'mistral:7b': 0.90,
+      'mistral:7b-instruct': 0.90,
+      'phi:3.8b': 0.90,
+      
+      // Small context models - conservative approach (85%)
+      'llama3.1:8b': 0.85,
+      'llama3.1:8b-instruct-q4_K_M': 0.85,
+      'phi:2.7b': 0.85,
+      
+      // Default fallback - balanced approach
+      'default': 0.90
+    };
+    
+    return utilizationProfiles[modelId] || utilizationProfiles['default'];
   }
 
   /**
