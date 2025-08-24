@@ -152,6 +152,80 @@ export class SummarizationEngine {
         contextWindow: modelId ? TextSplitter.getModelContextWindow(modelId) : 'unknown'
       });
 
+      // Check if we can use the fast path for large-context models
+      const contextWindow = modelId ? TextSplitter.getModelContextWindow(modelId) : 4096;
+      const canUseFastPath = chunks.length === 1 && contextWindow >= 32768; // 32K+ context models
+
+      if (canUseFastPath) {
+        logInfo('SUMMARIZE', `Using fast path for large-context model (${contextWindow} tokens)`, {
+          documentId: document.id,
+          modelId,
+          contextWindow
+        });
+        
+        onProgress?.(20, 100, 'Generating summary directly (fast path)...');
+        
+        // Generate summary directly from the full document - no fact extraction needed
+        const rawSummary = await this.generateDirectSummary(document, styleGuide);
+        
+        onProgress?.(80, 100, 'Generating styled summary...');
+        const styledSummary = await this.generateStyledSummaryFromRaw(document, rawSummary, styleGuide);
+        
+        // For backward compatibility, keep markdownSummary as the styled version
+        const markdownSummary = styledSummary;
+        
+        onProgress?.(95, 100, 'Finalizing summaries...');
+        
+        const processingTime = Date.now() - startTime;
+        
+        // Create minimal chunk facts for compatibility
+        const chunkFacts: ChunkFacts[] = [{
+          chunkId: chunks[0].id,
+          chunkIndex: 0,
+          facts: {},
+          parseSuccess: true,
+          rawResponse: 'Fast path - no fact extraction needed',
+          error: undefined,
+        }];
+        
+        const result: SummarizationResult = {
+          document,
+          chunkFacts,
+          mergedFacts: {
+            learning_objectives: [],
+            key_takeaways: [],
+            topics: [],
+            techniques: [],
+            notable_quotes: [],
+            action_items: [],
+            class_title: document.title,
+            date_or_series: '',
+            audience: ''
+          },
+          markdownSummary,
+          rawSummary,
+          styledSummary,
+          processingStats: {
+            totalChunks: 1,
+            successfulChunks: 1,
+            failedChunks: 0,
+            processingTime,
+            modelUsed: modelId || 'default',
+          }
+        };
+        
+        logInfo('SUMMARIZE', `Fast path summarization completed for document: ${document.title}`, {
+          documentId: document.id,
+          ...result.processingStats,
+          summaryLength: markdownSummary.length,
+          fastPath: true
+        });
+        
+        onProgress?.(100, 100, 'Summary completed successfully (fast path)!');
+        return result;
+      }
+
+      // Standard path for smaller models or multiple chunks
       onProgress?.(10, 100, `Processing ${chunks.length} chunks for fact extraction...`);
 
       // Extract facts from each chunk (with configurable parallel processing)
@@ -713,5 +787,141 @@ Generate ONLY the markdown summary, no other text:`;
     }
 
     return summary;
+  }
+
+  /**
+   * Generate summary directly from document (fast path for large models)
+   * Skips fact extraction and generates summary in one LLM call
+   */
+  private static async generateDirectSummary(
+    document: Document,
+    styleGuide: StyleGuide
+  ): Promise<string> {
+    const prompt = this.buildDirectSummaryPrompt(document, styleGuide);
+    
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: prompt
+      }]);
+      
+      return response.trim();
+      
+    } catch (error) {
+      logError('SUMMARIZE', 'Failed to generate direct summary', { error: error instanceof Error ? error.message : String(error) });
+      throw new Error(`Direct summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Generate styled summary from raw summary (fast path)
+   * Applies style guide to the raw summary
+   */
+  private static async generateStyledSummaryFromRaw(
+    document: Document,
+    rawSummary: string,
+    styleGuide: StyleGuide
+  ): Promise<string> {
+    const prompt = this.buildStyleApplicationPrompt(document, rawSummary, styleGuide);
+    
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: prompt
+      }]);
+      
+      return response.trim();
+      
+    } catch (error) {
+      logError('SUMMARIZE', 'Failed to apply style guide to summary', { error: error instanceof Error ? error.message : String(error) });
+      // Fallback: return raw summary if styling fails
+      return rawSummary;
+    }
+  }
+
+  /**
+   * Build prompt for direct summary generation (fast path)
+   */
+  private static buildDirectSummaryPrompt(
+    document: Document,
+    styleGuide: StyleGuide
+  ): string {
+    const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
+    
+    return `You are a professional transcript summarizer specializing in lessons, teachings, and meditations. Create a clear, factual summary of the following lesson/teaching transcript.
+
+DOCUMENT: ${document.title}
+
+TRANSCRIPT TEXT:
+${document.text}
+
+STYLE INSTRUCTIONS: ${styleInstructions}
+
+REQUIRED STRUCTURE (use this exact format):
+# ${document.title}
+
+## Synopsis
+[Exactly 4 sentences emphasizing WHY and WHAT benefits - compelling and benefit-focused]
+
+## Learning Objectives
+[What students will learn - bulleted list]
+
+## Key Takeaways
+[Main insights and lessons - bulleted list]
+
+## Topics
+[Subject areas covered - bulleted list]
+
+## Techniques
+[Specific methods, practices, exercises taught - bulleted list]
+
+## Notable Quotes
+[Memorable quotes from the lesson - bulleted list]
+
+## Open Questions
+[Questions for reflection or further exploration - bulleted list]
+
+INSTRUCTIONS:
+1. Follow the exact structure above - ALL sections must be included in this order
+2. Use the transcript text directly - no need to extract facts first
+3. Keep each section concise but comprehensive
+4. Maintain the professional tone specified in style instructions
+5. Focus on actionable insights and practical value
+
+Generate the summary now:`;
+  }
+
+  /**
+   * Build prompt for applying style guide to existing summary
+   */
+  private static buildStyleApplicationPrompt(
+    document: Document,
+    rawSummary: string,
+    styleGuide: StyleGuide
+  ): string {
+    const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
+    const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
+    
+    return `You are a professional content stylist. Apply the following style guide to the existing summary.
+
+DOCUMENT: ${document.title}
+
+EXISTING SUMMARY:
+${rawSummary}
+
+STYLE GUIDE:
+- Instructions: ${styleInstructions}
+- Formality: ${styleGuide.tone_settings.formality}
+- Enthusiasm: ${styleGuide.tone_settings.enthusiasm}
+- Technicality: ${styleGuide.tone_settings.technicality}
+- Keywords: ${styleGuide.keywords.join(', ') || 'None specified'}
+
+EXAMPLE PHRASES:
+${examplePhrasesSection}
+
+TASK:
+Rewrite the summary to match the style guide while preserving all factual content and structure. Maintain the exact same sections and information, but adjust the tone, language, and presentation to match the specified style.
+
+Apply the style guide now:`;
   }
 }
