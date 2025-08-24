@@ -18,6 +18,7 @@ export interface ChunkingOptions {
   chunkSize?: number;
   overlap?: number;
   maxChunks?: number;
+  modelContextWindow?: number; // New: model context window in tokens
 }
 
 export class TextSplitter {
@@ -32,6 +33,70 @@ export class TextSplitter {
     const maxChunks = options?.maxChunks ?? config.maxChunks;
 
     return this.splitTextWithConfig(text, documentId, { chunkSize, overlap, maxChunks });
+  }
+
+  /**
+   * Split text into chunks optimized for the selected model
+   * Uses model context window to determine optimal chunking strategy
+   */
+  static splitTextForModel(text: string, documentId: string, modelId: string): TextChunk[] {
+    // Get model context window (in tokens)
+    const contextWindow = this.getModelContextWindow(modelId);
+    
+    // Estimate text length in tokens (rough approximation: 1 token ≈ 4 characters)
+    const estimatedTokens = Math.ceil(text.length / 4);
+    
+    // If text fits in model context, return as single chunk
+    if (estimatedTokens <= contextWindow * 0.8) { // 80% safety margin
+      return [{
+        id: `${documentId}-chunk-0`,
+        documentId,
+        text,
+        startIndex: 0,
+        endIndex: text.length,
+        chunkIndex: 0
+      }];
+    }
+    
+    // Otherwise, use standard chunking with model-optimized settings
+    const optimalChunkSize = Math.min(
+      Math.floor(contextWindow * 0.6), // 60% of context window
+      4000 // Cap at 4K for safety
+    );
+    
+    return this.splitText(text, documentId, {
+      chunkSize: optimalChunkSize,
+      overlap: Math.floor(optimalChunkSize * 0.1), // 10% overlap
+      maxChunks: 10 // Reasonable limit
+    });
+  }
+
+  /**
+   * Get the context window size for a given model
+   */
+  static getModelContextWindow(modelId: string): number {
+    // Model context windows (in tokens)
+    const contextWindows: Record<string, number> = {
+      // LLaMA models
+      'llama3.1:8b-instruct-q4_K_M': 4096,
+      'llama3.1:8b': 4096,
+      'llama3.1:13b-instruct-q4_K_M': 4096,
+      'llama3.1:13b': 4096,
+      
+      // Gemma models
+      'gemma3:1b': 32768,
+      'gemma3:4b': 131072,
+      'gemma3:12b': 131072,
+      'gemma3:27b': 131072,
+      
+      // Mixtral
+      'mixtral:8x7b': 32768,
+      
+      // Default fallback
+      'default': 4096
+    };
+    
+    return contextWindows[modelId] || contextWindows['default'];
   }
 
   /**

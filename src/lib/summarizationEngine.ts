@@ -138,13 +138,17 @@ export class SummarizationEngine {
     });
 
     try {
-      // Split document into chunks for processing
+      // Split document into chunks optimized for the selected model
       onProgress?.(0, 100, 'Splitting document into chunks...');
-      const chunks = TextSplitter.splitText(document.text, document.id);
+      const chunks = modelId 
+        ? TextSplitter.splitTextForModel(document.text, document.id, modelId)
+        : TextSplitter.splitText(document.text, document.id);
       
       logInfo('SUMMARIZE', `Document split into ${chunks.length} chunks for fact extraction`, {
         documentId: document.id, 
-        chunkCount: chunks.length
+        chunkCount: chunks.length,
+        selectedModel: modelId || 'default',
+        contextWindow: modelId ? TextSplitter.getModelContextWindow(modelId) : 'unknown'
       });
 
       onProgress?.(10, 100, `Processing ${chunks.length} chunks for fact extraction...`);
