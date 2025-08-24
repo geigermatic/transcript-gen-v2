@@ -703,7 +703,7 @@ export const SummaryResultsView: React.FC = () => {
                     <h5 className="font-semibold text-purple-800 mb-3">
                       {allVersions.find(v => v.id === selectedVersions.left)?.isOriginal ? '🌱 Original' : `🔵 v${allVersions.find(v => v.id === selectedVersions.left)?.versionNumber}`}
                     </h5>
-                    <div className="prose prose-sm max-h-96 overflow-y-auto">
+                    <div className="prose prose-sm max-h-96 overflow-y-auto text-gray-800">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {allVersions.find(v => v.id === selectedVersions.left)?.summary || ''}
                       </ReactMarkdown>
@@ -715,7 +715,7 @@ export const SummaryResultsView: React.FC = () => {
                     <h5 className="font-semibold text-purple-800 mb-3">
                       {allVersions.find(v => v.id === selectedVersions.right)?.isOriginal ? '🌱 Original' : `🔵 v${allVersions.find(v => v.id === selectedVersions.right)?.versionNumber}`}
                     </h5>
-                    <div className="prose prose-sm max-h-96 overflow-y-auto">
+                    <div className="prose prose-sm max-h-96 overflow-y-auto text-gray-800">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {allVersions.find(v => v.id === selectedVersions.right)?.summary || ''}
                       </ReactMarkdown>
