@@ -99,25 +99,34 @@ export const ChatCentricLayout: React.FC = () => {
     if (location.state?.returnFromSummary && location.state?.document) {
       const document = location.state.document;
       
-      // Add a completion message to show the document was processed
-      const completionMessage = {
-        id: `completion-${crypto.randomUUID()}`,
-        role: 'assistant' as const,
-        content: `✅ Document "${document.title || document.filename}" has been successfully processed and summarized. You can now ask questions about this document or upload another one.`,
-        timestamp: new Date().toISOString(),
-        type: 'document' as const,
-        metadata: {
-          documentId: document.id,
-          filename: document.filename
-        }
-      };
+      // Check if we already have a completion message for this document
+      const existingCompletionMessage = messages.find(msg => 
+        msg.type === 'document' && 
+        msg.metadata?.documentId === document.id &&
+        msg.content.includes('has been successfully processed and summarized')
+      );
       
-      setMessages(prev => [...prev, completionMessage]);
+      // Only add completion message if one doesn't already exist
+      if (!existingCompletionMessage) {
+        const completionMessage = {
+          id: `completion-${crypto.randomUUID()}`,
+          role: 'assistant' as const,
+          content: `✅ Document "${document.title || document.filename}" has been successfully processed and summarized. You can now ask questions about this document or upload another one.`,
+          timestamp: new Date().toISOString(),
+          type: 'document' as const,
+          metadata: {
+            documentId: document.id,
+            filename: document.filename
+          }
+        };
+        
+        setMessages(prev => [...prev, completionMessage]);
+      }
       
       // Clear the navigation state to prevent re-triggering
       navigate('/', { replace: true, state: {} });
     }
-  }, [location.state, navigate]);
+  }, [location.state, navigate, messages]);
 
   // Handle document upload and add to chat
   const handleDocumentUpload = async (success: boolean, message: string, document?: Document) => {
