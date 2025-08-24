@@ -167,28 +167,35 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
                         <h4 className="font-medium text-gray-800 text-sm truncate mb-1">
                           {doc.title || doc.filename}
                         </h4>
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                        {/* Row 1: Basic metadata */}
+                        <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
                           <span>
                             {new Date(doc.uploadedAt).toLocaleDateString()}
                           </span>
                           <span>
                             {doc.text ? `${Math.round(doc.text.length / 1000)}k chars` : 'Unknown size'}
                           </span>
-                          {/* Processing Time */}
-                          {getDocumentProcessingTime(doc.id) && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {formatProcessingTime(getDocumentProcessingTime(doc.id)!)}
-                            </span>
-                          )}
-                          {/* Model Used */}
-                          {getDocumentModel(doc.id) && (
-                            <span className="flex items-center gap-1">
-                              <Cpu className="w-3 h-3" />
-                              {getDocumentModel(doc.id)}
-                            </span>
-                          )}
                         </div>
+                        
+                        {/* Row 2: Processing metadata (only show if available) */}
+                        {(getDocumentProcessingTime(doc.id) || getDocumentModel(doc.id)) && (
+                          <div className="flex items-center gap-3 text-xs text-gray-500">
+                            {/* Processing Time */}
+                            {getDocumentProcessingTime(doc.id) && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatProcessingTime(getDocumentProcessingTime(doc.id)!)}
+                              </span>
+                            )}
+                            {/* Model Used */}
+                            {getDocumentModel(doc.id) && (
+                              <span className="flex items-center gap-1">
+                                <Cpu className="w-3 h-3" />
+                                {getDocumentModel(doc.id)}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
