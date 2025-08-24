@@ -49,8 +49,7 @@ export const SummaryResultsView: React.FC = () => {
     try {
       const summaryResult = await SummarizationEngine.summarizeDocument(
         doc, 
-        styleGuide,
-
+        styleGuide
       );
       setSummary(summaryResult);
     } catch (error) {
