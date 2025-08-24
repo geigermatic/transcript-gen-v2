@@ -32,12 +32,37 @@ export const SummaryResultsView: React.FC = () => {
   const [isNavExpanded, setIsNavExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [showRestoreButton, setShowRestoreButton] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<{ versionId: string; message: string } | null>(null);
+  const [regenerationProgress, setRegenerationProgress] = useState<{ step: string; progress: number } | null>(null);
+  const [scrollToVersion, setScrollToVersion] = useState<string | null>(null);
 
   // Handle navigation hover
   const handleNavMouseEnter = () => setIsNavExpanded(true);
   const handleNavMouseLeave = () => setIsNavExpanded(false);
+
+  // Scroll to specific version
+  const scrollToVersionElement = (versionId: string) => {
+    setScrollToVersion(versionId);
+    const element = window.document.getElementById(`version-${versionId}`);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start',
+        inline: 'nearest'
+      });
+      // Clear the scroll target after animation
+      setTimeout(() => setScrollToVersion(null), 1000);
+    }
+  };
+
+  // Scroll to top when new version is created
+  const scrollToTop = () => {
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    });
+  };
 
   // Fetch summary for a document
   const fetchDocumentSummary = useCallback(async (doc: Document) => {
@@ -136,6 +161,31 @@ export const SummaryResultsView: React.FC = () => {
     });
   };
 
+  const handleCopyVersion = async (versionSummary: string, versionId: string) => {
+    try {
+      await navigator.clipboard.writeText(versionSummary);
+      setCopyFeedback({ versionId, message: 'Copied!' });
+      setTimeout(() => setCopyFeedback(null), 2000);
+    } catch (error) {
+      console.error('Failed to copy version summary:', error);
+      // Fallback for older browsers or clipboard issues
+      try {
+        const textArea = window.document.createElement('textarea');
+        textArea.value = versionSummary;
+        window.document.body.appendChild(textArea);
+        textArea.select();
+        window.document.execCommand('copy');
+        window.document.body.removeChild(textArea);
+        setCopyFeedback({ versionId, message: 'Copied!' });
+        setTimeout(() => setCopyFeedback(null), 2000);
+      } catch (fallbackError) {
+        console.error('Fallback copy also failed:', fallbackError);
+        setCopyFeedback({ versionId, message: 'Copy failed' });
+        setTimeout(() => setCopyFeedback(null), 2000);
+      }
+    }
+  };
+
   const handleCopy = async () => {
     const content = activeTab === 'stylized' 
       ? (summary?.styledSummary || 'No stylized summary available')
@@ -145,10 +195,28 @@ export const SummaryResultsView: React.FC = () => {
     
     try {
       await navigator.clipboard.writeText(content);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // setCopied(true); // This state variable was removed
+      setTimeout(() => {
+        // setCopied(false); // This state variable was removed
+      }, 2000);
     } catch (error) {
       console.error('Failed to copy summary:', error);
+      // Fallback for older browsers or clipboard issues
+      try {
+        const textArea = window.document.createElement('textarea');
+        textArea.value = content;
+        window.document.body.appendChild(textArea);
+        textArea.select();
+        window.document.execCommand('copy');
+        window.document.body.removeChild(textArea);
+        // setCopied(true); // This state variable was removed
+        setTimeout(() => {
+          // setCopied(false); // This state variable was removed
+        }, 2000);
+      } catch (fallbackError) {
+        console.error('Fallback copy also failed:', fallbackError);
+        // Could show an error toast here
+      }
     }
   };
 
@@ -156,11 +224,15 @@ export const SummaryResultsView: React.FC = () => {
     if (!document || !summary) return;
     
     setIsRegenerating(true);
+    setRegenerationProgress({ step: 'Preparing regeneration...', progress: 10 });
+    
     try {
       console.log('🔄 Starting regeneration for document:', document.id);
       
       // Save current version before regenerating
       if (summary.styledSummary) {
+        setRegenerationProgress({ step: 'Saving current version...', progress: 25 });
+        
         try {
           const currentModel = summary.processingStats.modelUsed || 'unknown';
           console.log('💾 Saving current version with model:', currentModel);
@@ -175,11 +247,14 @@ export const SummaryResultsView: React.FC = () => {
           setShowRestoreButton(true);
           
           console.log('✅ Current version saved to history');
+          setRegenerationProgress({ step: 'Current version saved...', progress: 50 });
         } catch (error) {
           console.warn('Failed to save summary version:', error);
           // Continue with regeneration even if versioning fails
         }
       }
+      
+      setRegenerationProgress({ step: 'Generating new summary...', progress: 75 });
       
       // Use the existing chunked content to regenerate just the styled summary
       const regeneratedSummary = await SummarizationEngine.regenerateStyledSummary(
@@ -190,6 +265,7 @@ export const SummaryResultsView: React.FC = () => {
       );
       
       console.log('🔄 New summary generated, length:', regeneratedSummary.length);
+      setRegenerationProgress({ step: 'Finalizing...', progress: 90 });
       
       // Update the summary with the new styled version
       const updatedSummary: SummarizationResult = {
@@ -209,9 +285,19 @@ export const SummaryResultsView: React.FC = () => {
       // Force a re-render to show the new version
       // This ensures the UI updates with the new version from the store
       console.log('✅ Summary updated, UI should refresh');
+      setRegenerationProgress({ step: 'Complete!', progress: 100 });
+      
+      // Scroll to top to show the new version
+      setTimeout(() => {
+        scrollToTop();
+      }, 100);
+      
+      // Clear progress after a brief delay
+      setTimeout(() => setRegenerationProgress(null), 1500);
       
     } catch (error) {
       console.error('Failed to regenerate summary:', error);
+      setRegenerationProgress({ step: 'Error occurred', progress: 0 });
       // Could show error message here
     } finally {
       setIsRegenerating(false);
@@ -241,16 +327,6 @@ export const SummaryResultsView: React.FC = () => {
     // Check if we should hide restore button (back to original)
     if (previousVersion.isOriginal) {
       setShowRestoreButton(false);
-    }
-  };
-
-  const handleCopyVersion = async (versionSummary: string) => {
-    try {
-      await navigator.clipboard.writeText(versionSummary);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy version summary:', error);
     }
   };
 
@@ -340,8 +416,42 @@ export const SummaryResultsView: React.FC = () => {
     // Render stacked versions
     return (
       <div className="space-y-6">
+        {/* Version Navigation */}
+        {allVersions.length > 1 && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-gray-700">Version Navigation</h3>
+              <span className="text-xs text-gray-500">
+                {allVersions.length} versions • {allVersions[0]?.regenerationCount || 0} regenerations
+              </span>
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+              {allVersions.map((version) => (
+                <button
+                  key={version.id}
+                  onClick={() => scrollToVersionElement(version.id)}
+                  className={`
+                    flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap
+                    ${scrollToVersion === version.id
+                      ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' 
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                    }
+                    ${version.isOriginal ? 'ring-2 ring-green-200' : ''}
+                  `}
+                >
+                  <span className={`w-2 h-2 rounded-full ${
+                    scrollToVersion === version.id ? 'bg-blue-500' : 'bg-gray-400'
+                  }`}></span>
+                  <span>{version.isOriginal ? 'Original' : `v${version.versionNumber}`}</span>
+                  {version.isOriginal && <span className="text-green-600">🌱</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
         {allVersions.map((version) => (
-          <div key={version.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div key={version.id} id={`version-${version.id}`} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             {/* Version Header */}
             <div className="flex items-center justify-between bg-gray-50 px-6 py-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
@@ -365,11 +475,20 @@ export const SummaryResultsView: React.FC = () => {
               
               {/* Inline Copy Button */}
               <button
-                onClick={() => handleCopyVersion(version.summary)}
+                onClick={() => handleCopyVersion(version.summary, version.id)}
                 className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm rounded-md transition-colors"
               >
-                <Copy size={14} />
-                <span>Copy</span>
+                {copyFeedback?.versionId === version.id ? (
+                  <>
+                    <Check size={14} className="text-green-600" />
+                    <span className="text-green-600 text-xs">{copyFeedback.message}</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={14} />
+                    <span>Copy</span>
+                  </>
+                )}
               </button>
             </div>
             
@@ -513,6 +632,24 @@ export const SummaryResultsView: React.FC = () => {
                     </button>
                   </div>
                   
+                  {/* Regeneration Progress Display */}
+                  {regenerationProgress && (
+                    <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                        <span className="text-sm text-blue-700 font-medium">
+                          {regenerationProgress.step}
+                        </span>
+                      </div>
+                      <div className="w-24 bg-blue-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${regenerationProgress.progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3">
                     {/* Regenerate Button */}
@@ -556,17 +693,8 @@ export const SummaryResultsView: React.FC = () => {
                       disabled={!summary}
                       className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {copied ? (
-                        <>
-                          <Check size={16} className="text-green-600" />
-                          <span className="text-green-600">Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={16} />
-                          <span>Copy</span>
-                        </>
-                        )}
+                      <Copy size={16} />
+                      <span>Copy Current</span>
                     </button>
                   </div>
                 </div>
