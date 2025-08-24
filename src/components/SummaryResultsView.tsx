@@ -61,34 +61,48 @@ export const SummaryResultsView: React.FC = () => {
   }, [getDocumentSummary, styleGuide]);
 
   useEffect(() => {
-    // Get document and summary data from navigation state
-    if (location.state?.document) {
-      setDocument(location.state.document);
-      
-      if (location.state?.summary) {
-        // We have both document and summary
-        setSummary(location.state.summary);
+    try {
+      // Get document and summary data from navigation state
+      if (location.state?.document) {
+        setDocument(location.state.document);
         
-        // Initialize version history with the original summary
-        if (location.state.summary.styledSummary) {
-          addSummaryVersion(location.state.document.id, location.state.summary.styledSummary, true);
-        }
-      } else {
-        // We have document but no summary - check if we have it stored, otherwise fetch it
-        const existingSummary = getDocumentSummary(location.state.document.id);
-        if (existingSummary) {
-          setSummary(existingSummary);
+        if (location.state?.summary) {
+          // We have both document and summary
+          setSummary(location.state.summary);
           
-          // Initialize version history with the existing summary
-          if (existingSummary.styledSummary) {
-            addSummaryVersion(location.state.document.id, existingSummary.styledSummary, true);
+          // Initialize version history with the original summary
+          if (location.state.summary.styledSummary) {
+            try {
+              addSummaryVersion(location.state.document.id, location.state.summary.styledSummary, true);
+            } catch (error) {
+              console.warn('Failed to add summary version:', error);
+            }
           }
         } else {
-          fetchDocumentSummary(location.state.document);
+          // We have document but no summary - check if we have it stored, otherwise fetch it
+          const existingSummary = getDocumentSummary(location.state.document.id);
+          if (existingSummary) {
+            setSummary(existingSummary);
+            
+            // Initialize version history with the existing summary
+            if (existingSummary.styledSummary) {
+              try {
+                addSummaryVersion(location.state.document.id, existingSummary.styledSummary, true);
+              } catch (error) {
+                console.warn('Failed to add summary version:', error);
+              }
+            }
+          } else {
+            fetchDocumentSummary(location.state.document);
+          }
         }
+      } else {
+        // Fallback: redirect back to chat if no document data
+        navigate('/');
       }
-    } else {
-      // Fallback: redirect back to chat if no document data
+    } catch (error) {
+      console.error('Error in SummaryResultsView useEffect:', error);
+      // Fallback to home page on error
       navigate('/');
     }
   }, [location.state, navigate, documents, getDocumentSummary, fetchDocumentSummary, addSummaryVersion]);
@@ -124,8 +138,13 @@ export const SummaryResultsView: React.FC = () => {
     try {
       // Save current version before regenerating
       if (summary.styledSummary) {
-        addSummaryVersion(document.id, summary.styledSummary, false);
-        setShowRestoreButton(true);
+        try {
+          addSummaryVersion(document.id, summary.styledSummary, false);
+          setShowRestoreButton(true);
+        } catch (error) {
+          console.warn('Failed to save summary version:', error);
+          // Continue with regeneration even if versioning fails
+        }
       }
       
       // Use the existing chunked content to regenerate just the styled summary

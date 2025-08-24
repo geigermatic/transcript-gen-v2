@@ -470,7 +470,12 @@ This style guide captures the distinctive voice and approach for creating engagi
       summaryHistory: new Map<string, SummaryHistory>(),
       addSummaryVersion: (documentId, summary, isOriginal = false) =>
         set((state) => {
-          const existingHistory = state.summaryHistory.get(documentId);
+          // Ensure summaryHistory is a Map (handle rehydration from persistence)
+          const summaryHistory = state.summaryHistory instanceof Map 
+            ? state.summaryHistory 
+            : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
+          
+          const existingHistory = summaryHistory.get(documentId);
           const newVersion: SummaryVersion = {
             id: crypto.randomUUID(),
             summary,
@@ -495,18 +500,27 @@ This style guide captures the distinctive voice and approach for creating engagi
             }
           }
           
-          const newHistory = new Map(state.summaryHistory);
+          const newHistory = new Map<string, SummaryHistory>(summaryHistory);
           newHistory.set(documentId, updatedHistory);
           
           return { summaryHistory: newHistory };
         }),
       getSummaryHistory: (documentId) => {
         const state = get();
-        return state.summaryHistory.get(documentId);
+        // Ensure summaryHistory is a Map (handle rehydration from persistence)
+        const summaryHistory = state.summaryHistory instanceof Map 
+          ? state.summaryHistory 
+          : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
+        return summaryHistory.get(documentId);
       },
       restoreSummaryVersion: (documentId, versionId) => {
         const state = get();
-        const history = state.summaryHistory.get(documentId);
+        // Ensure summaryHistory is a Map (handle rehydration from persistence)
+        const summaryHistory = state.summaryHistory instanceof Map 
+          ? state.summaryHistory 
+          : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
+        
+        const history = summaryHistory.get(documentId);
         if (!history) return undefined;
 
         const version = history.versions.find(v => v.id === versionId);
@@ -514,7 +528,7 @@ This style guide captures the distinctive voice and approach for creating engagi
 
         // Update last accessed time
         const updatedHistory = { ...history, lastAccessed: Date.now() };
-        const newHistory = new Map(state.summaryHistory);
+        const newHistory = new Map<string, SummaryHistory>(summaryHistory);
         newHistory.set(documentId, updatedHistory);
         set({ summaryHistory: newHistory });
 
@@ -537,12 +551,22 @@ This style guide captures the distinctive voice and approach for creating engagi
       },
       clearSummaryHistory: (documentId) =>
         set((state) => {
-          const newHistory = new Map(state.summaryHistory);
+          // Ensure summaryHistory is a Map (handle rehydration from persistence)
+          const summaryHistory = state.summaryHistory instanceof Map 
+            ? state.summaryHistory 
+            : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
+          
+          const newHistory = new Map<string, SummaryHistory>(summaryHistory);
           newHistory.delete(documentId);
           return { summaryHistory: newHistory };
         }),
       cleanupSummaryHistory: () => {
         const state = get();
+        // Ensure summaryHistory is a Map (handle rehydration from persistence)
+        const summaryHistory = state.summaryHistory instanceof Map 
+          ? state.summaryHistory 
+          : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
+        
         const now = Date.now();
         const maxAge = 24 * 60 * 60 * 1000; // 24 hours
         const maxSize = 50 * 1024 * 1024; // 50MB total
@@ -551,7 +575,7 @@ This style guide captures the distinctive voice and approach for creating engagi
         const newHistory = new Map<string, SummaryHistory>();
         
         // Keep only recent and small histories
-        for (const [docId, history] of state.summaryHistory.entries()) {
+        for (const [docId, history] of summaryHistory.entries()) {
           const age = now - history.lastAccessed;
           const wouldExceedSize = totalSize + history.totalSize > maxSize;
           
@@ -650,6 +674,7 @@ This style guide captures the distinctive voice and approach for creating engagi
           try {
             const parsed = JSON.parse(str);
             console.log('🔍 Storage getItem - Raw embeddings:', parsed.state?.embeddings);
+            console.log('🔍 Storage getItem - Raw summaryHistory:', parsed.state?.summaryHistory);
             
             if (parsed.state?.embeddings) {
               const entries = Object.entries(parsed.state.embeddings);
@@ -657,6 +682,14 @@ This style guide captures the distinctive voice and approach for creating engagi
               parsed.state.embeddings = new Map(entries);
               console.log('🔍 Storage getItem - Converted Map:', parsed.state.embeddings);
             }
+            
+            if (parsed.state?.summaryHistory) {
+              const entries = Object.entries(parsed.state.summaryHistory);
+              console.log('🔍 Storage getItem - SummaryHistory entries to convert:', entries);
+              parsed.state.summaryHistory = new Map(entries);
+              console.log('🔍 Storage getItem - Converted SummaryHistory Map:', parsed.state.summaryHistory);
+            }
+            
             return parsed;
           } catch (error) {
             console.warn('Failed to parse stored state:', error);
@@ -667,6 +700,8 @@ This style guide captures the distinctive voice and approach for creating engagi
           try {
             console.log('🔍 Storage setItem - Original embeddings:', value.state.embeddings);
             console.log('🔍 Storage setItem - Is Map?', value.state.embeddings instanceof Map);
+            console.log('🔍 Storage setItem - Original summaryHistory:', value.state.summaryHistory);
+            console.log('🔍 Storage setItem - SummaryHistory Is Map?', value.state.summaryHistory instanceof Map);
             
             const serializedState = {
               ...value,
@@ -675,10 +710,14 @@ This style guide captures the distinctive voice and approach for creating engagi
                 embeddings: value.state.embeddings instanceof Map 
                   ? Object.fromEntries(value.state.embeddings) 
                   : {},
+                summaryHistory: value.state.summaryHistory instanceof Map 
+                  ? Object.fromEntries(value.state.summaryHistory) 
+                  : {},
               }
             };
             
             console.log('🔍 Storage setItem - Serialized embeddings:', serializedState.state.embeddings);
+            console.log('🔍 Storage setItem - Serialized summaryHistory:', serializedState.state.summaryHistory);
             localStorage.setItem(name, JSON.stringify(serializedState));
           } catch (error) {
             console.warn('Failed to store state:', error);
