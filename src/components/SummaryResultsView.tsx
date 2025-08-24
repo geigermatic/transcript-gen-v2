@@ -325,7 +325,14 @@ export const SummaryResultsView: React.FC = () => {
     if (history && history.versions.length > 1) {
       setShowRestoreButton(true);
     }
-  }, [document, getSummaryHistory]);
+    
+    // Force a re-render when versions change
+    console.log('🔄 Store versions changed, forcing UI update:', {
+      documentId: document.id,
+      versionsCount: history?.versions.length || 0,
+      versions: history?.versions.map(v => ({ id: v.id, versionNumber: v.versionNumber, isOriginal: v.isOriginal }))
+    });
+  }, [document, getSummaryHistory, summary?.regenerationCount]); // Added regenerationCount dependency
 
   const handleBack = () => {
     // Navigate back to chat with document info to preserve upload completion state
@@ -384,6 +391,24 @@ export const SummaryResultsView: React.FC = () => {
       
       console.log('🔄 New summary generated, length:', regeneratedSummary.length);
       setRegenerationProgress({ step: 'Finalizing...', progress: 90 });
+      
+      // Add the new regenerated summary to the store's version history
+      try {
+        const currentModel = summary.processingStats.modelUsed || 'unknown';
+        console.log('💾 Adding new regenerated version to store:', { documentId: document.id, contentLength: regeneratedSummary.length });
+        
+        addSummaryVersion(
+          document.id,
+          regeneratedSummary,
+          false, // Not original
+          currentModel
+        );
+        
+        console.log('✅ New regenerated version added to store');
+      } catch (error) {
+        console.warn('Failed to add regenerated version to store:', error);
+        // Continue even if versioning fails
+      }
       
       // Update the summary with the new styled version
       const updatedSummary: SummarizationResult = {
@@ -460,11 +485,18 @@ export const SummaryResultsView: React.FC = () => {
   const renderStackedVersions = () => {
     if (!summary || !document) return null;
     
-    // Get all versions from the store
-    const allVersions = getAllVersions(document.id);
+    // Use the memoized allVersions for consistency
+    console.log('🔍 renderStackedVersions debug:', {
+      documentId: document.id,
+      allVersionsLength: allVersions.length,
+      allVersions: allVersions.map(v => ({ id: v.id, versionNumber: v.versionNumber, isOriginal: v.isOriginal, contentLength: v.summary.length })),
+      summaryStyledLength: summary.styledSummary?.length || 0,
+      regenerationCount: summary.regenerationCount || 0
+    });
     
     // If no versions or only one version, show the current summary
     if (allVersions.length <= 1) {
+      console.log('📝 Showing single summary view (no versions in store)');
       return (
         <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8 min-h-96">
           <div className="prose prose-lg max-w-none">
@@ -530,6 +562,8 @@ export const SummaryResultsView: React.FC = () => {
         </div>
       );
     }
+    
+    console.log('📚 Showing stacked versions view:', allVersions.length, 'versions');
     
     // Render stacked versions
     return (
