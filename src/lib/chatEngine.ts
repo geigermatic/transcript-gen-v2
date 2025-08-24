@@ -20,6 +20,17 @@ export class ChatEngine {
   private static readonly MIN_SIMILARITY_THRESHOLD = 0.3;
   private static readonly MAX_CONTEXT_MESSAGES = 10;
   private static readonly MAX_CONTEXT_LENGTH = 4000; // characters
+  
+  // OPTIMIZATION: Response cache for improved performance
+  private static readonly CACHE_SIZE = 100; // Maximum number of cached responses
+  private static readonly CACHE_TTL = 300000; // 5 minutes cache TTL
+  
+  private static responseCache = new Map<string, {
+    response: ChatResponse;
+    timestamp: number;
+    queryHash: string;
+    contextHash: string;
+  }>();
 
   /**
    * Process a user question and generate a grounded response
@@ -31,7 +42,21 @@ export class ChatEngine {
     const { addLog, getAllEmbeddings } = useAppStore.getState();
     const startTime = Date.now();
     
-
+    // OPTIMIZATION: Check cache for similar queries first
+    const cachedResponse = this.getCachedResponse(query, context);
+    if (cachedResponse) {
+      addLog({
+        level: 'info',
+        category: 'chat',
+        message: 'Using cached response for similar query',
+        details: { 
+          query,
+          cacheHit: true,
+          processingTime: 0
+        }
+      });
+      return cachedResponse;
+    }
 
     addLog({
       level: 'info',
@@ -88,6 +113,9 @@ export class ChatEngine {
       response.responseMetrics.retrievalCount = retrievalContext.retrievedChunks.length;
       response.responseMetrics.topSimilarity = retrievalContext.topScores[0] || 0;
       response.responseMetrics.responseLength = response.message.content.length;
+
+      // OPTIMIZATION: Cache the response for future use
+      this.cacheResponse(query, context, response);
 
       addLog({
         level: 'info',
@@ -425,6 +453,159 @@ NOTE: When the user refers to "the summary", "the generated summary", or "this s
     return {
       messages: messages.slice(-this.MAX_CONTEXT_MESSAGES),
       maxContextLength: context.maxContextLength,
+    };
+  }
+
+  // OPTIMIZATION: Cache management methods
+  
+  /**
+   * Get cached response for similar query and context
+   */
+  private static getCachedResponse(query: string, context: ChatContext): ChatResponse | null {
+    const now = Date.now();
+    
+    // Clean expired cache entries
+    this.cleanExpiredCache(now);
+    
+    // Find similar cached response
+    for (const [_, cached] of this.responseCache.entries()) {
+      if (cached.timestamp + this.CACHE_TTL < now) {
+        continue; // Skip expired entries
+      }
+      
+      // Check if query and context are similar enough
+      if (this.isQuerySimilar(query, cached.queryHash) && 
+          this.isContextSimilar(context, cached.contextHash)) {
+        
+        // Return cached response with updated timestamp
+        cached.timestamp = now;
+        return cached.response;
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Cache a response for future use
+   */
+  private static cacheResponse(query: string, context: ChatContext, response: ChatResponse): void {
+    const queryHash = this.hashString(query.toLowerCase().trim());
+    const contextHash = this.hashContext(context);
+    const key = `${queryHash}-${contextHash}`;
+    
+    // Manage cache size
+    if (this.responseCache.size >= this.CACHE_SIZE) {
+      this.evictOldestCacheEntry();
+    }
+    
+    this.responseCache.set(key, {
+      response,
+      timestamp: Date.now(),
+      queryHash,
+      contextHash
+    });
+  }
+  
+  /**
+   * Clean expired cache entries
+   */
+  private static cleanExpiredCache(now: number): void {
+    const expiredKeys: string[] = [];
+    
+    for (const [key, cached] of this.responseCache.entries()) {
+      if (cached.timestamp + this.CACHE_TTL < now) {
+        expiredKeys.push(key);
+      }
+    }
+    
+    // Remove expired entries
+    expiredKeys.forEach(key => this.responseCache.delete(key));
+  }
+  
+  /**
+   * Evict oldest cache entry when cache is full
+   */
+  private static evictOldestCacheEntry(): void {
+    let oldestKey = '';
+    let oldestTimestamp = Date.now();
+    
+    for (const [key, cached] of this.responseCache.entries()) {
+      if (cached.timestamp < oldestTimestamp) {
+        oldestTimestamp = cached.timestamp;
+        oldestKey = key;
+      }
+    }
+    
+    if (oldestKey) {
+      this.responseCache.delete(oldestKey);
+    }
+  }
+  
+  /**
+   * Check if two queries are similar enough for cache hit
+   */
+  private static isQuerySimilar(query: string, cachedQueryHash: string): boolean {
+    const queryHash = this.hashString(query.toLowerCase().trim());
+    return queryHash === cachedQueryHash;
+  }
+  
+  /**
+   * Check if two contexts are similar enough for cache hit
+   */
+  private static isContextSimilar(context: ChatContext, cachedContextHash: string): boolean {
+    const contextHash = this.hashContext(context);
+    return contextHash === cachedContextHash;
+  }
+  
+  /**
+   * Generate hash for a string (simple hash function)
+   */
+  private static hashString(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return hash.toString();
+  }
+  
+  /**
+   * Generate hash for context (based on key context elements)
+   */
+  private static hashContext(context: ChatContext): string {
+    const contextStr = JSON.stringify({
+      messageCount: context.messages.length,
+      hasSummary: !!context.selectedDocumentSummary,
+      summaryLength: context.selectedDocumentSummary?.length || 0,
+      // Include last few messages for context relevance
+      lastMessages: context.messages.slice(-3).map(m => m.content.substring(0, 100))
+    });
+    return this.hashString(contextStr);
+  }
+  
+  /**
+   * Clear the response cache (useful for testing or memory management)
+   */
+  static clearCache(): void {
+    this.responseCache.clear();
+  }
+  
+  /**
+   * Get cache statistics for monitoring
+   */
+  static getCacheStats(): {
+    size: number;
+    maxSize: number;
+    ttl: number;
+    hitRate: number;
+  } {
+    return {
+      size: this.responseCache.size,
+      maxSize: this.CACHE_SIZE,
+      ttl: this.CACHE_TTL,
+      hitRate: 0 // TODO: Implement hit rate tracking
     };
   }
 }
