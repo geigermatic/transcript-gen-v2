@@ -156,6 +156,15 @@ export class SummarizationEngine {
       const contextWindow = modelId ? TextSplitter.getModelContextWindow(modelId) : 4096;
       const canUseFastPath = chunks.length === 1 && contextWindow >= 32768; // 32K+ context models
 
+      console.log('🔍 Fast Path Debug:', {
+        modelId,
+        contextWindow,
+        chunkCount: chunks.length,
+        canUseFastPath,
+        textLength: document.text.length,
+        estimatedTokens: Math.ceil(document.text.length / 4)
+      });
+
       if (canUseFastPath) {
         logInfo('SUMMARIZE', `Using fast path for large-context model (${contextWindow} tokens)`, {
           documentId: document.id,
@@ -163,13 +172,10 @@ export class SummarizationEngine {
           contextWindow
         });
         
-        onProgress?.(20, 100, 'Generating summary directly (fast path)...');
+        onProgress?.(20, 100, 'Generating styled summary directly (ultra-fast path)...');
         
-        // Generate summary directly from the full document - no fact extraction needed
-        const rawSummary = await this.generateDirectSummary(document, styleGuide);
-        
-        onProgress?.(80, 100, 'Generating styled summary...');
-        const styledSummary = await this.generateStyledSummaryFromRaw(document, rawSummary, styleGuide);
+        // Generate styled summary directly from the full document in ONE LLM call
+        const styledSummary = await this.generateUltraFastSummary(document, styleGuide);
         
         // For backward compatibility, keep markdownSummary as the styled version
         const markdownSummary = styledSummary;
@@ -203,7 +209,7 @@ export class SummarizationEngine {
             audience: ''
           },
           markdownSummary,
-          rawSummary,
+          rawSummary: styledSummary, // Use styledSummary as rawSummary for compatibility
           styledSummary,
           processingStats: {
             totalChunks: 1,
@@ -789,15 +795,17 @@ Generate ONLY the markdown summary, no other text:`;
     return summary;
   }
 
+
+
   /**
-   * Generate summary directly from document (fast path for large models)
-   * Skips fact extraction and generates summary in one LLM call
+   * Generate styled summary directly in ONE LLM call (ultra-fast path)
+   * Combines summary generation and style application for maximum speed
    */
-  private static async generateDirectSummary(
+  private static async generateUltraFastSummary(
     document: Document,
     styleGuide: StyleGuide
   ): Promise<string> {
-    const prompt = this.buildDirectSummaryPrompt(document, styleGuide);
+    const prompt = this.buildUltraFastSummaryPrompt(document, styleGuide);
     
     try {
       const response = await ollama.chat([{
@@ -808,120 +816,55 @@ Generate ONLY the markdown summary, no other text:`;
       return response.trim();
       
     } catch (error) {
-      logError('SUMMARIZE', 'Failed to generate direct summary', { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Direct summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logError('SUMMARIZE', 'Failed to generate ultra-fast summary', { error: error instanceof Error ? error.message : String(error) });
+      throw new Error(`Ultra-fast summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   /**
-   * Generate styled summary from raw summary (fast path)
-   * Applies style guide to the raw summary
+   * Build optimized prompt for ultra-fast summary generation
+   * Shorter, more focused prompt for faster processing
    */
-  private static async generateStyledSummaryFromRaw(
-    document: Document,
-    rawSummary: string,
-    styleGuide: StyleGuide
-  ): Promise<string> {
-    const prompt = this.buildStyleApplicationPrompt(document, rawSummary, styleGuide);
-    
-    try {
-      const response = await ollama.chat([{
-        role: 'user',
-        content: prompt
-      }]);
-      
-      return response.trim();
-      
-    } catch (error) {
-      logError('SUMMARIZE', 'Failed to apply style guide to summary', { error: error instanceof Error ? error.message : String(error) });
-      // Fallback: return raw summary if styling fails
-      return rawSummary;
-    }
-  }
-
-  /**
-   * Build prompt for direct summary generation (fast path)
-   */
-  private static buildDirectSummaryPrompt(
+  private static buildUltraFastSummaryPrompt(
     document: Document,
     styleGuide: StyleGuide
   ): string {
     const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
     
-    return `You are a professional transcript summarizer specializing in lessons, teachings, and meditations. Create a clear, factual summary of the following lesson/teaching transcript.
+    return `Summarize this transcript in the specified style:
 
-DOCUMENT: ${document.title}
+TITLE: ${document.title}
+STYLE: ${styleInstructions}
 
-TRANSCRIPT TEXT:
+TRANSCRIPT:
 ${document.text}
 
-STYLE INSTRUCTIONS: ${styleInstructions}
-
-REQUIRED STRUCTURE (use this exact format):
+FORMAT:
 # ${document.title}
 
 ## Synopsis
-[Exactly 4 sentences emphasizing WHY and WHAT benefits - compelling and benefit-focused]
+[4 sentences on benefits and value]
 
 ## Learning Objectives
-[What students will learn - bulleted list]
+- [bullet points]
 
-## Key Takeaways
-[Main insights and lessons - bulleted list]
+## Key Takeaways  
+- [bullet points]
 
 ## Topics
-[Subject areas covered - bulleted list]
+- [bullet points]
 
 ## Techniques
-[Specific methods, practices, exercises taught - bulleted list]
+- [bullet points]
 
 ## Notable Quotes
-[Memorable quotes from the lesson - bulleted list]
+- [bullet points]
 
 ## Open Questions
-[Questions for reflection or further exploration - bulleted list]
+- [bullet points]
 
-INSTRUCTIONS:
-1. Follow the exact structure above - ALL sections must be included in this order
-2. Use the transcript text directly - no need to extract facts first
-3. Keep each section concise but comprehensive
-4. Maintain the professional tone specified in style instructions
-5. Focus on actionable insights and practical value
-
-Generate the summary now:`;
+Apply the style and generate the summary:`;
   }
 
-  /**
-   * Build prompt for applying style guide to existing summary
-   */
-  private static buildStyleApplicationPrompt(
-    document: Document,
-    rawSummary: string,
-    styleGuide: StyleGuide
-  ): string {
-    const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
-    const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
-    
-    return `You are a professional content stylist. Apply the following style guide to the existing summary.
 
-DOCUMENT: ${document.title}
-
-EXISTING SUMMARY:
-${rawSummary}
-
-STYLE GUIDE:
-- Instructions: ${styleInstructions}
-- Formality: ${styleGuide.tone_settings.formality}
-- Enthusiasm: ${styleGuide.tone_settings.enthusiasm}
-- Technicality: ${styleGuide.tone_settings.technicality}
-- Keywords: ${styleGuide.keywords.join(', ') || 'None specified'}
-
-EXAMPLE PHRASES:
-${examplePhrasesSection}
-
-TASK:
-Rewrite the summary to match the style guide while preserving all factual content and structure. Maintain the exact same sections and information, but adjust the tone, language, and presentation to match the specified style.
-
-Apply the style guide now:`;
-  }
 }
