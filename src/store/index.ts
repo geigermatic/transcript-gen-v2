@@ -75,6 +75,7 @@ interface AppState {
   restoreSummaryVersion: (documentId: string, versionId: string) => SummarizationResult | undefined;
   clearSummaryHistory: (documentId: string) => void;
   cleanupSummaryHistory: () => void; // Memory management
+  cleanupDuplicateVersions: (documentId: string) => void; // Clean up duplicate versions
   
   // Developer Console
   logs: LogEntry[];
@@ -479,6 +480,13 @@ This style guide captures the distinctive voice and approach for creating engagi
             : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
           
           const existingHistory = summaryHistory.get(documentId);
+          
+          // Check if this exact summary already exists to prevent duplicates
+          if (existingHistory?.versions.some(v => v.summary === summary)) {
+            console.log('Summary already exists, skipping duplicate version');
+            return state; // Don't add duplicate
+          }
+          
           const nextVersionNumber = (existingHistory?.versions.length || 0) + 1;
           
           const newVersion: SummaryVersion = {
@@ -554,24 +562,55 @@ This style guide captures the distinctive voice and approach for creating engagi
             ? state.summaryHistory 
             : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
           
-          // Keep only the original version
           const history = summaryHistory.get(documentId);
           if (!history) return state;
           
+          // Keep only the original version
           const originalVersion = history.versions.find(v => v.isOriginal);
           if (!originalVersion) return state;
           
-          const clearedHistory: SummaryHistory = {
-            documentId,
+          const cleanedHistory: SummaryHistory = {
+            ...history,
             versions: [originalVersion],
-            maxVersions: 10,
-            lastAccessed: Date.now(),
             totalSize: originalVersion.characterCount,
             currentVersionIndex: 0,
           };
           
           const newHistory = new Map<string, SummaryHistory>(summaryHistory);
-          newHistory.set(documentId, clearedHistory);
+          newHistory.set(documentId, cleanedHistory);
+          
+          return { summaryHistory: newHistory };
+        });
+      },
+      
+      // Clean up duplicate versions
+      cleanupDuplicateVersions: (documentId) => {
+        set((state) => {
+          const summaryHistory = state.summaryHistory instanceof Map 
+            ? state.summaryHistory 
+            : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
+          
+          const history = summaryHistory.get(documentId);
+          if (!history) return state;
+          
+          // Remove duplicates based on summary content
+          const uniqueVersions = history.versions.filter((version, index, self) => 
+            index === self.findIndex(v => v.summary === version.summary)
+          );
+          
+          if (uniqueVersions.length === history.versions.length) {
+            return state; // No duplicates found
+          }
+          
+          const cleanedHistory: SummaryHistory = {
+            ...history,
+            versions: uniqueVersions,
+            totalSize: uniqueVersions.reduce((total, v) => total + v.characterCount, 0),
+            currentVersionIndex: Math.min(history.currentVersionIndex, uniqueVersions.length - 1),
+          };
+          
+          const newHistory = new Map<string, SummaryHistory>(summaryHistory);
+          newHistory.set(documentId, cleanedHistory);
           
           return { summaryHistory: newHistory };
         });

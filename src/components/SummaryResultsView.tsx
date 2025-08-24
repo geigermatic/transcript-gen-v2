@@ -6,12 +6,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Send, Copy, Check } from 'lucide-react';
-import { useAppStore } from '../store';
-import { SummarizationEngine } from '../lib/summarizationEngine';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useAppStore } from '../store';
+import type { SummarizationResult, Document } from '../types';
+import { SummarizationEngine } from '../lib/summarizationEngine';
 import { LeftNavigation } from './LeftNavigation';
-import type { Document, SummarizationResult } from '../types';
 
 export const SummaryResultsView: React.FC = () => {
   const navigate = useNavigate();
@@ -22,7 +22,8 @@ export const SummaryResultsView: React.FC = () => {
     getDocumentSummary, 
     addSummaryVersion, 
     getSummaryHistory,
-    getAllVersions
+    getAllVersions,
+    cleanupDuplicateVersions
   } = useAppStore();
   
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
@@ -264,10 +265,16 @@ export const SummaryResultsView: React.FC = () => {
           // We have both document and summary
           setSummary(location.state.summary);
           
-          // Initialize version history with the original summary
+          // Initialize version history with the original summary (only if not already exists)
           if (location.state.summary.styledSummary) {
             try {
-              addSummaryVersion(location.state.document.id, location.state.summary.styledSummary, true);
+              const existingHistory = getSummaryHistory(location.state.document.id);
+              if (!existingHistory || existingHistory.versions.length === 0) {
+                addSummaryVersion(location.state.document.id, location.state.summary.styledSummary, true);
+              } else {
+                // Clean up any existing duplicates
+                cleanupDuplicateVersions(location.state.document.id);
+              }
             } catch (error) {
               console.warn('Failed to add summary version:', error);
             }
@@ -278,10 +285,16 @@ export const SummaryResultsView: React.FC = () => {
           if (existingSummary) {
             setSummary(existingSummary);
             
-            // Initialize version history with the existing summary
+            // Initialize version history with the existing summary (only if not already exists)
             if (existingSummary.styledSummary) {
               try {
-                addSummaryVersion(location.state.document.id, existingSummary.styledSummary, true);
+                const existingHistory = getSummaryHistory(location.state.document.id);
+                if (!existingHistory || existingHistory.versions.length === 0) {
+                  addSummaryVersion(location.state.document.id, existingSummary.styledSummary, true);
+                } else {
+                  // Clean up any existing duplicates
+                  cleanupDuplicateVersions(location.state.document.id);
+                }
               } catch (error) {
                 console.warn('Failed to add summary version:', error);
               }
@@ -524,9 +537,20 @@ export const SummaryResultsView: React.FC = () => {
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-medium text-gray-700">Version Navigation</h3>
-              <span className="text-xs text-gray-500">
-                {allVersions.length} versions • {currentVersion?.regenerationCount || 0} regenerations
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-500">
+                  {allVersions.length} versions • {currentVersion?.regenerationCount || 0} regenerations
+                </span>
+                {allVersions.length > 1 && (
+                  <button
+                    onClick={() => cleanupDuplicateVersions(document?.id || '')}
+                    className="px-2 py-1 text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 rounded transition-colors"
+                    title="Remove duplicate versions"
+                  >
+                    🧹 Clean
+                  </button>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
               {allVersions.map((version) => (
