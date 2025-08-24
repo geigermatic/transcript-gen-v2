@@ -27,6 +27,8 @@ export const SummaryResultsView: React.FC = () => {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showRestoreButton, setShowRestoreButton] = useState(false);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
 
   // Handle navigation hover
   const handleNavMouseEnter = () => setIsNavExpanded(true);
@@ -165,6 +167,12 @@ export const SummaryResultsView: React.FC = () => {
       
       setSummary(updatedSummary);
       
+      // Update version index to the latest
+      const history = getSummaryHistory(document.id);
+      if (history) {
+        setCurrentVersionIndex(history.versions.length);
+      }
+      
       // Switch to stylized tab to show the new summary
       setActiveTab('stylized');
       
@@ -219,6 +227,176 @@ export const SummaryResultsView: React.FC = () => {
       console.log('Follow-up query:', followUpQuery);
       setFollowUpQuery('');
     }
+  };
+
+  const renderVersionTimeline = () => {
+    if (!document) return null;
+    
+    const history = getSummaryHistory(document.id);
+    if (!history || history.versions.length <= 1) return null;
+    
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-medium text-gray-700">Version History</h3>
+          <span className="text-xs text-gray-500">
+            {history.versions.length} versions • {history.versions[history.versions.length - 1]?.regenerationCount || 0} regenerations
+          </span>
+        </div>
+        
+        {/* Version Timeline */}
+        <div className="flex items-center space-x-2 overflow-x-auto pb-2">
+          {history.versions.map((version, index) => {
+            const isActive = index === currentVersionIndex;
+            const isOriginal = version.isOriginal;
+            
+            return (
+              <button
+                key={version.id}
+                onClick={() => handleVersionSelect(index)}
+                className={`
+                  flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
+                  ${isActive 
+                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' 
+                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                  }
+                  ${isOriginal ? 'ring-2 ring-green-200' : ''}
+                `}
+              >
+                <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-blue-500' : 'bg-gray-400'}`}></span>
+                <span>{isOriginal ? 'Original' : `v${index}`}</span>
+                {isOriginal && <span className="text-green-600">🌱</span>}
+              </button>
+            );
+          })}
+        </div>
+        
+        {/* Version Info */}
+        <div className="text-xs text-gray-500 mt-2">
+          {history.versions[currentVersionIndex] && (
+            <>
+              <span>Current: {history.versions[currentVersionIndex].isOriginal ? 'Original' : `Version ${currentVersionIndex}`}</span>
+              <span className="mx-2">•</span>
+              <span>{new Date(history.versions[currentVersionIndex].timestamp).toLocaleTimeString()}</span>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const handleVersionSelect = (versionIndex: number) => {
+    if (!document) return;
+    
+    const history = getSummaryHistory(document.id);
+    if (!history || !history.versions[versionIndex]) return;
+    
+    const selectedVersion = history.versions[versionIndex];
+    
+    // Update the summary with the selected version
+    const restoredSummary: SummarizationResult = {
+      ...summary!,
+      styledSummary: selectedVersion.summary,
+      regenerationCount: selectedVersion.regenerationCount,
+      currentVersionId: selectedVersion.id
+    };
+    
+    setSummary(restoredSummary);
+    setCurrentVersionIndex(versionIndex);
+    
+    // Update restore button state
+    setShowRestoreButton(versionIndex < history.versions.length - 1);
+  };
+
+  const renderVersionHistoryModal = () => {
+    if (!showVersionHistory || !document) return null;
+    
+    const history = getSummaryHistory(document.id);
+    if (!history || history.versions.length <= 1) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden">
+          {/* Modal Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">Version History</h2>
+            <button
+              onClick={() => setShowVersionHistory(false)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          {/* Modal Content */}
+          <div className="p-6 overflow-y-auto max-h-[60vh]">
+            <div className="grid gap-4">
+              {history.versions.map((version, index) => {
+                const isActive = index === currentVersionIndex;
+                const isOriginal = version.isOriginal;
+                
+                return (
+                  <div
+                    key={version.id}
+                    className={`
+                      border rounded-lg p-4 transition-all cursor-pointer
+                      ${isActive 
+                        ? 'border-blue-300 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }
+                    `}
+                    onClick={() => {
+                      handleVersionSelect(index);
+                      setShowVersionHistory(false);
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <span className={`
+                          w-3 h-3 rounded-full ${isActive ? 'bg-blue-500' : 'bg-gray-400'}
+                        `}></span>
+                        <span className="font-medium text-gray-900">
+                          {isOriginal ? 'Original Version' : `Version ${index}`}
+                        </span>
+                        {isOriginal && <span className="text-green-600 text-sm">🌱</span>}
+                        {isActive && <span className="text-blue-600 text-sm font-medium">(Current)</span>}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {new Date(version.timestamp).toLocaleString()}
+                      </div>
+                    </div>
+                    
+                    {/* Version Preview */}
+                    <div className="text-sm text-gray-600 line-clamp-3">
+                      {version.summary.substring(0, 200)}...
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="text-xs text-gray-500">
+                        {version.summary.length} characters
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleVersionSelect(index);
+                          setShowVersionHistory(false);
+                        }}
+                        className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm rounded-md transition-colors"
+                      >
+                        {isActive ? 'Current' : 'Restore'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -318,7 +496,20 @@ export const SummaryResultsView: React.FC = () => {
                       )}
                     </button>
                     
-                    {/* Restore Button - Only show when there are previous versions */}
+                    {/* Version History Button */}
+                    {showRestoreButton && (
+                      <button
+                        onClick={() => setShowVersionHistory(!showVersionHistory)}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Version History</span>
+                      </button>
+                    )}
+                    
+                    {/* Restore Previous Button */}
                     {showRestoreButton && (
                       <button
                         onClick={handleRestore}
@@ -328,7 +519,21 @@ export const SummaryResultsView: React.FC = () => {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                         </svg>
-                        <span>Restore</span>
+                        <span>Restore Previous</span>
+                      </button>
+                    )}
+                    
+                    {/* Restore Original Button */}
+                    {showRestoreButton && (
+                      <button
+                        onClick={() => handleVersionSelect(0)}
+                        disabled={!summary}
+                        className="flex items-center gap-2 px-4 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Restore Original</span>
                       </button>
                     )}
                     
@@ -377,6 +582,9 @@ export const SummaryResultsView: React.FC = () => {
 
                 {/* Summary Content */}
                 <div className="bg-white border border-gray-200 rounded-lg p-8 mb-8 min-h-96">
+                  {/* Version Timeline */}
+                  {renderVersionTimeline()}
+                  
                   <div className="prose prose-lg max-w-none">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
@@ -465,6 +673,7 @@ export const SummaryResultsView: React.FC = () => {
           </div>
         </div>
       </div>
+      {renderVersionHistoryModal()}
     </div>
   );
 };
