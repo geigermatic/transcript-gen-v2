@@ -80,7 +80,7 @@ REQUIRED STRUCTURE (use this exact format):
 ## Mini Synopsis
 [Exactly 1 sentence emphasizing WHY and WHAT benefits - in author's voice]
 
-## Synopsis
+## 4-Sentence Synopsis
 [Exactly 4 sentences emphasizing WHY and WHAT benefits - in author's voice]
 
 ## Learning Objectives
@@ -143,7 +143,7 @@ REQUIRED STRUCTURE (use this exact format):
 ## Mini Synopsis
 [Exactly 1 sentence emphasizing WHY and WHAT benefits - in author's voice - MAKE THIS DRAMATICALLY DIFFERENT]
 
-## Synopsis
+## 4-Sentence Synopsis
 [Exactly 4 sentences emphasizing WHY and WHAT benefits - in author's voice - MAKE THIS DRAMATICALLY DIFFERENT]
 
 ## Learning Objectives
