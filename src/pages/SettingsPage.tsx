@@ -65,7 +65,7 @@ export function SettingsPage() {
                           className={`relative p-3 rounded-lg border-2 cursor-pointer transition-all ${
                             settings.chat_default === model.id
                               ? 'border-blue-500 bg-blue-500/10'
-                              : 'border-gray-600 hover:border-gray-500 bg-gray-800/50'
+                              : 'border-gray-300 hover:border-gray-400 bg-gray-100'
                           }`}
                           onClick={() => updateSettings({ chat_default: model.id })}
                         >
