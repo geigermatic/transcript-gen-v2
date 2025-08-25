@@ -746,7 +746,10 @@ export const SummaryResultsView: React.FC = () => {
                     ),
                   }}
                 >
-                  {version.summary}
+                  {activeTab === 'stylized' 
+                    ? version.summary
+                    : (summary.rawSummary || version.summary)
+                  }
                 </ReactMarkdown>
               </div>
             </div>
