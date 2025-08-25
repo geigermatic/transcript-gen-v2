@@ -106,11 +106,13 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
                 navigate('/');
               }
             }}
-            className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <Plus className="w-6 h-6 text-gray-600" />
+            <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+              <Plus className="w-6 h-6 text-gray-600" />
+            </div>
             {isNavExpanded && (
-              <span className="text-gray-700">
+              <span className="text-gray-700 ml-3">
                 {showNewChatButton ? 'New Chat' : 'Back to Chat'}
               </span>
             )}
@@ -118,19 +120,23 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
           
           <button 
             onClick={() => navigate('/settings')}
-            className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <Settings className="w-6 h-6 text-gray-600" />
-            {isNavExpanded && <span className="text-gray-700">Settings</span>}
+            <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+              <Settings className="w-6 h-6 text-gray-600" />
+            </div>
+            {isNavExpanded && <span className="text-gray-700 ml-3">Settings</span>}
           </button>
           
           {/* Clear All Documents Button */}
           <button 
             onClick={handleClearAllDocuments}
-            className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors"
+            className="w-full flex items-center p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors"
           >
-            <Trash2 className="w-6 h-6" />
-            {isNavExpanded && <span>Clear All Documents</span>}
+            <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            {isNavExpanded && <span className="ml-3">Clear All Documents</span>}
           </button>
         </div>
 
@@ -217,10 +223,12 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
         <div className="mt-auto p-4">
           <button 
             onClick={() => navigate('/dev-console')}
-            className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <Terminal className="w-6 h-6 text-gray-600" />
-            {isNavExpanded && <span className="text-gray-700">Dev Console</span>}
+            <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+              <Terminal className="w-6 h-6 text-gray-600" />
+            </div>
+            {isNavExpanded && <span className="text-gray-700 ml-3">Dev Console</span>}
           </button>
         </div>
       </div>
