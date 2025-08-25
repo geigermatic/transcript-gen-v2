@@ -176,8 +176,8 @@ export const PromptEditor: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="glass-panel p-6">
-        <h2 className="text-hierarchy-h2 mb-4">AI Prompt Editor</h2>
-        <p className="text-gray-300 mb-6">
+        <h2 className="text-hierarchy-h2 mb-4" style={{ color: '#111827' }}>AI Prompt Editor</h2>
+        <p className="text-gray-600 mb-6">
           View and edit the internal AI prompts used for fact extraction, summarization, chat responses, and style guide analysis.
         </p>
 
@@ -209,8 +209,21 @@ export const PromptEditor: React.FC = () => {
         <div className="flex gap-2">
                       <button
               onClick={resetCurrentPrompt}
-              className="glass-button-secondary text-red-400 hover:bg-red-400 hover:bg-opacity-10"
               title="Reset to default"
+              style={{ 
+                background: '#FEF2F2',
+                border: '1px solid #FECACA',
+                borderRadius: '16px',
+                padding: '12px 16px',
+                color: '#DC2626',
+                fontWeight: '500',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
             >
             <RotateCcw size={16} />
             Reset All to Defaults
@@ -221,7 +234,7 @@ export const PromptEditor: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Prompt List */}
         <div className="glass-panel p-6">
-          <h3 className="text-hierarchy-h3 mb-4">Prompts</h3>
+          <h3 className="text-hierarchy-h3 mb-4" style={{ color: '#111827' }}>Prompts</h3>
           <div className="space-y-3">
             {filteredPrompts.map((prompt) => (
               <button
@@ -229,21 +242,21 @@ export const PromptEditor: React.FC = () => {
                 onClick={() => setSelectedPrompt(prompt.id)}
                 className={`w-full text-left p-4 rounded-lg border transition-all ${
                   selectedPrompt === prompt.id
-                    ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-400 shadow-lg shadow-blue-500/20'
-                    : 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-600 hover:from-gray-700 hover:to-gray-800 hover:border-gray-500'
+                    ? 'bg-blue-100 border-blue-300 shadow-lg'
+                    : 'bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <span className={selectedPrompt === prompt.id ? 'text-blue-200' : 'text-gray-300'}>
+                  <span className={selectedPrompt === prompt.id ? 'text-blue-600' : 'text-gray-600'}>
                     {prompt.icon}
                   </span>
-                  <span className="font-semibold text-white">{prompt.name}</span>
+                  <span className="font-semibold text-gray-900">{prompt.name}</span>
                 </div>
-                <p className="text-sm text-gray-200 mb-2 leading-relaxed">{prompt.description}</p>
+                <p className="text-sm text-gray-600 mb-2 leading-relaxed">{prompt.description}</p>
                 <span className={`inline-block px-2 py-1 text-xs rounded font-medium ${
                   selectedPrompt === prompt.id 
-                    ? 'bg-blue-800 bg-opacity-50 text-blue-100' 
-                    : 'bg-gray-700 text-gray-300'
+                    ? 'bg-blue-200 text-blue-800' 
+                    : 'bg-gray-200 text-gray-600'
                 }`}>
                   {prompt.category}
                 </span>
@@ -258,24 +271,50 @@ export const PromptEditor: React.FC = () => {
             <>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-hierarchy-h3 flex items-center gap-2">
+                  <h3 className="text-hierarchy-h3 flex items-center gap-2" style={{ color: '#111827' }}>
                     {currentPrompt.icon}
                     {currentPrompt.name}
                   </h3>
-                  <p className="text-gray-400 text-sm">{currentPrompt.description}</p>
+                  <p className="text-gray-600 text-sm">{currentPrompt.description}</p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={copyPromptToClipboard}
-                    className="glass-button-secondary"
                     title="Copy to clipboard"
+                    style={{ 
+                      background: '#E5E7EB',
+                      border: '1px solid #D1D5DB',
+                      borderRadius: '16px',
+                      padding: '12px 16px',
+                      color: '#111827',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
                   >
                     <Copy size={16} />
                   </button>
                   <button
                     onClick={resetCurrentPrompt}
-                    className="glass-button-secondary text-yellow-400"
                     title="Reset to default"
+                    style={{ 
+                      background: '#FFFBEB',
+                      border: '1px solid #FED7AA',
+                      borderRadius: '16px',
+                      padding: '12px 16px',
+                      color: '#D97706',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
                   >
                     <RotateCcw size={16} />
                   </button>
@@ -293,10 +332,10 @@ export const PromptEditor: React.FC = () => {
 
               {/* Variables Info */}
               <div className="mb-4">
-                <h4 className="text-white font-medium mb-2">Available Variables:</h4>
+                <h4 className="text-gray-900 font-medium mb-2">Available Variables:</h4>
                 <div className="flex flex-wrap gap-2">
                   {currentPrompt.variables.map(variable => (
-                    <code key={variable} className="px-2 py-1 bg-black bg-opacity-30 rounded text-green-400 text-sm">
+                    <code key={variable} className="px-2 py-1 bg-green-100 rounded text-green-800 text-sm border border-green-200">
                       {`{{${variable}}}`}
                     </code>
                   ))}
@@ -305,7 +344,7 @@ export const PromptEditor: React.FC = () => {
 
               {/* Prompt Textarea */}
               <div className="space-y-2">
-                <label className="block text-white font-medium">
+                <label className="block text-gray-900 font-medium">
                   Prompt Template:
                 </label>
                 <textarea
@@ -315,9 +354,9 @@ export const PromptEditor: React.FC = () => {
                   rows={20}
                   placeholder="Enter your prompt template here..."
                 />
-                <div className="flex justify-between text-sm text-gray-400">
+                <div className="flex justify-between text-sm text-gray-600">
                   <span>{editingPrompt.length} characters</span>
-                  {hasChanges && <span className="text-yellow-400">• Unsaved changes</span>}
+                  {hasChanges && <span className="text-yellow-600">• Unsaved changes</span>}
                 </div>
               </div>
             </>

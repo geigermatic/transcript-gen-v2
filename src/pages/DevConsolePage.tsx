@@ -98,8 +98,22 @@ export function DevConsolePage() {
                 <h2 className="text-hierarchy-h2" style={{ color: '#111827' }}>System Status</h2>
                 <button
                   onClick={checkOllamaConnection}
-                  className="glass-button text-white text-sm"
+                  title="Refresh status"
                   disabled={ollamaStatus === 'checking'}
+                  style={{ 
+                    background: '#E5E7EB',
+                    border: '1px solid #D1D5DB',
+                    borderRadius: '16px',
+                    padding: '12px 16px',
+                    color: '#111827',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
                 >
                   🔄 Refresh
                 </button>
@@ -139,17 +153,31 @@ export function DevConsolePage() {
                  <h2 className="text-hierarchy-h2" style={{ color: '#111827' }}>Application Logs</h2>
                  <div className="flex space-x-2">
                    <span className="text-sm text-gray-600">{logs.length} entries</span>
-                   <button
-                     onClick={clearLogs}
-                     className="glass-button text-white text-sm"
-                   >
-                     🗑️ Clear
-                   </button>
+                                     <button
+                    onClick={clearLogs}
+                    title="Clear all logs"
+                    style={{ 
+                      background: '#E5E7EB',
+                      border: '1px solid #D1D5DB',
+                      borderRadius: '16px',
+                      padding: '12px 16px',
+                      color: '#111827',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    🗑️ Clear
+                  </button>
                  </div>
                </div>
-              <div className="bg-black bg-opacity-50 rounded-lg p-4 h-96 overflow-y-auto font-mono text-sm">
+              <div className="bg-gray-100 rounded-lg p-4 h-96 overflow-y-auto font-mono text-sm border border-gray-200">
                 {logs.length === 0 ? (
-                  <div className="text-gray-500 italic">No logs yet. Upload a document to see ingestion logs.</div>
+                  <div className="text-gray-600 italic">No logs yet. Upload a document to see ingestion logs.</div>
                 ) : (
                   logs.slice().reverse().map((log) => (
                     <div key={log.id} className="mb-2">
@@ -159,14 +187,14 @@ export function DevConsolePage() {
                       <span className={`ml-2 ${getLogColor(log.level)}`}>
                         [{log.level.toUpperCase()}]
                       </span>
-                      <span className="ml-2 text-purple-400">
+                      <span className="ml-2 text-purple-600">
                         [{log.category}]
                       </span>
-                      <span className="ml-2 text-gray-300">
+                      <span className="ml-2 text-gray-700">
                         {log.message}
                       </span>
                       {log.details && (
-                        <div className="ml-4 mt-1 text-gray-500 text-xs">
+                        <div className="ml-4 mt-1 text-gray-600 text-xs">
                           {JSON.stringify(log.details, null, 2)}
                         </div>
                       )}
