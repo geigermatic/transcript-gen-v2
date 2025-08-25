@@ -41,6 +41,7 @@ export const SummaryResultsView: React.FC = () => {
     left: null,
     right: null
   });
+  const [fullWidthComparison, setFullWidthComparison] = useState(false);
 
   // Handle navigation hover
   const handleNavMouseEnter = () => setIsNavExpanded(true);
@@ -73,8 +74,9 @@ export const SummaryResultsView: React.FC = () => {
   const toggleComparisonMode = () => {
     setComparisonMode(!comparisonMode);
     if (comparisonMode) {
-      // Reset selections when exiting comparison mode
+      // Reset selections and full-width mode when exiting comparison mode
       setSelectedVersions({ left: null, right: null });
+      setFullWidthComparison(false);
     }
   };
 
@@ -604,12 +606,19 @@ export const SummaryResultsView: React.FC = () => {
 
         {/* Comparison Interface */}
         {comparisonMode && (
-          <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-6">
+          <div className={`bg-purple-50 border-2 border-purple-200 rounded-lg p-6 ${fullWidthComparison ? 'mx-0' : ''}`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-purple-800">Version Comparison</h3>
-              <span className="text-sm text-purple-600">
-                Select two versions to compare
-              </span>
+              <div className="flex items-center gap-3">
+                {fullWidthComparison && (
+                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                    🖥️ Full Width Mode
+                  </span>
+                )}
+                <span className="text-sm text-purple-600">
+                  Select two versions to compare
+                </span>
+              </div>
             </div>
             
             {/* Version Selection */}
@@ -684,6 +693,16 @@ export const SummaryResultsView: React.FC = () => {
                 Clear Selection
               </button>
               <button
+                onClick={() => setFullWidthComparison(!fullWidthComparison)}
+                className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                  fullWidthComparison
+                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {fullWidthComparison ? '📱 Normal Width' : '🖥️ Full Width'}
+              </button>
+              <button
                 onClick={toggleComparisonMode}
                 className="px-4 py-2 text-sm text-purple-600 hover:text-purple-800"
               >
@@ -697,30 +716,30 @@ export const SummaryResultsView: React.FC = () => {
                 <h4 className="text-lg font-semibold text-purple-800 mb-4 text-center">
                   Side-by-Side Comparison
                 </h4>
-                <div className="grid grid-cols-2 gap-6">
+                <div className={`grid gap-6 ${fullWidthComparison ? 'grid-cols-2 gap-8' : 'grid-cols-2 gap-6'}`}>
                   {/* Left Version */}
-                  <div className="bg-white border-2 border-purple-300 rounded-lg p-4">
+                  <div className={`bg-white border-2 border-purple-300 rounded-lg p-4 ${fullWidthComparison ? 'p-6' : 'p-4'}`}>
                     <h5 className="font-semibold text-purple-800 mb-3">
                       {allVersions.find(v => v.id === selectedVersions.left)?.isOriginal ? '🌱 Original' : `🔵 v${allVersions.find(v => v.id === selectedVersions.left)?.versionNumber}`}
                     </h5>
-                    <div className="prose prose-sm max-h-96 overflow-y-auto text-gray-800">
+                    <div className={`prose max-h-96 overflow-y-auto text-gray-800 ${fullWidthComparison ? 'prose-base' : 'prose-sm'}`}>
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           h1: ({ children }) => (
-                            <h1 className="text-lg font-bold text-gray-900 mb-2 mt-0">{children}</h1>
+                            <h1 className={`font-bold text-gray-900 mb-2 mt-0 ${fullWidthComparison ? 'text-xl' : 'text-lg'}`}>{children}</h1>
                           ),
                           h2: ({ children }) => (
-                            <h2 className="text-base font-bold text-gray-900 mb-2 mt-0">{children}</h2>
+                            <h2 className={`font-bold text-gray-900 mb-2 mt-0 ${fullWidthComparison ? 'text-lg' : 'text-base'}`}>{children}</h2>
                           ),
                           h3: ({ children }) => (
-                            <h3 className="text-sm font-medium text-gray-800 mb-1 mt-2">{children}</h3>
+                            <h3 className={`font-medium text-gray-800 mb-1 mt-2 ${fullWidthComparison ? 'text-base' : 'text-sm'}`}>{children}</h3>
                           ),
                           h4: ({ children }) => (
-                            <h4 className="text-xs font-medium text-gray-800 mb-1 mt-2">{children}</h4>
+                            <h4 className={`font-medium text-gray-800 mb-1 mt-2 ${fullWidthComparison ? 'text-sm' : 'text-xs'}`}>{children}</h4>
                           ),
                           p: ({ children }) => (
-                            <p className="text-gray-700 mb-2 leading-relaxed text-sm">{children}</p>
+                            <p className={`text-gray-700 mb-2 leading-relaxed ${fullWidthComparison ? 'text-base' : 'text-sm'}`}>{children}</p>
                           ),
                           ul: ({ children }) => (
                             <ul className="text-gray-700 mb-2 space-y-1">{children}</ul>
@@ -729,13 +748,13 @@ export const SummaryResultsView: React.FC = () => {
                             <ol className="text-gray-700 mb-2 space-y-1 list-decimal list-inside">{children}</ol>
                           ),
                           li: ({ children }) => (
-                            <li className="text-gray-700 flex items-start text-sm">
+                            <li className={`text-gray-700 flex items-start ${fullWidthComparison ? 'text-base' : 'text-sm'}`}>
                               <span className="text-blue-500 mr-2">•</span>
                               <span>{children}</span>
                             </li>
                           ),
                           blockquote: ({ children }) => (
-                            <blockquote className="border-l-4 border-blue-400 pl-3 italic text-gray-600 my-2 bg-blue-50 py-2 text-sm">
+                            <blockquote className={`border-l-4 border-blue-400 pl-3 italic text-gray-600 my-2 bg-blue-50 py-2 ${fullWidthComparison ? 'text-base' : 'text-sm'}`}>
                               {children}
                             </blockquote>
                           ),
@@ -746,12 +765,12 @@ export const SummaryResultsView: React.FC = () => {
                             <em className="text-gray-700 italic">{children}</em>
                           ),
                           code: ({ children }) => (
-                            <code className="bg-gray-100 text-blue-700 px-1.5 py-0.5 rounded text-xs font-mono">
+                            <code className={`bg-gray-100 text-blue-700 px-1.5 py-0.5 rounded font-mono ${fullWidthComparison ? 'text-sm' : 'text-xs'}`}>
                               {children}
                             </code>
                           ),
                           pre: ({ children }) => (
-                            <pre className="bg-gray-100 text-gray-800 p-2 rounded overflow-x-auto mb-2 font-mono text-xs">
+                            <pre className={`bg-gray-100 text-gray-800 p-2 rounded overflow-x-auto mb-2 font-mono ${fullWidthComparison ? 'text-sm' : 'text-xs'}`}>
                               {children}
                             </pre>
                           ),
@@ -763,28 +782,28 @@ export const SummaryResultsView: React.FC = () => {
                   </div>
                   
                   {/* Right Version */}
-                  <div className="bg-white border-2 border-purple-300 rounded-lg p-4">
+                  <div className={`bg-white border-2 border-purple-300 rounded-lg p-4 ${fullWidthComparison ? 'p-6' : 'p-4'}`}>
                     <h5 className="font-semibold text-purple-800 mb-3">
                       {allVersions.find(v => v.id === selectedVersions.right)?.isOriginal ? '🌱 Original' : `🔵 v${allVersions.find(v => v.id === selectedVersions.right)?.versionNumber}`}
                     </h5>
-                    <div className="prose prose-sm max-h-96 overflow-y-auto text-gray-800">
+                    <div className={`prose max-h-96 overflow-y-auto text-gray-800 ${fullWidthComparison ? 'prose-base' : 'prose-sm'}`}>
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           h1: ({ children }) => (
-                            <h1 className="text-lg font-bold text-gray-900 mb-2 mt-0">{children}</h1>
+                            <h1 className={`font-bold text-gray-900 mb-2 mt-0 ${fullWidthComparison ? 'text-xl' : 'text-lg'}`}>{children}</h1>
                           ),
                           h2: ({ children }) => (
-                            <h2 className="text-base font-bold text-gray-900 mb-2 mt-0">{children}</h2>
+                            <h2 className={`font-bold text-gray-900 mb-2 mt-0 ${fullWidthComparison ? 'text-lg' : 'text-base'}`}>{children}</h2>
                           ),
                           h3: ({ children }) => (
-                            <h3 className="text-sm font-medium text-gray-800 mb-1 mt-2">{children}</h3>
+                            <h3 className={`font-medium text-gray-800 mb-1 mt-2 ${fullWidthComparison ? 'text-base' : 'text-sm'}`}>{children}</h3>
                           ),
                           h4: ({ children }) => (
-                            <h4 className="text-xs font-medium text-gray-800 mb-1 mt-2">{children}</h4>
+                            <h4 className={`font-medium text-gray-800 mb-1 mt-2 ${fullWidthComparison ? 'text-sm' : 'text-xs'}`}>{children}</h4>
                           ),
                           p: ({ children }) => (
-                            <p className="text-gray-700 mb-2 leading-relaxed text-sm">{children}</p>
+                            <p className={`text-gray-700 mb-2 leading-relaxed ${fullWidthComparison ? 'text-base' : 'text-sm'}`}>{children}</p>
                           ),
                           ul: ({ children }) => (
                             <ul className="text-gray-700 mb-2 space-y-1">{children}</ul>
@@ -793,13 +812,13 @@ export const SummaryResultsView: React.FC = () => {
                             <ol className="text-gray-700 mb-2 space-y-1 list-decimal list-inside">{children}</ol>
                           ),
                           li: ({ children }) => (
-                            <li className="text-gray-700 flex items-start text-sm">
+                            <li className={`text-gray-700 flex items-start ${fullWidthComparison ? 'text-base' : 'text-sm'}`}>
                               <span className="text-blue-500 mr-2">•</span>
                               <span>{children}</span>
                             </li>
                           ),
                           blockquote: ({ children }) => (
-                            <blockquote className="border-l-4 border-blue-400 pl-3 italic text-gray-600 my-2 bg-blue-50 py-2 text-sm">
+                            <blockquote className={`border-l-4 border-blue-400 pl-3 italic text-gray-600 my-2 bg-blue-50 py-2 ${fullWidthComparison ? 'text-base' : 'text-sm'}`}>
                               {children}
                             </blockquote>
                           ),
@@ -810,12 +829,12 @@ export const SummaryResultsView: React.FC = () => {
                             <em className="text-gray-700 italic">{children}</em>
                           ),
                           code: ({ children }) => (
-                            <code className="bg-gray-100 text-blue-700 px-1.5 py-0.5 rounded text-xs font-mono">
+                            <code className={`bg-gray-100 text-blue-700 px-1.5 py-0.5 rounded font-mono ${fullWidthComparison ? 'text-sm' : 'text-xs'}`}>
                               {children}
                             </code>
                           ),
                           pre: ({ children }) => (
-                            <pre className="bg-gray-100 text-gray-800 p-2 rounded overflow-x-auto mb-2 font-mono text-xs">
+                            <pre className={`bg-gray-100 text-gray-800 p-2 rounded overflow-x-auto mb-2 font-mono ${fullWidthComparison ? 'text-sm' : 'text-xs'}`}>
                               {children}
                             </pre>
                           ),
@@ -983,17 +1002,17 @@ export const SummaryResultsView: React.FC = () => {
       {/* Left Navigation Panel - Collapsible on Hover */}
       {/* Left Navigation Panel - Collapsible on Hover */}
       <LeftNavigation
-        isNavExpanded={isNavExpanded}
-        onNavMouseEnter={handleNavMouseEnter}
-        onNavMouseLeave={handleNavMouseLeave}
+        isNavExpanded={fullWidthComparison ? false : isNavExpanded}
+        onNavMouseEnter={fullWidthComparison ? () => {} : handleNavMouseEnter}
+        onNavMouseLeave={fullWidthComparison ? () => {} : handleNavMouseLeave}
         currentDocumentId={document?.id}
         showNewChatButton={false}
       />
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col ${fullWidthComparison ? 'w-full' : ''}`}>
         {/* Main Content */}
-        <div className="flex-1 px-6 py-8 overflow-y-auto">
-          <div className="max-w-4xl mx-auto">
+        <div className={`flex-1 px-6 py-8 overflow-y-auto ${fullWidthComparison ? 'px-2' : ''}`}>
+          <div className={`${fullWidthComparison ? 'w-full max-w-none' : 'max-w-4xl mx-auto'}`}>
             {/* Back Button */}
             <div className="mb-6">
               <button
