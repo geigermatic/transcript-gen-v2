@@ -40,11 +40,9 @@ export class TextSplitter {
    * Uses model context window to determine optimal chunking strategy
    */
   static splitTextForModel(text: string, documentId: string, modelId: string): TextChunk[] {
-    // AGGRESSIVE OPTIMIZATION: Force single chunk for most documents to reduce LLM calls
+    // Fast path: if text is small enough, return as single chunk immediately
     const textLength = text.length;
-    
-    // For most documents, use single chunk to minimize LLM calls
-    if (textLength <= 50000) { // 50KB - safe for single chunk processing
+    if (textLength <= 12000) { // 3K tokens - safe for most models
       return [{
         id: `${documentId}-chunk-0`,
         documentId,
@@ -55,12 +53,13 @@ export class TextSplitter {
       }];
     }
     
-    // Get model context window (in tokens)
+    // Get model context window (in tokens) - cache this for performance
     const contextWindow = this.getModelContextWindow(modelId);
     const estimatedTokens = Math.ceil(textLength / 4);
     
-    // Even for large documents, try to use single chunk if possible
-    if (estimatedTokens <= contextWindow * 0.95) { // 95% utilization threshold
+    // Quick decision tree for chunking strategy
+    if (estimatedTokens <= contextWindow * 0.9) {
+      // Single chunk for documents that fit comfortably
       return [{
         id: `${documentId}-chunk-0`,
         documentId,
@@ -71,17 +70,14 @@ export class TextSplitter {
       }];
     }
     
-    // Only split if absolutely necessary (document is extremely large)
-    console.warn(`⚠️ Document extremely large (${estimatedTokens} tokens), forced to split into chunks`);
-    
-    // Use very large chunks to minimize the number of LLM calls
-    const chunkSize = Math.min(15000, Math.floor(contextWindow * 0.8)); // Much larger chunks
-    const overlap = Math.floor(chunkSize * 0.02); // Minimal overlap
+    // For large documents, use larger chunks for efficiency (fewer LLM calls)
+    const chunkSize = Math.min(8000, Math.floor(contextWindow * 0.7)); // Larger chunks
+    const overlap = Math.floor(chunkSize * 0.05); // Minimal overlap for speed
     
     return this.splitText(text, documentId, {
       chunkSize,
       overlap,
-      maxChunks: 3 // Very low limit to minimize LLM calls
+      maxChunks: 8 // Lower limit for efficiency
     });
   }
 
