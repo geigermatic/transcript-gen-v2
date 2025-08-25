@@ -40,12 +40,12 @@ export function SettingsPage() {
         <div className="flex-1 px-6 py-8 overflow-y-auto">
           <div className="space-y-8">
                          {/* Page Header */}
-             <div className="glass-panel p-6">
-               <h1 className="text-2xl font-bold text-gray-900 mb-4">Settings</h1>
-               <p className="text-gray-600">
-                 Configure your voice, style preferences, and core application settings for the beta version.
-               </p>
-             </div>
+                           <div className="glass-panel p-6">
+                <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>Settings</h1>
+                <p className="text-gray-600">
+                  Configure your voice, style preferences, and core application settings for the beta version.
+                </p>
+              </div>
 
             {/* Voice & Style Guide - Top Level Section */}
             <StyleGuideManager />
@@ -54,7 +54,7 @@ export function SettingsPage() {
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                {/* AI Model Configuration */}
                <div className="glass-panel p-6">
-                 <h2 className="text-hierarchy-h2 text-gray-900 mb-4">AI Model Configuration</h2>
+                                   <h2 className="text-hierarchy-h2" style={{ color: '#111827' }}>AI Model Configuration</h2>
                  <div className="space-y-4">
                    <div>
                      <label className="block text-gray-700 mb-2 text-sm">Select Model</label>
@@ -116,7 +116,7 @@ export function SettingsPage() {
 
                              {/* Theme */}
                <div className="glass-panel p-6">
-                 <h2 className="text-hierarchy-h2 text-gray-900 mb-4">Theme</h2>
+                 <h2 className="text-hierarchy-h2" style={{ color: '#111827' }}>Theme</h2>
                 <div className="space-y-4">
                   <div className="flex flex-col space-y-2">
                     <button 

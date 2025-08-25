@@ -87,7 +87,7 @@ export function DevConsolePage() {
         <div className="flex-1 px-6 py-8 overflow-y-auto">
           <div className="space-y-6">
             <div className="glass-panel p-6">
-              <h1 className="text-hierarchy-h1 text-gray-900">Developer Console</h1>
+              <h1 className="text-hierarchy-h1" style={{ color: '#111827' }}>Developer Console</h1>
               <p className="text-gray-600">
                 View detailed logs, status tracking, and debugging information for development builds.
               </p>
@@ -95,7 +95,7 @@ export function DevConsolePage() {
 
             <div className="glass-panel p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-hierarchy-h2 text-gray-900">System Status</h2>
+                <h2 className="text-hierarchy-h2" style={{ color: '#111827' }}>System Status</h2>
                 <button
                   onClick={checkOllamaConnection}
                   className="glass-button text-white text-sm"
@@ -106,29 +106,29 @@ export function DevConsolePage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="glass-panel p-4">
-                  <h3 className="text-hierarchy-h3 text-gray-900">Ollama Status</h3>
+                  <h3 className="text-hierarchy-h3" style={{ color: '#111827' }}>Ollama Status</h3>
                   <p className={getStatusColor(ollamaStatus)}>{getStatusText(ollamaStatus)}</p>
                 </div>
                 <div className="glass-panel p-4">
-                  <h3 className="text-hierarchy-h3 text-gray-900">Documents</h3>
+                  <h3 className="text-hierarchy-h3" style={{ color: '#111827' }}>Documents</h3>
                   <p className="text-gray-600">{documents.length}</p>
                 </div>
                 <div className="glass-panel p-4">
-                  <h3 className="text-hierarchy-h3 text-gray-900">Total Words</h3>
+                  <h3 className="text-hierarchy-h3" style={{ color: '#111827' }}>Total Words</h3>
                   <p className="text-gray-600">{totalWords.toLocaleString()}</p>
                 </div>
                 <div className="glass-panel p-4">
-                  <h3 className="text-hierarchy-h3 text-gray-900">Storage Used</h3>
+                  <h3 className="text-hierarchy-h3" style={{ color: '#111827' }}>Storage Used</h3>
                   <p className="text-gray-600">
                     {totalSize > 0 ? (totalSize / 1024 / 1024).toFixed(2) + ' MB' : '0 MB'}
                   </p>
                 </div>
                 <div className="glass-panel p-4">
-                  <h3 className="text-hierarchy-h3 text-gray-900">Embeddings</h3>
+                  <h3 className="text-hierarchy-h3" style={{ color: '#111827' }}>Embeddings</h3>
                   <p className="text-gray-600">{totalEmbeddings} chunks</p>
                 </div>
                 <div className="glass-panel p-4">
-                  <h3 className="text-hierarchy-h3 text-gray-900">Indexed Docs</h3>
+                  <h3 className="text-hierarchy-h3" style={{ color: '#111827' }}>Indexed Docs</h3>
                   <p className="text-gray-600">{documentsWithEmbeddings}/{documents.length}</p>
                 </div>
               </div>
@@ -136,7 +136,7 @@ export function DevConsolePage() {
 
                          <div className="glass-panel p-6">
                <div className="flex items-center justify-between mb-4">
-                 <h2 className="text-hierarchy-h2 text-gray-900">Application Logs</h2>
+                 <h2 className="text-hierarchy-h2" style={{ color: '#111827' }}>Application Logs</h2>
                  <div className="flex space-x-2">
                    <span className="text-sm text-gray-600">{logs.length} entries</span>
                    <button
