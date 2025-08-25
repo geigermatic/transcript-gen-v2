@@ -72,9 +72,13 @@ export const SummaryResultsView: React.FC = () => {
 
   // Version comparison functions
   const toggleComparisonMode = () => {
-    setComparisonMode(!comparisonMode);
-    if (comparisonMode) {
-      // Reset selections and full-width mode when exiting comparison mode
+    if (!comparisonMode) {
+      // Entering comparison mode - automatically enable full-width
+      setComparisonMode(true);
+      setFullWidthComparison(true);
+    } else {
+      // Exiting comparison mode - automatically restore normal layout
+      setComparisonMode(false);
       setSelectedVersions({ left: null, right: null });
       setFullWidthComparison(false);
     }
@@ -691,16 +695,6 @@ export const SummaryResultsView: React.FC = () => {
                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
               >
                 Clear Selection
-              </button>
-              <button
-                onClick={() => setFullWidthComparison(!fullWidthComparison)}
-                className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-                  fullWidthComparison
-                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {fullWidthComparison ? '📱 Normal Width' : '🖥️ Full Width'}
               </button>
               <button
                 onClick={toggleComparisonMode}
