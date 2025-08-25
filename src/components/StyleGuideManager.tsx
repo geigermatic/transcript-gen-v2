@@ -678,16 +678,18 @@ export const StyleGuideManager: React.FC = () => {
             </button>
             <button
               onClick={importStyleGuide}
-              className="glass-button-secondary text-white text-opacity-80 hover:text-white"
+              className="glass-button-secondary text-gray-700 hover:text-gray-900"
               title="Import style guide from JSON"
+              style={{ color: '#374151' }}
             >
               <Upload size={16} />
               Import
             </button>
             <button
               onClick={exportStyleGuide}
-              className="glass-button-secondary text-white text-opacity-80 hover:text-white"
+              className="glass-button-secondary text-gray-700 hover:text-gray-900"
               title="Export style guide as JSON"
+              style={{ color: '#374151' }}
             >
               <Download size={16} />
               Export
@@ -746,6 +748,7 @@ export const StyleGuideManager: React.FC = () => {
                     onClick={handleReset}
                     disabled={!hasChanges}
                     className="glass-button-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ color: '#374151' }}
                   >
                     <RotateCcw size={16} />
                     Reset Changes
@@ -774,8 +777,9 @@ export const StyleGuideManager: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={checkOllamaStatus}
-                    className="text-sm text-white text-opacity-60 hover:text-white transition-colors p-1"
+                    className="text-sm transition-colors p-1"
                     title="Refresh Ollama status"
+                    style={{ color: '#6B7280' }}
                   >
                     <RefreshCw size={14} />
                   </button>
@@ -827,8 +831,9 @@ export const StyleGuideManager: React.FC = () => {
                       <button
                         onClick={() => setNewsletterText('')}
                         disabled={!newsletterText.trim() || isAnalyzing}
-                        className="glass-button-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-gray-400 hover:text-gray-200"
+                        className="glass-button-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         title="Clear text input"
+                        style={{ color: '#374151' }}
                       >
                         <RotateCcw size={16} />
                         Clear
@@ -840,6 +845,7 @@ export const StyleGuideManager: React.FC = () => {
                           setNewsletterText('');
                         }}
                         className="glass-button-secondary"
+                        style={{ color: '#374151' }}
                       >
                         Cancel
                       </button>
@@ -922,6 +928,7 @@ export const StyleGuideManager: React.FC = () => {
                     <button
                       onClick={() => setAnalyzedStyleGuide(null)}
                       className="glass-button-secondary"
+                      style={{ color: '#374151' }}
                     >
                       ← Back to Edit
                     </button>
@@ -1108,7 +1115,7 @@ export const StyleGuideManager: React.FC = () => {
                     {isEditing && (
                   <button
                         onClick={() => addExamplePhrase(category)}
-                        className="text-blue-400 hover:text-blue-300 text-sm"
+                        className="text-blue-600 hover:text-blue-700 text-sm"
                   >
                         + Add
                   </button>
