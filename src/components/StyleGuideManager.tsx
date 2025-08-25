@@ -665,15 +665,15 @@ export const StyleGuideManager: React.FC = () => {
                 border: '1px solid #D1D5DB'
               }}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2" style={{ color: '#111827 !important' }}>
                 {showTextInput ? (
                   <>
-                    <FileText size={16} />
+                    <FileText size={16} style={{ color: '#111827' }} />
                     Hide Analyzer
                   </>
                 ) : (
                   <>
-                    <Search size={16} />
+                    <Search size={16} style={{ color: '#111827' }} />
                     Analyze Text
                   </>
                 )}
@@ -721,7 +721,7 @@ export const StyleGuideManager: React.FC = () => {
                 border: '1px solid #D1D5DB'
               }}
             >
-              <Trash2 size={16} />
+              <Trash2 size={16} style={{ color: '#111827' }} />
               Clear Style Guide
             </button>
             <button
