@@ -121,7 +121,8 @@ export function SettingsPage() {
                   <div className="flex flex-col space-y-2">
                                     <button 
                   onClick={toggleDarkMode}
-                  className={`glass-button-secondary text-gray-900 text-sm ${!isDarkMode ? 'bg-white bg-opacity-20' : ''}`}
+                  className={`glass-button-secondary text-sm ${!isDarkMode ? 'bg-white bg-opacity-20' : ''}`}
+                  style={{ color: '#111827' }}
                 >
                   {isDarkMode ? '🌙 Dark Mode' : '☀️ Light Mode'}
                 </button>
