@@ -61,6 +61,24 @@ export class TextSplitter {
       }];
     }
     
+    // Check if document is extremely large and needs special handling
+    const isExtremelyLarge = estimatedTokens > contextWindow * 2; // More than 2x context window
+    if (isExtremelyLarge) {
+      console.warn(`⚠️ Document is extremely large (${estimatedTokens} tokens vs ${contextWindow} context window). Using conservative chunking.`);
+      
+      // Use very conservative chunking for extremely large documents
+      const conservativeChunkSize = Math.min(
+        Math.floor(contextWindow * 0.4), // 40% of context window for safety
+        2000 // Cap at 2K for very large docs
+      );
+      
+      return this.splitText(text, documentId, {
+        chunkSize: conservativeChunkSize,
+        overlap: Math.floor(conservativeChunkSize * 0.15), // 15% overlap for large docs
+        maxChunks: 20 // Higher limit for very large documents
+      });
+    }
+    
     // Otherwise, use standard chunking with model-optimized settings
     const optimalChunkSize = Math.min(
       Math.floor(contextWindow * 0.6), // 60% of context window

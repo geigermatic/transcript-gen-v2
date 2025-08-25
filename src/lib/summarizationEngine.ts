@@ -126,6 +126,16 @@ export class SummarizationEngine {
   ): Promise<SummarizationResult> {
     const startTime = Date.now();
     
+    // Check document size and provide early warnings
+    const sizeCheck = this.checkDocumentSize(document, modelId);
+    if (sizeCheck.warning) {
+      console.warn(`⚠️ ${sizeCheck.warning}`);
+      logInfo('SUMMARIZE', `Document size warning: ${sizeCheck.warning}`, {
+        documentId: document.id,
+        suggestedMode: sizeCheck.suggestedMode
+      });
+    }
+    
     // Update the Ollama client to use the selected model if provided
     if (modelId) {
       ollama.updateModel(modelId);
@@ -135,15 +145,35 @@ export class SummarizationEngine {
     logInfo('SUMMARIZE', `Starting summarization for document: ${document.title}`, {
       documentId: document.id, 
       textLength: document.text.length,
-      selectedModel: modelId || 'default'
+      selectedModel: modelId || 'default',
+      sizeWarning: sizeCheck.warning,
+      suggestedMode: sizeCheck.suggestedMode
     });
 
     try {
       // Split document into chunks optimized for the selected model
       onProgress?.(0, 100, 'Splitting document into chunks...');
-      const chunks = modelId 
-        ? TextSplitter.splitTextForModel(document.text, document.id, modelId)
-        : TextSplitter.splitText(document.text, document.id);
+      let chunks: TextChunk[];
+      
+      try {
+        chunks = modelId 
+          ? TextSplitter.splitTextForModel(document.text, document.id, modelId)
+          : TextSplitter.splitText(document.text, document.id);
+      } catch (chunkingError) {
+        console.warn('⚠️ Initial chunking failed, falling back to conservative chunking:', chunkingError);
+        
+        // Fallback to very conservative chunking
+        chunks = TextSplitter.splitText(document.text, document.id, {
+          chunkSize: 1500, // Very small chunks
+          overlap: 200,
+          maxChunks: 25 // Higher limit for safety
+        });
+        
+        logInfo('SUMMARIZE', `Fallback chunking successful: ${chunks.length} chunks`, {
+          documentId: document.id,
+          fallbackChunkSize: 1500
+        });
+      }
       
       logInfo('SUMMARIZE', `Document split into ${chunks.length} chunks for fact extraction`, {
         documentId: document.id, 
@@ -174,61 +204,71 @@ export class SummarizationEngine {
         
         onProgress?.(20, 100, 'Generating combined summary (ultra-fast path)...');
         
-        // OPTIMIZED: Single Ollama call for both raw and styled summary
-        const { rawSummary, styledSummary } = await this.generateCombinedSummary(document, styleGuide);
-        
-        // For backward compatibility, keep markdownSummary as the styled version
-        const markdownSummary = styledSummary;
-        
-        onProgress?.(95, 100, 'Finalizing summaries...');
-        
-        const processingTime = Date.now() - startTime;
-        
-        // Create minimal chunk facts for compatibility
-        const chunkFacts: ChunkFacts[] = [{
-          chunkId: chunks[0].id,
-          chunkIndex: 0,
-          facts: {},
-          parseSuccess: true,
-          rawResponse: 'Fast path - no fact extraction needed',
-          error: undefined,
-        }];
-        
-        const result: SummarizationResult = {
-          document,
-          chunkFacts,
-          mergedFacts: {
-            learning_objectives: [],
-            key_takeaways: [],
-            topics: [],
-            techniques: [],
-            notable_quotes: [],
-            action_items: [],
-            class_title: document.title,
-            date_or_series: '',
-            audience: ''
-          },
-          markdownSummary,
-          rawSummary,
-          styledSummary,
-          processingStats: {
-            totalChunks: 1,
-            successfulChunks: 1,
-            failedChunks: 0,
-            processingTime,
-            modelUsed: modelId || 'default',
-          }
-        };
-        
-        logInfo('SUMMARIZE', `Fast path summarization completed for document: ${document.title}`, {
-          documentId: document.id,
-          ...result.processingStats,
-          summaryLength: markdownSummary.length,
-          fastPath: true
-        });
-        
-        onProgress?.(100, 100, 'Summary completed successfully (fast path)!');
-        return result;
+        try {
+          // OPTIMIZED: Single Ollama call for both raw and styled summary
+          const { rawSummary, styledSummary } = await this.generateCombinedSummary(document, styleGuide);
+          
+          // For backward compatibility, keep markdownSummary as the styled version
+          const markdownSummary = styledSummary;
+          
+          onProgress?.(95, 100, 'Finalizing summaries...');
+          
+          const processingTime = Date.now() - startTime;
+          
+          // Create minimal chunk facts for compatibility
+          const chunkFacts: ChunkFacts[] = [{
+            chunkId: chunks[0].id,
+            chunkIndex: 0,
+            facts: {},
+            parseSuccess: true,
+            rawResponse: 'Fast path - no fact extraction needed',
+            error: undefined,
+          }];
+          
+          const result: SummarizationResult = {
+            document,
+            chunkFacts,
+            mergedFacts: {
+              learning_objectives: [],
+              key_takeaways: [],
+              topics: [],
+              techniques: [],
+              notable_quotes: [],
+              action_items: [],
+              class_title: document.title,
+              date_or_series: '',
+              audience: ''
+            },
+            markdownSummary,
+            rawSummary,
+            styledSummary,
+            processingStats: {
+              totalChunks: 1,
+              successfulChunks: 1,
+              failedChunks: 0,
+              processingTime,
+              modelUsed: modelId || 'default',
+            }
+          };
+          
+          logInfo('SUMMARIZE', `Fast path summarization completed for document: ${document.title}`, {
+            documentId: document.id,
+            ...result.processingStats,
+            summaryLength: markdownSummary.length,
+            fastPath: true
+          });
+          
+          onProgress?.(100, 100, 'Summary completed successfully (fast path)!');
+          return result;
+          
+        } catch (fastPathError) {
+          console.warn('⚠️ Fast path failed, falling back to standard processing:', fastPathError);
+          logInfo('SUMMARIZE', `Fast path failed, falling back to standard processing`, {
+            documentId: document.id,
+            error: fastPathError instanceof Error ? fastPathError.message : 'Unknown error'
+          });
+          // Continue to standard processing below
+        }
       }
 
       // Standard path for smaller models or multiple chunks
@@ -407,6 +447,11 @@ export class SummarizationEngine {
     onProgress?: (current: number, total: number, status?: string) => void
   ): Promise<ChunkFacts[]> {
     const chunkFacts: ChunkFacts[] = [];
+    
+    // Check if we have too many chunks and need to fall back to more conservative chunking
+    if (chunks.length > 15) {
+      console.warn(`⚠️ Document has ${chunks.length} chunks, which may cause processing issues. Consider using 'ultra-fast' mode for very large documents.`);
+    }
     
     if (config.enableParallelFactExtraction && config.chunking.parallelProcessing) {
       // Parallel processing in batches with detailed progress updates
@@ -1063,4 +1108,37 @@ Apply the voice style guide now:`;
            hasContentInQuotes && hasContentInObjectives;
   }
 
+  /**
+   * Check if document size might cause processing issues and suggest alternatives
+   */
+  private static checkDocumentSize(document: Document, modelId?: string): {
+    isLarge: boolean;
+    isExtremelyLarge: boolean;
+    suggestedMode: string;
+    warning?: string;
+  } {
+    const textLength = document.text.length;
+    const estimatedTokens = Math.ceil(textLength / 4);
+    const contextWindow = modelId ? TextSplitter.getModelContextWindow(modelId) : 4096;
+    
+    const isLarge = estimatedTokens > contextWindow * 0.8;
+    const isExtremelyLarge = estimatedTokens > contextWindow * 2;
+    
+    let suggestedMode = 'balanced';
+    let warning: string | undefined;
+    
+    if (isExtremelyLarge) {
+      suggestedMode = 'ultra-fast';
+      warning = `Document is extremely large (${estimatedTokens} tokens vs ${contextWindow} context window). Using 'ultra-fast' mode recommended.`;
+    } else if (isLarge) {
+      suggestedMode = 'fast';
+      warning = `Document is large (${estimatedTokens} tokens). Consider using 'fast' or 'ultra-fast' mode for better performance.`;
+    }
+    
+    return { isLarge, isExtremelyLarge, suggestedMode, warning };
+  }
+
+  /**
+   * Main summarization method
+   */
 }
