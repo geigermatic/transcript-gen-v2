@@ -42,7 +42,7 @@ export class TextSplitter {
   static splitTextForModel(text: string, documentId: string, modelId: string): TextChunk[] {
     // Fast path: if text is small enough, return as single chunk immediately
     const textLength = text.length;
-    if (textLength <= 8000) { // 2K tokens - safe for most models
+    if (textLength <= 12000) { // 3K tokens - safe for most models
       return [{
         id: `${documentId}-chunk-0`,
         documentId,
@@ -70,14 +70,14 @@ export class TextSplitter {
       }];
     }
     
-    // For large documents, use aggressive chunking for speed
-    const chunkSize = Math.min(4000, Math.floor(contextWindow * 0.5));
-    const overlap = Math.floor(chunkSize * 0.1);
+    // For large documents, use larger chunks for efficiency (fewer LLM calls)
+    const chunkSize = Math.min(8000, Math.floor(contextWindow * 0.7)); // Larger chunks
+    const overlap = Math.floor(chunkSize * 0.05); // Minimal overlap for speed
     
     return this.splitText(text, documentId, {
       chunkSize,
       overlap,
-      maxChunks: 15 // Reasonable limit for performance
+      maxChunks: 8 // Lower limit for efficiency
     });
   }
 

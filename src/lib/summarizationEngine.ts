@@ -437,6 +437,122 @@ export class SummarizationEngine {
   }
 
   /**
+   * Combine chunks for efficiency to reduce LLM calls
+   */
+  private static combineChunksForEfficiency(chunks: TextChunk[]): TextChunk[] {
+    const combined: TextChunk[] = [];
+    let currentCombined = '';
+    let startIndex = 0;
+    let chunkIndex = 0;
+    
+    // Target size for combined chunks (aim for ~8-12K characters)
+    const targetSize = 10000;
+    
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      
+      // If adding this chunk would exceed target size, save current combined chunk
+      if (currentCombined.length + chunk.text.length > targetSize && currentCombined.length > 0) {
+        combined.push({
+          id: `combined-${chunkIndex}`,
+          documentId: chunk.documentId,
+          text: currentCombined.trim(),
+          startIndex,
+          endIndex: startIndex + currentCombined.length,
+          chunkIndex: chunkIndex++
+        });
+        
+        // Start new combined chunk
+        currentCombined = chunk.text;
+        startIndex = chunk.startIndex;
+      } else {
+        // Add to current combined chunk
+        if (currentCombined.length > 0) {
+          currentCombined += '\n\n' + chunk.text;
+        } else {
+          currentCombined = chunk.text;
+          startIndex = chunk.startIndex;
+        }
+      }
+    }
+    
+    // Add the last combined chunk
+    if (currentCombined.length > 0) {
+      combined.push({
+        id: `combined-${chunkIndex}`,
+        documentId: chunks[0].documentId,
+        text: currentCombined.trim(),
+        startIndex,
+        endIndex: startIndex + currentCombined.length,
+        chunkIndex: chunkIndex
+      });
+    }
+    
+    return combined;
+  }
+  
+  /**
+   * Process combined chunks efficiently
+   */
+  private static async processCombinedChunks(
+    combinedChunks: TextChunk[],
+    styleGuide: StyleGuide,
+    documentId: string,
+    _config: ProcessingConfig,
+    onProgress?: (current: number, total: number, status?: string) => void
+  ): Promise<ChunkFacts[]> {
+    const chunkFacts: ChunkFacts[] = [];
+    
+    // Process combined chunks sequentially for better control
+    for (let i = 0; i < combinedChunks.length; i++) {
+      const chunk = combinedChunks[i];
+      onProgress?.(10 + i * 60 / combinedChunks.length, 100, 
+        `Processing combined section ${i + 1}/${combinedChunks.length}...`);
+      
+      try {
+        const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);
+        chunkFacts.push({
+          chunkId: chunk.id,
+          chunkIndex: chunk.chunkIndex,
+          facts: facts.facts,
+          parseSuccess: facts.parseSuccess,
+          rawResponse: facts.rawResponse,
+          error: facts.error,
+        });
+        
+        logInfo('SUMMARIZE', `Processed combined chunk ${i + 1}/${combinedChunks.length}`, {
+          documentId, 
+          chunkId: chunk.id, 
+          parseSuccess: facts.parseSuccess,
+          factKeys: Object.keys(facts.facts)
+        });
+        
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        chunkFacts.push({
+          chunkId: chunk.id,
+          chunkIndex: chunk.chunkIndex,
+          facts: {},
+          parseSuccess: false,
+          rawResponse: '',
+          error: errorMessage,
+        });
+        
+        logError('SUMMARIZE', `Failed to process combined chunk ${i + 1}/${combinedChunks.length}`, {
+          documentId, chunkId: chunk.id, error: errorMessage
+        });
+      }
+      
+      // Small delay between combined chunks
+      if (i < combinedChunks.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+    
+    return chunkFacts;
+  }
+
+  /**
    * Process chunks with configurable parallel processing
    */
   private static async processChunks(
@@ -447,6 +563,18 @@ export class SummarizationEngine {
     onProgress?: (current: number, total: number, status?: string) => void
   ): Promise<ChunkFacts[]> {
     const chunkFacts: ChunkFacts[] = [];
+    
+    // OPTIMIZATION: For large documents, combine chunks to reduce LLM calls
+    if (chunks.length > 8) {
+      console.log(`🚀 Large document detected (${chunks.length} chunks). Combining chunks for efficiency...`);
+      
+      // Combine chunks into larger sections to reduce LLM calls
+      const combinedChunks = this.combineChunksForEfficiency(chunks);
+      console.log(`📦 Reduced from ${chunks.length} to ${combinedChunks.length} combined chunks`);
+      
+      // Process combined chunks instead
+      return this.processCombinedChunks(combinedChunks, styleGuide, documentId, config, onProgress);
+    }
     
     // Check if we have too many chunks and need to fall back to more conservative chunking
     if (chunks.length > 15) {
