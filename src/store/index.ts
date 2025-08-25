@@ -75,6 +75,7 @@ interface AppState {
   restoreSummaryVersion: (documentId: string, versionId: string) => SummarizationResult | undefined;
   clearSummaryHistory: (documentId: string) => void;
   cleanupSummaryHistory: () => void; // Memory management
+  deleteSummaryVersion: (documentId: string, versionId: string) => void;
   
   // Developer Console
   logs: LogEntry[];
@@ -666,6 +667,54 @@ This style guide captures the distinctive voice and approach for creating engagi
         }
         
         set({ summaryHistory: newHistory });
+      },
+      deleteSummaryVersion: (documentId: string, versionId: string) => {
+        set((state) => {
+          // Handle both Map and plain object cases
+          let summaryHistory: Map<string, SummaryHistory>;
+          if (state.summaryHistory instanceof Map) {
+            summaryHistory = state.summaryHistory;
+          } else {
+            // Convert from plain object back to Map
+            summaryHistory = new Map<string, SummaryHistory>();
+            if (state.summaryHistory) {
+              Object.entries(state.summaryHistory).forEach(([key, value]) => {
+                summaryHistory.set(key, value as SummaryHistory);
+              });
+            }
+          }
+          
+          const existingHistory = summaryHistory.get(documentId);
+          if (!existingHistory || !existingHistory.versions) {
+            return state;
+          }
+
+          // Filter out the version to delete
+          const updatedVersions = existingHistory.versions.filter((v: any) => v.id !== versionId);
+          
+          // If we're deleting the last version, clear the history
+          if (updatedVersions.length === 0) {
+            summaryHistory.delete(documentId);
+            return {
+              ...state,
+              summaryHistory: summaryHistory
+            };
+          }
+
+          // Update the history with the filtered versions
+          const updatedHistory: SummaryHistory = {
+            ...existingHistory,
+            versions: updatedVersions,
+            currentVersionIndex: Math.min(existingHistory.currentVersionIndex || 0, updatedVersions.length - 1)
+          };
+
+          summaryHistory.set(documentId, updatedHistory);
+
+          return {
+            ...state,
+            summaryHistory: summaryHistory
+          };
+        });
       },
 
       // Developer Console

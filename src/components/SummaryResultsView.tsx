@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Send, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Send, Copy, Check, Trash2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import ReactMarkdown from 'react-markdown';
@@ -22,7 +22,8 @@ export const SummaryResultsView: React.FC = () => {
     getDocumentSummary, 
     addSummaryVersion, 
     getSummaryHistory,
-    getAllVersions
+    getAllVersions,
+    deleteSummaryVersion
   } = useAppStore();
   
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
@@ -298,6 +299,22 @@ export const SummaryResultsView: React.FC = () => {
       setFollowUpQuery('');
     }
   };
+
+  const handleDeleteVersion = useCallback(async (versionId: string) => {
+    if (!document) return;
+    try {
+      await deleteSummaryVersion(document.id, versionId);
+      console.log('Version deleted:', versionId);
+      // Optionally, refetch the summary to update the UI
+      const updatedSummary = getDocumentSummary(document.id);
+      if (updatedSummary) {
+        setSummary(updatedSummary);
+      }
+    } catch (error) {
+      console.error('Failed to delete version:', error);
+      // Could show error message here
+    }
+  }, [document, deleteSummaryVersion, getDocumentSummary]);
 
   const renderStackedVersions = () => {
     if (!summary || !document) return null;
@@ -661,6 +678,14 @@ export const SummaryResultsView: React.FC = () => {
                         <span>Copy</span>
                       </>
                     )}
+                  </button>
+                  {/* Delete Button */}
+                  <button
+                    onClick={() => handleDeleteVersion(version.id)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-sm rounded-md transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    <span>Delete</span>
                   </button>
                 </div>
             </div>
