@@ -28,7 +28,7 @@ export const ABTestingDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">A/B Testing Dashboard</h3>
+        <h2 className="text-2xl font-semibold text-gray-900">A/B Testing Dashboard</h2>
         <div className="text-2xl">🧪</div>
       </div>
 

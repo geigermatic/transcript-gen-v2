@@ -42,7 +42,7 @@ export function ChatTester() {
 
   return (
     <div className="glass-panel p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Chat System Test</h3>
+      <h2 className="text-2xl font-semibold text-gray-900 mb-4">Chat System Test</h2>
       
       {allEmbeddings.size === 0 ? (
         <div className="text-gray-600 text-center py-8">

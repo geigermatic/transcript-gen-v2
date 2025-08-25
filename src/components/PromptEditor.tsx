@@ -176,7 +176,7 @@ export const PromptEditor: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="glass-panel p-6">
-        <h2 className="text-hierarchy-h2 mb-4" style={{ color: '#111827' }}>AI Prompt Editor</h2>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-4">AI Prompt Editor</h2>
         <p className="text-gray-600 mb-6">
           View and edit the internal AI prompts used for fact extraction, summarization, chat responses, and style guide analysis.
         </p>
@@ -250,7 +250,7 @@ export const PromptEditor: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Prompt List */}
         <div className="glass-panel p-6">
-          <h3 className="text-hierarchy-h3 mb-4" style={{ color: '#111827' }}>Prompts</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Prompts</h3>
           <div className="space-y-3">
             {filteredPrompts.map((prompt) => (
               <button
@@ -287,7 +287,7 @@ export const PromptEditor: React.FC = () => {
             <>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-hierarchy-h3 flex items-center gap-2" style={{ color: '#111827' }}>
+                  <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
                     {currentPrompt.icon}
                     {currentPrompt.name}
                   </h3>
