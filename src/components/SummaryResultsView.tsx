@@ -96,77 +96,6 @@ export const SummaryResultsView: React.FC = () => {
     }
   }, [getDocumentSummary, styleGuide]);
 
-  // Export and sharing functions
-  const exportVersion = useCallback(async (version: any, format: 'markdown' | 'text' | 'html') => {
-    try {
-      let content = '';
-      let filename = '';
-      
-      switch (format) {
-        case 'markdown':
-          content = version.summary;
-          filename = `summary-v${version.versionNumber}-${new Date(version.timestamp).toISOString().split('T')[0]}.md`;
-          break;
-        case 'text':
-          content = version.summary.replace(/[#*`]/g, ''); // Remove markdown formatting
-          filename = `summary-v${version.versionNumber}-${new Date(version.timestamp).toISOString().split('T')[0]}.txt`;
-          break;
-        case 'html':
-          // Convert markdown to HTML (basic conversion)
-          content = `<html><head><title>Summary v${version.versionNumber}</title></head><body>${version.summary.replace(/\n/g, '<br>')}</body></html>`;
-          filename = `summary-v${version.versionNumber}-${new Date(version.timestamp).toISOString().split('T')[0]}.html`;
-          break;
-      }
-      
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = window.document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      window.document.body.appendChild(a);
-      a.click();
-      window.document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      // Show success feedback
-      setCopyFeedback({ versionId: version.id, message: `Exported as ${format.toUpperCase()}` });
-      setTimeout(() => setCopyFeedback(null), 2000);
-      
-    } catch (error) {
-      console.error('Failed to export version:', error);
-      setCopyFeedback({ versionId: version.id, message: 'Export failed' });
-      setTimeout(() => setCopyFeedback(null), 2000);
-    }
-  }, []);
-
-  const shareVersion = useCallback(async (version: any) => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `Summary v${version.versionNumber}`,
-          text: version.summary.substring(0, 100) + '...',
-          url: window.location.href
-        });
-      } else {
-        // Fallback: copy to clipboard
-        await navigator.clipboard.writeText(version.summary);
-        setCopyFeedback({ versionId: version.id, message: 'Shared to clipboard' });
-        setTimeout(() => setCopyFeedback(null), 2000);
-      }
-    } catch (error) {
-      console.error('Failed to share version:', error);
-      // Fallback to clipboard
-      try {
-        await navigator.clipboard.writeText(version.summary);
-        setCopyFeedback({ versionId: version.id, message: 'Shared to clipboard' });
-        setTimeout(() => setCopyFeedback(null), 2000);
-      } catch (clipboardError) {
-        setCopyFeedback({ versionId: version.id, message: 'Share failed' });
-        setTimeout(() => setCopyFeedback(null), 2000);
-      }
-    }
-  }, []);
-
   // Memoized values for performance
   const allVersions = useMemo(() => {
     return getAllVersions(document?.id || '') || [];
@@ -745,61 +674,24 @@ export const SummaryResultsView: React.FC = () => {
               
               {/* Version Actions */}
               <div className="flex items-center gap-2">
-                {/* Export Dropdown */}
-                <div className="relative group">
-                  <button className="flex items-center gap-2 px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 text-sm rounded-md transition-colors">
-                    <span>📤</span>
-                    <span>Export</span>
+                  {/* Inline Copy Button */}
+                  <button
+                    onClick={() => handleCopyVersion(version.summary, version.id)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm rounded-md transition-colors"
+                  >
+                    {copyFeedback?.versionId === version.id ? (
+                      <>
+                        <Check size={14} className="text-green-600" />
+                        <span className="text-green-600 text-xs">{copyFeedback.message}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} />
+                        <span>Copy</span>
+                      </>
+                    )}
                   </button>
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[120px]">
-                    <button
-                      onClick={() => exportVersion(version, 'markdown')}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
-                    >
-                      📄 Markdown (.md)
-                    </button>
-                    <button
-                      onClick={() => exportVersion(version, 'text')}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      📝 Plain Text (.txt)
-                    </button>
-                    <button
-                      onClick={() => exportVersion(version, 'html')}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-lg"
-                    >
-                      🌐 HTML (.html)
-                    </button>
-                  </div>
                 </div>
-                
-                {/* Share Button */}
-                <button
-                  onClick={() => shareVersion(version)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 text-sm rounded-md transition-colors"
-                >
-                  <span>📤</span>
-                  <span>Share</span>
-                </button>
-                
-                {/* Inline Copy Button */}
-                <button
-                  onClick={() => handleCopyVersion(version.summary, version.id)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm rounded-md transition-colors"
-                >
-                  {copyFeedback?.versionId === version.id ? (
-                    <>
-                      <Check size={14} className="text-green-600" />
-                      <span className="text-green-600 text-xs">{copyFeedback.message}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={14} />
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
             
             {/* Version Content */}
