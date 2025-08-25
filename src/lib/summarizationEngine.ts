@@ -160,18 +160,18 @@ export class SummarizationEngine {
           ? TextSplitter.splitTextForModel(document.text, document.id, modelId)
           : TextSplitter.splitText(document.text, document.id);
       } catch (chunkingError) {
-        console.warn('⚠️ Initial chunking failed, falling back to conservative chunking:', chunkingError);
+        console.warn('⚠️ Initial chunking failed, falling back to fast chunking:', chunkingError);
         
-        // Fallback to very conservative chunking
+        // Fast fallback to aggressive chunking
         chunks = TextSplitter.splitText(document.text, document.id, {
-          chunkSize: 1500, // Very small chunks
-          overlap: 200,
-          maxChunks: 25 // Higher limit for safety
+          chunkSize: 3000, // Larger chunks for speed
+          overlap: 100,    // Minimal overlap for speed
+          maxChunks: 20    // Higher limit for speed
         });
         
-        logInfo('SUMMARIZE', `Fallback chunking successful: ${chunks.length} chunks`, {
+        logInfo('SUMMARIZE', `Fast fallback chunking successful: ${chunks.length} chunks`, {
           documentId: document.id,
-          fallbackChunkSize: 1500
+          fallbackChunkSize: 3000
         });
       }
       
@@ -1118,6 +1118,12 @@ Apply the voice style guide now:`;
     warning?: string;
   } {
     const textLength = document.text.length;
+    
+    // Fast size check - only warn for very large documents
+    if (textLength <= 50000) { // 50KB - safe for most processing
+      return { isLarge: false, isExtremelyLarge: false, suggestedMode: 'balanced' };
+    }
+    
     const estimatedTokens = Math.ceil(textLength / 4);
     const contextWindow = modelId ? TextSplitter.getModelContextWindow(modelId) : 4096;
     
@@ -1129,10 +1135,10 @@ Apply the voice style guide now:`;
     
     if (isExtremelyLarge) {
       suggestedMode = 'ultra-fast';
-      warning = `Document is extremely large (${estimatedTokens} tokens vs ${contextWindow} context window). Using 'ultra-fast' mode recommended.`;
+      warning = `Large document detected. Using 'ultra-fast' mode recommended.`;
     } else if (isLarge) {
       suggestedMode = 'fast';
-      warning = `Document is large (${estimatedTokens} tokens). Consider using 'fast' or 'ultra-fast' mode for better performance.`;
+      warning = `Large document detected. Consider 'fast' mode for better performance.`;
     }
     
     return { isLarge, isExtremelyLarge, suggestedMode, warning };

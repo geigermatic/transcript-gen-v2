@@ -40,55 +40,44 @@ export class TextSplitter {
    * Uses model context window to determine optimal chunking strategy
    */
   static splitTextForModel(text: string, documentId: string, modelId: string): TextChunk[] {
-    // Get model context window (in tokens)
-    const contextWindow = this.getModelContextWindow(modelId);
-    
-    // Estimate text length in tokens (rough approximation: 1 token ≈ 4 characters)
-    const estimatedTokens = Math.ceil(text.length / 4);
-    
-    // OPTIMIZED: Increased threshold from 80% to 95% for better context utilization
-    const utilizationThreshold = this.getModelUtilizationThreshold(modelId);
-    
-    // If text fits in model context, return as single chunk
-    if (estimatedTokens <= contextWindow * utilizationThreshold) {
+    // Fast path: if text is small enough, return as single chunk immediately
+    const textLength = text.length;
+    if (textLength <= 8000) { // 2K tokens - safe for most models
       return [{
         id: `${documentId}-chunk-0`,
         documentId,
         text,
         startIndex: 0,
-        endIndex: text.length,
+        endIndex: textLength,
         chunkIndex: 0
       }];
     }
     
-    // Check if document is extremely large and needs special handling
-    const isExtremelyLarge = estimatedTokens > contextWindow * 2; // More than 2x context window
-    if (isExtremelyLarge) {
-      console.warn(`⚠️ Document is extremely large (${estimatedTokens} tokens vs ${contextWindow} context window). Using conservative chunking.`);
-      
-      // Use very conservative chunking for extremely large documents
-      const conservativeChunkSize = Math.min(
-        Math.floor(contextWindow * 0.4), // 40% of context window for safety
-        2000 // Cap at 2K for very large docs
-      );
-      
-      return this.splitText(text, documentId, {
-        chunkSize: conservativeChunkSize,
-        overlap: Math.floor(conservativeChunkSize * 0.15), // 15% overlap for large docs
-        maxChunks: 20 // Higher limit for very large documents
-      });
+    // Get model context window (in tokens) - cache this for performance
+    const contextWindow = this.getModelContextWindow(modelId);
+    const estimatedTokens = Math.ceil(textLength / 4);
+    
+    // Quick decision tree for chunking strategy
+    if (estimatedTokens <= contextWindow * 0.9) {
+      // Single chunk for documents that fit comfortably
+      return [{
+        id: `${documentId}-chunk-0`,
+        documentId,
+        text,
+        startIndex: 0,
+        endIndex: textLength,
+        chunkIndex: 0
+      }];
     }
     
-    // Otherwise, use standard chunking with model-optimized settings
-    const optimalChunkSize = Math.min(
-      Math.floor(contextWindow * 0.6), // 60% of context window
-      4000 // Cap at 4K for safety
-    );
+    // For large documents, use aggressive chunking for speed
+    const chunkSize = Math.min(4000, Math.floor(contextWindow * 0.5));
+    const overlap = Math.floor(chunkSize * 0.1);
     
     return this.splitText(text, documentId, {
-      chunkSize: optimalChunkSize,
-      overlap: Math.floor(optimalChunkSize * 0.1), // 10% overlap
-      maxChunks: 10 // Reasonable limit
+      chunkSize,
+      overlap,
+      maxChunks: 15 // Reasonable limit for performance
     });
   }
 
@@ -183,21 +172,19 @@ export class TextSplitter {
     overlap: number;
     maxChunks?: number;
   }): TextChunk[] {
-    // First try paragraph splitting on double newlines
-    const paragraphs = this.splitByParagraphs(text);
-    
-    if (paragraphs.length > 1 && this.areGoodParagraphs(paragraphs, options.chunkSize)) {
-      let chunks = this.createChunksFromParagraphs(paragraphs, documentId);
-      
-      // Apply max chunks limit if specified
-      if (options.maxChunks && chunks.length > options.maxChunks) {
-        chunks = this.limitChunks(chunks, options.maxChunks);
-      }
-      
-      return chunks;
+    // Fast path: if text is small enough, return as single chunk
+    if (text.length <= options.chunkSize) {
+      return [{
+        id: `${documentId}-chunk-0`,
+        documentId,
+        text,
+        startIndex: 0,
+        endIndex: text.length,
+        chunkIndex: 0
+      }];
     }
     
-    // Fallback to fixed-size chunking
+    // Use fixed-size chunking for speed (skip paragraph analysis)
     let chunks = this.createFixedSizeChunks(text, documentId, options.chunkSize, options.overlap);
     
     // Apply max chunks limit if specified
@@ -209,62 +196,9 @@ export class TextSplitter {
   }
 
   /**
-   * Split text by double newlines (paragraph breaks)
-   */
-  private static splitByParagraphs(text: string): string[] {
-    return text
-      .split(/\n\s*\n/) // Split on double newlines with optional whitespace
-      .map(para => para.trim())
-      .filter(para => para.length > 0);
-  }
-
-  /**
-   * Check if paragraphs are reasonable sizes (not too short or too long)
-   */
-  private static areGoodParagraphs(paragraphs: string[], targetChunkSize: number): boolean {
-    const minParagraphLength = Math.max(200, targetChunkSize * 0.1);
-    const maxParagraphLength = targetChunkSize * 2;
-    
-    // At least 70% of paragraphs should be within reasonable size range
-    const goodParagraphs = paragraphs.filter(para => 
-      para.length >= minParagraphLength && para.length <= maxParagraphLength
-    );
-    
-    return goodParagraphs.length / paragraphs.length >= 0.7;
-  }
-
-  /**
-   * Create chunks from good paragraph splits
-   */
-  private static createChunksFromParagraphs(paragraphs: string[], documentId: string): TextChunk[] {
-    const chunks: TextChunk[] = [];
-    let currentPosition = 0;
-    
-    paragraphs.forEach((paragraph, index) => {
-      // Find the actual position in the original text
-      const startIndex = currentPosition;
-      const endIndex = startIndex + paragraph.length;
-      
-      chunks.push({
-        id: `${documentId}-para-${index}`,
-        documentId,
-        text: paragraph,
-        startIndex,
-        endIndex,
-        chunkIndex: index,
-      });
-      
-      // Account for the paragraph separator (double newline) in position tracking
-      currentPosition = endIndex + 2; // +2 for \n\n
-    });
-    
-    return chunks;
-  }
-
-  /**
    * Create fixed-size chunks with overlap
    */
-  private static createFixedSizeChunks(text: string, documentId: string, chunkSize: number, overlap: number): TextChunk[] {
+  private static createFixedSizeChunks(text: string, documentId: string, chunkSize: number, _overlap: number): TextChunk[] {
     const chunks: TextChunk[] = [];
     let startIndex = 0;
     let chunkIndex = 0;
@@ -272,11 +206,11 @@ export class TextSplitter {
     while (startIndex < text.length) {
       const endIndex = Math.min(startIndex + chunkSize, text.length);
       
-      // Try to break at word boundary if not at end of text
+      // Simple word boundary break for speed
       let actualEndIndex = endIndex;
       if (endIndex < text.length) {
         const lastSpaceIndex = text.lastIndexOf(' ', endIndex);
-        if (lastSpaceIndex > startIndex + chunkSize * 0.8) {
+        if (lastSpaceIndex > startIndex + chunkSize * 0.7) { // Reduced threshold for speed
           actualEndIndex = lastSpaceIndex;
         }
       }
@@ -296,10 +230,8 @@ export class TextSplitter {
       }
       
       // Move start position with overlap
-      startIndex = Math.max(actualEndIndex - overlap, actualEndIndex);
-      if (startIndex >= actualEndIndex) {
-        startIndex = actualEndIndex;
-      }
+      startIndex = actualEndIndex;
+      if (startIndex >= text.length) break;
     }
     
     return chunks;
