@@ -189,13 +189,29 @@ export const PromptEditor: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search prompts..."
-              className="glass-input w-full"
+              className="w-full"
+              style={{
+                borderRadius: '0.75rem',
+                border: '1px solid #D1D5DB',
+                background: '#FFFFFF',
+                padding: '0.75rem 1rem',
+                color: '#111827',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
             />
           </div>
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="glass-input w-auto"
+            className="w-auto"
+            style={{
+              borderRadius: '0.75rem',
+              border: '1px solid #D1D5DB',
+              background: '#FFFFFF',
+              padding: '0.75rem 1rem',
+              color: '#111827',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
           >
             {categories.map(cat => (
               <option key={cat} value={cat}>
@@ -350,7 +366,16 @@ export const PromptEditor: React.FC = () => {
                 <textarea
                   value={editingPrompt}
                   onChange={(e) => handlePromptChange(e.target.value)}
-                  className="glass-input w-full font-mono text-sm resize-none"
+                  className="w-full font-mono text-sm resize-none"
+                  style={{
+                    borderRadius: '0.75rem',
+                    border: '1px solid #D1D5DB',
+                    background: '#FFFFFF',
+                    padding: '0.75rem 1rem',
+                    color: '#111827',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    fontFamily: 'monospace'
+                  }}
                   rows={20}
                   placeholder="Enter your prompt template here..."
                 />
