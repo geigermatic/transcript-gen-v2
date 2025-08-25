@@ -678,18 +678,18 @@ export const StyleGuideManager: React.FC = () => {
             </button>
             <button
               onClick={importStyleGuide}
-              className="glass-button-secondary text-gray-700 hover:text-gray-900"
+              className="glass-button"
               title="Import style guide from JSON"
-              style={{ color: '#374151' }}
+              style={{ color: '#111827', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderColor: 'rgba(255, 255, 255, 0.3)' }}
             >
               <Upload size={16} />
               Import
             </button>
             <button
               onClick={exportStyleGuide}
-              className="glass-button-secondary text-gray-700 hover:text-gray-900"
+              className="glass-button"
               title="Export style guide as JSON"
-              style={{ color: '#374151' }}
+              style={{ color: '#111827', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderColor: 'rgba(255, 255, 255, 0.3)' }}
             >
               <Download size={16} />
               Export
@@ -747,8 +747,8 @@ export const StyleGuideManager: React.FC = () => {
                   <button
                     onClick={handleReset}
                     disabled={!hasChanges}
-                    className="glass-button-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ color: '#374151' }}
+                    className="glass-button disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ color: '#111827', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderColor: 'rgba(255, 255, 255, 0.3)' }}
                   >
                     <RotateCcw size={16} />
                     Reset Changes
@@ -831,9 +831,9 @@ export const StyleGuideManager: React.FC = () => {
                       <button
                         onClick={() => setNewsletterText('')}
                         disabled={!newsletterText.trim() || isAnalyzing}
-                        className="glass-button-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="glass-button disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         title="Clear text input"
-                        style={{ color: '#374151' }}
+                        style={{ color: '#111827', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderColor: 'rgba(255, 255, 255, 0.3)' }}
                       >
                         <RotateCcw size={16} />
                         Clear
