@@ -214,7 +214,7 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
         )}
         
         {/* Bottom Section - Dev Console Link */}
-        <div className="mt-auto p-4 border-t border-gray-200">
+        <div className="mt-auto p-4">
           <button 
             onClick={() => navigate('/dev-console')}
             className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
