@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Plus, Trash2, Clock, Cpu, Terminal } from 'lucide-react';
+import { Settings, Plus, Trash2, Clock, Cpu, Terminal, FileText } from 'lucide-react';
 import { useAppStore } from '../store';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 
@@ -106,7 +106,9 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
                 navigate('/');
               }
             }}
-            className="w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${
+              !isNavExpanded ? 'justify-center' : ''
+            }`}
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
               <Plus className="w-6 h-6 text-gray-600" />
@@ -120,7 +122,9 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
           
           <button 
             onClick={() => navigate('/settings')}
-            className="w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${
+              !isNavExpanded ? 'justify-center' : ''
+            }`}
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
               <Settings className="w-6 h-6 text-gray-600" />
@@ -131,12 +135,26 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
           {/* Clear All Documents Button */}
           <button 
             onClick={handleClearAllDocuments}
-            className="w-full flex items-center p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors"
+            className={`w-full flex items-center p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors ${
+              !isNavExpanded ? 'justify-center' : ''
+            }`}
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
               <Trash2 className="w-6 h-6" />
             </div>
             {isNavExpanded && <span className="ml-3">Clear All Documents</span>}
+          </button>
+          
+          {/* Documents List Indicator */}
+          <button 
+            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${
+              !isNavExpanded ? 'justify-center' : ''
+            }`}
+          >
+            <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-6 h-6 text-gray-600" />
+            </div>
+            {isNavExpanded && <span className="ml-3 text-gray-700">Documents ({documents.length})</span>}
           </button>
         </div>
 
@@ -223,7 +241,9 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
         <div className="mt-auto p-4">
           <button 
             onClick={() => navigate('/dev-console')}
-            className="w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${
+              !isNavExpanded ? 'justify-center' : ''
+            }`}
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
               <Terminal className="w-6 h-6 text-gray-600" />
