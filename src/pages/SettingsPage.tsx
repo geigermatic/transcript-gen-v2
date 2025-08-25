@@ -119,12 +119,12 @@ export function SettingsPage() {
                  <h2 className="text-hierarchy-h2" style={{ color: '#111827' }}>Theme</h2>
                 <div className="space-y-4">
                   <div className="flex flex-col space-y-2">
-                    <button 
-                      onClick={toggleDarkMode}
-                      className={`glass-button-secondary text-white text-sm ${!isDarkMode ? 'bg-white bg-opacity-20' : ''}`}
-                    >
-                      {isDarkMode ? '🌙 Dark Mode' : '☀️ Light Mode'}
-                    </button>
+                                    <button 
+                  onClick={toggleDarkMode}
+                  className={`glass-button-secondary text-gray-900 text-sm ${!isDarkMode ? 'bg-white bg-opacity-20' : ''}`}
+                >
+                  {isDarkMode ? '🌙 Dark Mode' : '☀️ Light Mode'}
+                </button>
                   </div>
                 </div>
               </div>
