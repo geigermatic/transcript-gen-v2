@@ -108,7 +108,7 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
             }}
             className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <Plus className="w-5 h-5 text-gray-600" />
+            <Plus className="w-6 h-6 text-gray-600" />
             {isNavExpanded && (
               <span className="text-gray-700">
                 {showNewChatButton ? 'New Chat' : 'Back to Chat'}
@@ -120,7 +120,7 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
             onClick={() => navigate('/settings')}
             className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <Settings className="w-5 h-5 text-gray-600" />
+            <Settings className="w-6 h-6 text-gray-600" />
             {isNavExpanded && <span className="text-gray-700">Settings</span>}
           </button>
           
@@ -129,7 +129,7 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
             onClick={handleClearAllDocuments}
             className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors"
           >
-            <Trash2 className="w-5 h-5" />
+            <Trash2 className="w-6 h-6" />
             {isNavExpanded && <span>Clear All Documents</span>}
           </button>
         </div>
@@ -219,7 +219,7 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
             onClick={() => navigate('/dev-console')}
             className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
-            <Terminal className="w-5 h-5 text-gray-600" />
+            <Terminal className="w-6 h-6 text-gray-600" />
             {isNavExpanded && <span className="text-gray-700">Dev Console</span>}
           </button>
         </div>
