@@ -85,16 +85,18 @@ export function DevConsolePage() {
       <div className="flex-1 flex flex-col">
         {/* Main Content */}
         <div className="flex-1 px-6 py-8 overflow-y-auto">
-          <div className="space-y-6">
-            <div className="glass-panel p-6">
+          <div className="space-y-8">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Developer Console</h1>
               <p className="text-gray-600">
                 View detailed logs, status tracking, and debugging information for development builds.
               </p>
             </div>
 
-            <div className="glass-panel p-6">
-              <div className="flex items-center justify-between mb-4">
+            {/* System Status Section */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-semibold text-gray-900">System Status</h2>
                 <button
                   onClick={checkOllamaConnection}
@@ -148,9 +150,10 @@ export function DevConsolePage() {
               </div>
             </div>
 
-                         <div className="glass-panel p-6">
-               <div className="flex items-center justify-between mb-4">
-                 <h2 className="text-2xl font-semibold text-gray-900">Application Logs</h2>
+            {/* Application Logs Section */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold text-gray-900">Application Logs</h2>
                  <div className="flex space-x-2">
                    <span className="text-sm text-gray-600">{logs.length} entries</span>
                                      <button
@@ -204,17 +207,22 @@ export function DevConsolePage() {
               </div>
             </div>
 
-            {/* AI Prompt Editor */}
-            <PromptEditor />
+            {/* AI Prompt Editor Section */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <PromptEditor />
+            </div>
 
-            {/* AI Features Testing */}
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <SemanticSearchTest />
-                <ChatTester />
+            {/* AI Features Testing Section */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6">AI Features Testing</h2>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  <SemanticSearchTest />
+                  <ChatTester />
+                </div>
+                <ABTestingDashboard />
+                <QATestRunner />
               </div>
-              <ABTestingDashboard />
-              <QATestRunner />
             </div>
           </div>
         </div>

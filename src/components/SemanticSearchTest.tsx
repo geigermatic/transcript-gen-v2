@@ -44,8 +44,8 @@ export function SemanticSearchTest() {
   };
 
   return (
-    <div className="glass-panel p-6">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-4">Semantic Search Test</h2>
+    <div className="space-y-4">
+      <h3 className="text-xl font-semibold text-gray-900 mb-4">Semantic Search Test</h3>
       
       {allEmbeddings.size === 0 ? (
         <div className="text-gray-600 text-center py-8">

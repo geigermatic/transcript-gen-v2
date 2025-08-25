@@ -94,9 +94,9 @@ export const QATestRunner: React.FC = () => {
   };
 
   return (
-    <div className="glass-panel p-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-semibold text-gray-900">QA Test Suite</h2>
+        <h3 className="text-xl font-semibold text-gray-900">QA Test Suite</h3>
         <div className="flex gap-2">
           {testResults.length > 0 && (
                       <button
