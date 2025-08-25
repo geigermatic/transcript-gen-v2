@@ -39,13 +39,13 @@ export function SettingsPage() {
         {/* Main Content */}
         <div className="flex-1 px-6 py-8 overflow-y-auto">
           <div className="space-y-8">
-                         {/* Page Header */}
-                           <div className="glass-panel p-6">
-                <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>Settings</h1>
-                <p className="text-gray-600">
-                  Configure your voice, style preferences, and core application settings for the beta version.
-                </p>
-              </div>
+                                     {/* Page Header */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Settings</h1>
+              <p className="text-gray-600">
+                Configure your voice, style preferences, and core application settings for the beta version.
+              </p>
+            </div>
 
             {/* Voice & Style Guide - Top Level Section */}
             <StyleGuideManager />
@@ -53,8 +53,8 @@ export function SettingsPage() {
                          {/* Configuration Sections in Columns */}
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                {/* AI Model Configuration */}
-               <div className="glass-panel p-6">
-                                   <h2 className="text-hierarchy-h2" style={{ color: '#111827' }}>AI Model Configuration</h2>
+                             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <h2 className="text-2xl font-semibold text-gray-900">AI Model Configuration</h2>
                  <div className="space-y-4">
                    <div>
                      <label className="block text-gray-700 mb-2 text-sm">Select Model</label>
@@ -115,8 +115,8 @@ export function SettingsPage() {
               </div>
 
                              {/* Theme */}
-               <div className="glass-panel p-6">
-                 <h2 className="text-hierarchy-h2" style={{ color: '#111827', fontWeight: '700', fontSize: '2rem', lineHeight: '1.2', letterSpacing: '-0.03em' }}>Theme</h2>
+                             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <h2 className="text-2xl font-semibold text-gray-900">Theme</h2>
                 <div className="space-y-4">
                   <div className="flex flex-col space-y-2">
                                     <button 

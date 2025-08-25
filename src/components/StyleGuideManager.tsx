@@ -652,7 +652,7 @@ export const StyleGuideManager: React.FC = () => {
     <>
       <div className="glass-panel p-6">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-hierarchy-h1" style={{ fontSize: '1.75rem', fontWeight: '700', fontFamily: 'Inter, sans-serif', color: '#111827', lineHeight: '1.2', letterSpacing: '-0.02em' }}>Voice & Style Guide</h1>
+                      <h1 className="text-4xl font-bold text-gray-900 mb-2">Voice & Style Guide</h1>
           <div className="flex gap-4">
             <button
               onClick={() => setShowTextInput(!showTextInput)}
@@ -1014,15 +1014,15 @@ export const StyleGuideManager: React.FC = () => {
 
           {/* Tone Settings */}
           <div>
-            <h3 className="text-hierarchy-h3 mb-6" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: '#111827', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Tone Settings</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">Tone Settings</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {(Object.keys(currentStyleGuide.tone_settings) as Array<keyof ToneSettings>).map((key) => {
                 const value = currentStyleGuide.tone_settings[key];
                 return (
-                  <div key={key} className="glass-card p-6">
+                  <div key={key} className="bg-gray-50 border border-gray-200 rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-gray-900 font-semibold capitalize text-lg">{key}</span>
-                      <span className="text-blue-400 font-medium px-3 py-1 rounded-full bg-blue-400 bg-opacity-20">
+                      <span className="text-gray-900 font-medium px-3 py-1 rounded-full bg-blue-100 border border-blue-200">
                         {getToneLabel(value)} ({value})
                       </span>
                   </div>
@@ -1035,9 +1035,9 @@ export const StyleGuideManager: React.FC = () => {
                           max="100"
                           value={value}
                           onChange={(e) => updateToneSetting(key, parseInt(e.target.value))}
-                          className="w-full h-3 bg-white bg-opacity-10 rounded-full appearance-none cursor-pointer mb-3"
+                          className="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer mb-3"
                           style={{
-                            background: `linear-gradient(to right, #60a5fa 0%, #a855f7 ${value}%, rgba(255,255,255,0.1) ${value}%, rgba(255,255,255,0.1) 100%)`
+                            background: `linear-gradient(to right, #3B82F6 0%, #8B5CF6 ${value}%, #E5E7EB ${value}%, #E5E7EB 100%)`
                           }}
                         />
                         <p className="text-gray-600 text-sm mt-2">
@@ -1046,11 +1046,11 @@ export const StyleGuideManager: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        <div className="w-full bg-white bg-opacity-10 rounded-full h-3 mb-3">
+                                                <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
                           <div
-                            className="bg-gradient-to-r from-blue-400 to-purple-500 h-3 rounded-full transition-all duration-500 ease-out"
-                      style={{ width: `${value}%` }}
-                    />
+                            className="bg-gradient-to-r from-blue-600 to-purple-600 h-3 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${value}%` }}
+                      />
                         </div>
                         <div className="text-right text-gray-600 font-medium">{value}/100</div>
                       </>
@@ -1064,7 +1064,7 @@ export const StyleGuideManager: React.FC = () => {
           {/* Keywords */}
           <div className="glass-card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-hierarchy-h3" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: '#111827', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Keywords & Phrases</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Keywords & Phrases</h3>
               {isEditing && (
                 <button
                   onClick={addKeyword}
@@ -1107,7 +1107,7 @@ export const StyleGuideManager: React.FC = () => {
           {/* Custom Instructions */}
           <div className="glass-card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-hierarchy-h3" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: '#111827', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Custom Instructions</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Custom Instructions</h3>
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
