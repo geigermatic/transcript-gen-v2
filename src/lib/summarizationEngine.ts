@@ -184,25 +184,31 @@ export class SummarizationEngine {
 
       // Check if we can use the fast path for large-context models
       const contextWindow = modelId ? TextSplitter.getModelContextWindow(modelId) : 4096;
-      const canUseFastPath = chunks.length === 1 && contextWindow >= 32768; // 32K+ context models
-
+      
+      // AGGRESSIVE OPTIMIZATION: Force fast path for most documents to minimize LLM calls
+      const canUseFastPath = chunks.length === 1 || 
+                             (chunks.length <= 3 && contextWindow >= 8192) || // 8K+ context models
+                             document.text.length <= 100000; // Documents under 100KB
+      
       console.log('🔍 Fast Path Debug:', {
         modelId,
         contextWindow,
         chunkCount: chunks.length,
         canUseFastPath,
         textLength: document.text.length,
-        estimatedTokens: Math.ceil(document.text.length / 4)
+        estimatedTokens: Math.ceil(document.text.length / 4),
+        forceFastPath: document.text.length <= 100000
       });
 
       if (canUseFastPath) {
-        logInfo('SUMMARIZE', `Using fast path for large-context model (${contextWindow} tokens)`, {
+        logInfo('SUMMARIZE', `Using fast path for efficient processing (${chunks.length} chunks, ${contextWindow} context)`, {
           documentId: document.id,
           modelId,
-          contextWindow
+          contextWindow,
+          chunkCount: chunks.length
         });
         
-        onProgress?.(20, 100, 'Generating combined summary (ultra-fast path)...');
+        onProgress?.(20, 100, 'Generating summary (fast path)...');
         
         try {
           // OPTIMIZED: Single Ollama call for both raw and styled summary
@@ -273,6 +279,98 @@ export class SummarizationEngine {
 
       // Standard path for smaller models or multiple chunks
       onProgress?.(10, 100, `Processing ${chunks.length} chunks for fact extraction...`);
+
+      // OPTIMIZATION: For documents with few chunks, use simplified processing
+      if (chunks.length <= 3) {
+        console.log(`🚀 Document has only ${chunks.length} chunks, using simplified processing...`);
+        
+        // Process chunks sequentially with minimal overhead
+        const chunkFacts: ChunkFacts[] = [];
+        for (let i = 0; i < chunks.length; i++) {
+          const chunk = chunks[i];
+          onProgress?.(10 + i * 60 / chunks.length, 100, 
+            `Processing chunk ${i + 1}/${chunks.length}...`);
+          
+          try {
+            const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);
+            chunkFacts.push({
+              chunkId: chunk.id,
+              chunkIndex: chunk.chunkIndex,
+              facts: facts.facts,
+              parseSuccess: facts.parseSuccess,
+              rawResponse: facts.rawResponse,
+              error: facts.error,
+            });
+            
+            logInfo('SUMMARIZE', `Processed chunk ${i + 1}/${chunks.length}`, {
+              documentId: document.id, 
+              chunkId: chunk.id, 
+              parseSuccess: facts.parseSuccess
+            });
+            
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            chunkFacts.push({
+              chunkId: chunk.id,
+              chunkIndex: chunk.chunkIndex,
+              facts: {},
+              parseSuccess: false,
+              rawResponse: '',
+              error: errorMessage,
+            });
+            
+            logError('SUMMARIZE', `Failed to process chunk ${i + 1}/${chunks.length}`, {
+              documentId: document.id, chunkId: chunk.id, error: errorMessage
+            });
+          }
+          
+          // Minimal delay between chunks
+          if (i < chunks.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 200)); // Reduced from 500ms
+          }
+        }
+        
+        // Continue with the rest of the processing...
+        onProgress?.(70, 100, 'Merging facts from chunks...');
+        const mergedFacts = this.mergeFacts(chunkFacts);
+        
+        onProgress?.(80, 100, 'Generating raw summary...');
+        const rawSummary = await this.generateRawSummary(document, mergedFacts);
+        
+        onProgress?.(85, 100, 'Generating styled summary...');
+        const styledSummary = await this.generateStyledSummary(document, mergedFacts, styleGuide);
+        
+        const markdownSummary = styledSummary;
+        onProgress?.(95, 100, 'Finalizing summaries...');
+        
+        const processingTime = Date.now() - startTime;
+        const successfulChunks = chunkFacts.filter(cf => cf.parseSuccess).length;
+        
+        const result: SummarizationResult = {
+          document,
+          chunkFacts,
+          mergedFacts,
+          markdownSummary,
+          rawSummary,
+          styledSummary,
+          processingStats: {
+            totalChunks: chunks.length,
+            successfulChunks,
+            failedChunks: chunks.length - successfulChunks,
+            processingTime,
+            modelUsed: modelId || 'default',
+          }
+        };
+        
+        logInfo('SUMMARIZE', `Simplified processing completed for document: ${document.title}`, {
+          documentId: document.id,
+          ...result.processingStats,
+          summaryLength: markdownSummary.length
+        });
+        
+        onProgress?.(100, 100, 'Summary completed successfully!');
+        return result;
+      }
 
       // Extract facts from each chunk (with configurable parallel processing)
       const config = ChunkingConfigManager.getCurrentConfig();
