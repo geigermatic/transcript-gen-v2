@@ -77,6 +77,9 @@ EXTRACTED FACTS:
 REQUIRED STRUCTURE (use this exact format):
 # {{documentTitle}}
 
+## Mini Synopsis
+[Exactly 1 sentence emphasizing WHY and WHAT benefits - in author's voice]
+
 ## Synopsis
 [Exactly 4 sentences emphasizing WHY and WHAT benefits - in author's voice]
 
@@ -136,6 +139,9 @@ EXTRACTED FACTS:
 
 REQUIRED STRUCTURE (use this exact format):
 # {{documentTitle}}
+
+## Mini Synopsis
+[Exactly 1 sentence emphasizing WHY and WHAT benefits - in author's voice - MAKE THIS DRAMATICALLY DIFFERENT]
 
 ## Synopsis
 [Exactly 4 sentences emphasizing WHY and WHAT benefits - in author's voice - MAKE THIS DRAMATICALLY DIFFERENT]
