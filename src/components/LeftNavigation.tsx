@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Plus, Trash2, Clock, Cpu } from 'lucide-react';
+import { Settings, Plus, Trash2, Clock, Cpu, Terminal } from 'lucide-react';
 import { useAppStore } from '../store';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 
@@ -131,6 +131,15 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
           >
             <Trash2 className="w-5 h-5" />
             {isNavExpanded && <span>Clear All Documents</span>}
+          </button>
+          
+          {/* Dev Console Button */}
+          <button 
+            onClick={() => navigate('/dev-console')}
+            className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <Terminal className="w-5 h-5 text-gray-600" />
+            {isNavExpanded && <span className="text-gray-700">Dev Console</span>}
           </button>
         </div>
 
