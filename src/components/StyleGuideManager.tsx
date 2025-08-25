@@ -652,7 +652,7 @@ export const StyleGuideManager: React.FC = () => {
     <>
       <div className="glass-panel p-6">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-hierarchy-h1" style={{ fontSize: '1.75rem', fontWeight: '700', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.2', letterSpacing: '-0.02em' }}>Voice & Style Guide</h1>
+          <h1 className="text-hierarchy-h1" style={{ fontSize: '1.75rem', fontWeight: '700', fontFamily: 'Inter, sans-serif', color: '#111827', lineHeight: '1.2', letterSpacing: '-0.02em' }}>Voice & Style Guide</h1>
           <div className="flex gap-4">
             <button
               onClick={() => setShowTextInput(!showTextInput)}
@@ -935,36 +935,36 @@ export const StyleGuideManager: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="glass-card p-6 text-center">
               <div className="text-3xl font-bold text-blue-400 mb-2">{currentStyleGuide.keywords.length}</div>
-              <div className="text-white text-opacity-80 font-medium">Keywords</div>
+              <div className="text-gray-700 font-medium">Keywords</div>
             </div>
             <div className="glass-card p-6 text-center">
               <div className="text-3xl font-bold text-green-400 mb-2">{totalExamplePhrases}</div>
-              <div className="text-white text-opacity-80 font-medium">Example Phrases</div>
+              <div className="text-gray-700 font-medium">Example Phrases</div>
             </div>
             <div className="glass-card p-6 text-center">
               <div className="text-3xl font-bold text-purple-400 mb-2">
                 {hasCustomInstructions ? '✓' : '○'}
               </div>
-              <div className="text-white text-opacity-80 font-medium">Custom Instructions</div>
+              <div className="text-gray-700 font-medium">Custom Instructions</div>
             </div>
             <div className="glass-card p-6 text-center">
               <div className="text-3xl font-bold text-orange-400 mb-2">
                 {Math.round((currentStyleGuide.tone_settings.formality + currentStyleGuide.tone_settings.enthusiasm + currentStyleGuide.tone_settings.technicality) / 3)}
               </div>
-              <div className="text-white text-opacity-80 font-medium">Avg Tone Level</div>
+              <div className="text-gray-700 font-medium">Avg Tone Level</div>
             </div>
           </div>
 
           {/* Tone Settings */}
           <div>
-            <h3 className="text-hierarchy-h3 mb-6" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Tone Settings</h3>
+            <h3 className="text-hierarchy-h3 mb-6" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: '#111827', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Tone Settings</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {(Object.keys(currentStyleGuide.tone_settings) as Array<keyof ToneSettings>).map((key) => {
                 const value = currentStyleGuide.tone_settings[key];
                 return (
                   <div key={key} className="glass-card p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <span className="text-white font-semibold capitalize text-lg">{key}</span>
+                      <span className="text-gray-900 font-semibold capitalize text-lg">{key}</span>
                       <span className="text-blue-400 font-medium px-3 py-1 rounded-full bg-blue-400 bg-opacity-20">
                         {getToneLabel(value)} ({value})
                       </span>
@@ -983,7 +983,7 @@ export const StyleGuideManager: React.FC = () => {
                             background: `linear-gradient(to right, #60a5fa 0%, #a855f7 ${value}%, rgba(255,255,255,0.1) ${value}%, rgba(255,255,255,0.1) 100%)`
                           }}
                         />
-                        <p className="text-white text-opacity-70 text-sm mt-2">
+                        <p className="text-gray-600 text-sm mt-2">
                           {getToneDescription(key, value)}
                         </p>
                       </>
@@ -995,7 +995,7 @@ export const StyleGuideManager: React.FC = () => {
                       style={{ width: `${value}%` }}
                     />
                         </div>
-                        <div className="text-right text-white text-opacity-70 font-medium">{value}/100</div>
+                        <div className="text-right text-gray-600 font-medium">{value}/100</div>
                       </>
                     )}
                   </div>
@@ -1007,7 +1007,7 @@ export const StyleGuideManager: React.FC = () => {
           {/* Keywords */}
           <div className="glass-card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-hierarchy-h3" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Keywords & Phrases</h3>
+              <h3 className="text-hierarchy-h3" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: '#111827', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Keywords & Phrases</h3>
               {isEditing && (
                 <button
                   onClick={addKeyword}
@@ -1037,11 +1037,11 @@ export const StyleGuideManager: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-white text-opacity-60 italic">No keywords added yet</p>
+              <p className="text-gray-600 italic">No keywords added yet</p>
             )}
             
             {!isEditing && (
-              <p className="text-white text-opacity-60 text-sm mt-3">
+              <p className="text-gray-600 text-sm mt-3">
                 Keywords and phrases that should be emphasized or included in summaries.
               </p>
             )}
@@ -1050,7 +1050,7 @@ export const StyleGuideManager: React.FC = () => {
           {/* Custom Instructions */}
           <div className="glass-card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-hierarchy-h3" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Custom Instructions</h3>
+              <h3 className="text-hierarchy-h3" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: '#111827', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Custom Instructions</h3>
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
@@ -1070,7 +1070,7 @@ export const StyleGuideManager: React.FC = () => {
                   placeholder="Enter specific instructions for how the AI should write summaries and respond to questions..."
                   className="glass-input w-full h-32 text-white resize-none"
                 />
-                <p className="text-white text-opacity-60 text-sm">
+                <p className="text-gray-600 text-sm">
                   These instructions will be included in all AI prompts to guide the writing style.
                 </p>
               </div>
@@ -1091,18 +1091,18 @@ export const StyleGuideManager: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <p className="text-white text-opacity-60 italic">No custom instructions added yet</p>
+              <p className="text-gray-600 italic">No custom instructions added yet</p>
             )}
           </div>
 
           {/* Example Phrases */}
           <div className="glass-card p-6">
-            <h3 className="text-hierarchy-h3 mb-6" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: 'white', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Example Phrases</h3>
+            <h3 className="text-hierarchy-h3 mb-6" style={{ fontSize: '1.25rem', fontWeight: '600', fontFamily: 'Inter, sans-serif', color: '#111827', lineHeight: '1.3', letterSpacing: '-0.01em' }}>Example Phrases</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Object.entries(currentStyleGuide.example_phrases).map(([category, phrases]) => (
                 <div key={category}>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-white font-medium capitalize">
+                    <h4 className="text-gray-900 font-medium capitalize">
                       {category.replace('_', ' ')}
                     </h4>
                     {isEditing && (
@@ -1136,7 +1136,7 @@ export const StyleGuideManager: React.FC = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-white text-opacity-50 text-sm italic">No phrases added yet</p>
+                    <p className="text-gray-600 text-sm italic">No phrases added yet</p>
                   )}
                 </div>
               ))}

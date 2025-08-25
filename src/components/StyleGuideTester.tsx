@@ -74,14 +74,14 @@ Example Phrases:
     <div className="glass-card p-6">
       <div className="flex items-center gap-2 mb-6">
         <TestTube className="w-6 h-6 text-blue-400" />
-        <h3 className="text-hierarchy-h3">Style Guide Tester</h3>
+        <h3 className="text-hierarchy-h3" style={{ color: '#111827' }}>Style Guide Tester</h3>
       </div>
 
       {!hasStyleGuide ? (
         <div className="text-center py-8">
           <div className="text-4xl mb-3">📝</div>
-          <p className="text-gray-400 mb-2">No style guide configured</p>
-          <p className="text-sm text-gray-500">
+          <p className="text-gray-600 mb-2">No style guide configured</p>
+          <p className="text-sm text-gray-600">
             Add custom instructions in Settings → Voice & Style Guide to test them here
           </p>
         </div>
@@ -89,7 +89,7 @@ Example Phrases:
         <div className="space-y-6">
           {/* Test Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Test Text
             </label>
             <textarea
@@ -98,7 +98,7 @@ Example Phrases:
               placeholder="Enter text to test how the style guide affects AI processing..."
               className="glass-input w-full h-24 text-white resize-none"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 mt-1">
               This text will be processed using your current style guide
             </p>
           </div>
@@ -128,7 +128,7 @@ Example Phrases:
               {/* Generated Prompt */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-300">
+                  <label className="block text-sm font-medium text-gray-700">
                     Generated Prompt (Sent to AI)
                   </label>
                   <button
@@ -144,7 +144,7 @@ Example Phrases:
                     {generatedPrompt}
                   </pre>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-600 mt-1">
                   This shows exactly what's being sent to the AI, including your style guide
                 </p>
               </div>
@@ -153,7 +153,7 @@ Example Phrases:
               {aiResponse && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-300">
+                    <label className="block text-sm font-medium text-gray-700">
                       AI Response (Using Your Style Guide)
                     </label>
                     <button

@@ -80,7 +80,7 @@ export function SettingsPage() {
                              )}
                            </div>
                            <p className="text-gray-600 text-sm mb-2">{model.description}</p>
-                           <div className="flex gap-4 text-xs text-gray-500">
+                           <div className="flex gap-4 text-xs text-gray-600">
                                 <span>Size: {model.size}</span>
                                 <span>Speed: {model.expectedSpeed}</span>
                                 <span>RAM: {model.ramUsage}</span>
