@@ -70,7 +70,7 @@ export class OllamaClient {
 
   async chat(messages: ChatMessage[]): Promise<string> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for chat
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for chat (reduced from 60s)
     
     try {
       const response = await fetch(`${this.config.baseUrl}/api/chat`, {
@@ -97,7 +97,7 @@ export class OllamaClient {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Chat request timed out after 60 seconds. Ollama may be unresponsive.');
+        throw new Error('Chat request timed out after 30 seconds. Ollama may be unresponsive.');
       }
       throw error;
     }

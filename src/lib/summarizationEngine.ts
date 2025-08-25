@@ -1113,127 +1113,111 @@ Apply the voice style guide now:`;
   }
 
   /**
-   * Generate combined summary (raw + styled) directly from document (ultra-fast path)
+   * Sample document for fast processing instead of sending entire text
+   */
+  private static sampleDocumentForFastProcessing(fullText: string): string {
+    const textLength = fullText.length;
+    
+    // For very large documents, sample key sections
+    if (textLength > 100000) { // 100KB
+      // Sample: beginning, middle, and end sections
+      const sampleSize = 8000; // 8K characters per section
+      const beginning = fullText.substring(0, sampleSize);
+      const middle = fullText.substring(Math.floor(textLength / 2) - sampleSize / 2, Math.floor(textLength / 2) + sampleSize / 2);
+      const end = fullText.substring(textLength - sampleSize);
+      
+      return `[BEGINNING SECTION]\n${beginning}\n\n[MIDDLE SECTION]\n${middle}\n\n[ENDING SECTION]\n${end}`;
+    } else if (textLength > 50000) { // 50KB
+      // Sample: beginning and end sections
+      const sampleSize = 10000; // 10K characters per section
+      const beginning = fullText.substring(0, sampleSize);
+      const end = fullText.substring(textLength - sampleSize);
+      
+      return `[BEGINNING SECTION]\n${beginning}\n\n[ENDING SECTION]\n${end}`;
+    }
+    
+    // For smaller documents, return the full text
+    return fullText;
+  }
+  
+  /**
+   * Build fast summary prompt using sampled text
+   */
+  private static buildFastSummaryPrompt(
+    document: Document,
+    sampledText: string,
+    styleGuide: StyleGuide
+  ): string {
+    const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
+    
+    return `You are an expert at creating comprehensive summaries from document samples.
+
+DOCUMENT TITLE: ${document.title}
+
+STYLE GUIDE: ${styleInstructions}
+
+DOCUMENT SAMPLE (this represents key sections of a larger document):
+${sampledText}
+
+TASK: Create a comprehensive summary that covers the main content, key insights, and notable points from this document sample. Since this is a sample, focus on the themes, patterns, and key information that would be representative of the full document.
+
+Please provide your response in this exact JSON format:
+{
+  "rawSummary": "A comprehensive summary of the key content and insights...",
+  "styledSummary": "A stylized version following the style guide..."
+}
+
+Make both summaries detailed and informative, focusing on the most important content from the sample.`;
+  }
+
+  /**
+   * Generate combined summary using a truly fast approach
    */
   private static async generateCombinedSummary(
     document: Document,
     styleGuide: StyleGuide
   ): Promise<{ rawSummary: string; styledSummary: string }> {
-    const prompt = this.buildCombinedSummaryPrompt(document, styleGuide);
+    // TRULY FAST PATH: Don't send entire document to model
+    // Instead, use a smart sampling approach for large documents
     
-    try {
-      const response = await ollama.chat([{
-        role: 'user',
-        content: prompt
-      }]);
+    if (document.text.length > 50000) { // 50KB threshold
+      console.log('🚀 Large document detected, using smart sampling for ultra-fast processing...');
       
-      // Attempt to parse the JSON response
+      // Sample key sections instead of sending entire document
+      const sampledText = this.sampleDocumentForFastProcessing(document.text);
+      
+      const prompt = this.buildFastSummaryPrompt(document, sampledText, styleGuide);
+      
       try {
+        const response = await ollama.chat([{
+          role: 'user',
+          content: prompt
+        }]);
+        
+        // Parse the response
         const cleanedResponse = this.cleanJsonResponse(response);
         const parsed = JSON.parse(cleanedResponse);
         
-        // Validate the response structure
         if (parsed.rawSummary && parsed.styledSummary) {
-          // QUALITY CHECK: Ensure we have sufficient detail
-          if (this.hasSufficientDetail(parsed.rawSummary)) {
-            return { 
-              rawSummary: parsed.rawSummary.trim(), 
-              styledSummary: parsed.styledSummary.trim() 
-            };
-          } else {
-            logInfo('SUMMARIZE', 'Combined summary lacks sufficient detail, falling back to separate generation', {
-              documentId: document.id,
-              summaryLength: parsed.rawSummary.length
-            });
-          }
-        } else {
-          throw new Error('Invalid response structure - missing rawSummary or styledSummary');
+          return { 
+            rawSummary: parsed.rawSummary.trim(), 
+            styledSummary: parsed.styledSummary.trim() 
+          };
         }
-      } catch (parseError) {
-        // If JSON parsing fails, fall back to generating both summaries separately
-        logInfo('SUMMARIZE', 'Combined summary JSON parsing failed, falling back to separate generation', {
-          error: parseError instanceof Error ? parseError.message : String(parseError),
-          responsePreview: response.substring(0, 200) + '...'
-        });
+      } catch (error) {
+        console.warn('Fast path parsing failed, using fallback:', error);
       }
-      
-      // Fallback: generate summaries separately (still faster than the old approach)
-      logInfo('SUMMARIZE', 'Using fallback separate generation for better detail', {
-        documentId: document.id
-      });
-      
-      const rawSummary = await this.generateRawSummaryDirect(document);
-      const styledSummary = await this.generateStyledSummaryFromRaw(document, rawSummary, styleGuide);
-      
-      return { rawSummary, styledSummary };
-      
-    } catch (error) {
-      logError('SUMMARIZE', 'Failed to generate combined summary', { error: error instanceof Error ? error.message : String(error) });
-      throw new Error(`Combined summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }
-
-  /**
-   * Build prompt for combined summary generation (ultra-fast path)
-   */
-  private static buildCombinedSummaryPrompt(
-    document: Document,
-    styleGuide: StyleGuide
-  ): string {
-    const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
-    const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
     
-    return PromptService.buildPrompt('combined-summary-generation', {
-      styleInstructions,
-      formalityLevel: styleGuide.tone_settings.formality.toString(),
-      enthusiasmLevel: styleGuide.tone_settings.enthusiasm.toString(),
-      technicalityLevel: styleGuide.tone_settings.technicality.toString(),
-      keywords: styleGuide.keywords.join(', ') || 'None specified',
-      examplePhrasesSection,
-      documentTitle: document.title,
-      documentText: document.text
+    // Fallback: generate summaries separately (still faster than sending entire document)
+    logInfo('SUMMARIZE', 'Using fallback separate generation for better detail', {
+      documentId: document.id
     });
-  }
-
-  /**
-   * Check if the raw summary has sufficient detail for the combined summary quality check.
-   * Looks for specific content indicators to ensure quality without additional LLM calls.
-   */
-  private static hasSufficientDetail(rawSummary: string): boolean {
-    // Basic length check
-    if (rawSummary.length < 200) {
-      return false;
-    }
     
-    // Check for specific content indicators
-    const hasNotableQuotes = rawSummary.includes('## Notable Quotes') && 
-                             rawSummary.includes('## Notable Quotes') && 
-                             !rawSummary.includes('## Notable Quotes\n\n');
+    const rawSummary = await this.generateRawSummaryDirect(document);
+    const styledSummary = await this.generateStyledSummaryFromRaw(document, rawSummary, styleGuide);
     
-    const hasLearningObjectives = rawSummary.includes('## Learning Objectives') && 
-                                 rawSummary.includes('## Learning Objectives') && 
-                                 !rawSummary.includes('## Learning Objectives\n\n');
-    
-    const hasKeyTakeaways = rawSummary.includes('## Key Takeaways') && 
-                           rawSummary.includes('## Key Takeaways') && 
-                           !rawSummary.includes('## Key Takeaways\n\n');
-    
-    const hasTechniques = rawSummary.includes('## Techniques') && 
-                         rawSummary.includes('## Techniques') && 
-                         !rawSummary.includes('## Techniques\n\n');
-    
-    // Check if sections have actual content (not just headers)
-    const hasContentInQuotes = rawSummary.includes('## Notable Quotes') && 
-                               rawSummary.includes('## Notable Quotes') && 
-                               rawSummary.split('## Notable Quotes')[1]?.includes('-');
-    
-    const hasContentInObjectives = rawSummary.includes('## Learning Objectives') && 
-                                  rawSummary.includes('## Learning Objectives') && 
-                                  rawSummary.split('## Learning Objectives')[1]?.includes('-');
-    
-    // Return true only if we have sufficient content indicators
-    return hasNotableQuotes && hasLearningObjectives && hasKeyTakeaways && hasTechniques &&
-           hasContentInQuotes && hasContentInObjectives;
+    return { rawSummary, styledSummary };
   }
 
   /**
