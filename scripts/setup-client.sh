@@ -9,8 +9,41 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🚀 Starting Transcript Generator Development Environment${NC}"
+echo -e "${BLUE}🎯 Transcript Generator - Client Setup Script${NC}"
+echo -e "${CYAN}This script will prepare your environment for testing${NC}"
 echo ""
+
+# Function to check if Node.js is installed
+check_nodejs() {
+    if command -v node &> /dev/null && command -v npm &> /dev/null; then
+        local node_version=$(node --version)
+        local npm_version=$(npm --version)
+        echo -e "${GREEN}✅ Node.js is installed${NC}"
+        echo -e "${CYAN}   Node.js: $node_version${NC}"
+        echo -e "${CYAN}   npm: $npm_version${NC}"
+        return 0
+    else
+        echo -e "${RED}❌ Node.js is not installed${NC}"
+        return 1
+    fi
+}
+
+# Function to install Node.js on macOS
+install_nodejs_macos() {
+    echo -e "${BLUE}🔧 Installing Node.js on macOS...${NC}"
+    
+    # Check if Homebrew is available
+    if command -v brew &> /dev/null; then
+        echo -e "${CYAN}Using Homebrew to install Node.js...${NC}"
+        brew install node
+        return $?
+    else
+        echo -e "${YELLOW}Homebrew not found. Installing Node.js manually...${NC}"
+        echo -e "${CYAN}Please download Node.js from: https://nodejs.org/${NC}"
+        echo -e "${YELLOW}After installation, please restart this script.${NC}"
+        return 1
+    fi
+}
 
 # Function to check if Ollama is installed
 check_ollama_installed() {
@@ -113,58 +146,43 @@ download_required_models() {
     return 0
 }
 
-# Function to check if Ollama is running
-check_ollama() {
-    if curl -f http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
-        echo -e "${GREEN}✅ Ollama is already running${NC}"
+# Function to install project dependencies
+install_dependencies() {
+    echo -e "${BLUE}📦 Installing project dependencies...${NC}"
+    
+    if npm install; then
+        echo -e "${GREEN}✅ Dependencies installed successfully${NC}"
         return 0
     else
-        echo -e "${YELLOW}⚠️  Ollama is not running${NC}"
+        echo -e "${RED}❌ Failed to install dependencies${NC}"
         return 1
     fi
 }
 
-# Function to start Ollama
-start_ollama() {
-    echo -e "${BLUE}🔧 Starting Ollama...${NC}"
+# Main setup sequence
+echo -e "${BLUE}🔍 Checking Node.js installation...${NC}"
+
+if ! check_nodejs; then
+    echo -e "${YELLOW}⚠️  Node.js needs to be installed${NC}"
     
-    # Start Ollama in background
-    echo -e "${BLUE}Starting Ollama server...${NC}"
-    ollama serve > /dev/null 2>&1 &
-    OLLAMA_PID=$!
-    
-    # Wait for Ollama to start
-    echo -e "${YELLOW}Waiting for Ollama to start...${NC}"
-    for i in {1..30}; do
-        if check_ollama; then
-            echo -e "${GREEN}✅ Ollama started successfully! (PID: $OLLAMA_PID)${NC}"
-            echo ""
-            return 0
+    # Detect OS and install accordingly
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo -e "${CYAN}Detected macOS. Installing Node.js...${NC}"
+        if install_nodejs_macos; then
+            echo -e "${GREEN}✅ Node.js installation completed${NC}"
+        else
+            echo -e "${RED}❌ Node.js installation failed${NC}"
+            echo -e "${YELLOW}Please install Node.js manually from: https://nodejs.org/${NC}"
+            exit 1
         fi
-        sleep 1
-        echo -n "."
-    done
-    
-    echo ""
-    echo -e "${RED}❌ Ollama failed to start within 30 seconds${NC}"
-    echo -e "${YELLOW}You may need to start it manually with: ollama serve${NC}"
-    echo ""
-    return 1
-}
-
-# Function to cleanup on exit
-cleanup() {
-    if [ ! -z "$OLLAMA_PID" ]; then
-        echo -e "${YELLOW}🛑 Stopping Ollama (PID: $OLLAMA_PID)${NC}"
-        kill $OLLAMA_PID 2>/dev/null
+    else
+        echo -e "${RED}❌ Node.js installation not supported on this OS${NC}"
+        echo -e "${YELLOW}Please install Node.js manually from: https://nodejs.org/${NC}"
+        exit 1
     fi
-    exit 0
-}
+fi
 
-# Set trap to cleanup on script exit
-trap cleanup EXIT INT TERM
-
-# Main startup sequence
+echo ""
 echo -e "${BLUE}🔍 Checking Ollama installation...${NC}"
 
 if ! check_ollama_installed; then
@@ -178,26 +196,21 @@ if ! check_ollama_installed; then
         else
             echo -e "${RED}❌ Ollama installation failed${NC}"
             echo -e "${YELLOW}Please install Ollama manually from: https://ollama.ai/download${NC}"
-            echo -e "${BLUE}Continuing with frontend only (AI features will not work)${NC}"
-            echo ""
-            # Continue to start Vite
+            exit 1
         fi
     else
         echo -e "${RED}❌ Ollama installation not supported on this OS${NC}"
         echo -e "${YELLOW}Please install Ollama manually from: https://ollama.ai/download${NC}"
-        echo -e "${BLUE}Continuing with frontend only (AI features will not work)${NC}"
-        echo ""
-        # Continue to start Vite
+        exit 1
     fi
 fi
 
 echo ""
-echo -e "${BLUE}🔍 Checking Ollama status...${NC}"
+echo -e "${BLUE}📦 Installing project dependencies...${NC}"
 
-if check_ollama; then
-    echo -e "${GREEN}✅ Ollama is ready${NC}"
-else
-    start_ollama
+if ! install_dependencies; then
+    echo -e "${RED}❌ Failed to install project dependencies${NC}"
+    exit 1
 fi
 
 echo ""
@@ -211,21 +224,20 @@ if ! check_required_models; then
     else
         echo -e "${RED}❌ Failed to download required models${NC}"
         echo -e "${YELLOW}AI features may not work properly${NC}"
-        echo -e "${BLUE}Continuing with frontend...${NC}"
+        exit 1
     fi
 fi
 
 echo ""
-echo -e "${BLUE}🌐 Starting Vite development server...${NC}"
-echo -e "${GREEN}📱 Frontend will be available at: http://localhost:5173${NC}"
-echo -e "${GREEN}🤖 AI features will work if Ollama and models are available${NC}"
+echo -e "${GREEN}🎉 Setup completed successfully!${NC}"
+echo ""
+echo -e "${CYAN}Next steps:${NC}"
+echo -e "   1. Run: ${GREEN}npm run dev:full${NC}"
+echo -e "   2. Open your browser to: ${GREEN}http://localhost:5173${NC}"
+echo -e "   3. Start testing the application!${NC}"
 echo ""
 echo -e "${YELLOW}💡 Tips:${NC}"
-echo -e "   • Press Ctrl+C to stop both servers"
-echo -e "   • Check Ollama status: npm run check-ollama"
-echo -e "   • Manual Ollama start: ollama serve"
-echo -e "   • View available models: ollama list"
+echo -e "   • The app will automatically start Ollama when needed"
+echo -e "   • Check Ollama status: ${GREEN}npm run check-ollama${NC}"
+echo -e "   • View available models: ${GREEN}ollama list${NC}"
 echo ""
-
-# Start Vite dev server
-npm run dev
