@@ -656,16 +656,23 @@ export const StyleGuideManager: React.FC = () => {
           <div className="flex gap-4">
             <button
               onClick={() => setShowTextInput(!showTextInput)}
-              className="glass-button"
               title={`Analyze newsletter text to refine style guide${ollamaStatus !== 'available' ? ' (Requires Ollama)' : ''}`}
               style={{ 
-                color: '#111827 !important', 
-                backgroundColor: '#E5E7EB !important',
-                borderColor: '#D1D5DB !important',
-                border: '1px solid #D1D5DB'
+                background: '#E5E7EB',
+                border: '1px solid #D1D5DB',
+                borderRadius: '16px',
+                padding: '12px 16px',
+                color: '#111827',
+                fontWeight: '500',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
               }}
             >
-              <span className="flex items-center gap-2" style={{ color: '#111827 !important' }}>
+              <span className="flex items-center gap-2" style={{ color: '#111827' }}>
                 {showTextInput ? (
                   <>
                     <FileText size={16} style={{ color: '#111827' }} />
@@ -684,13 +691,20 @@ export const StyleGuideManager: React.FC = () => {
             </button>
             <button
               onClick={importStyleGuide}
-              className="glass-button"
               title="Import style guide from JSON"
               style={{ 
-                color: '#111827 !important', 
-                backgroundColor: '#E5E7EB !important',
-                borderColor: '#D1D5DB !important',
-                border: '1px solid #D1D5DB'
+                background: '#E5E7EB',
+                border: '1px solid #D1D5DB',
+                borderRadius: '16px',
+                padding: '12px 16px',
+                color: '#111827',
+                fontWeight: '500',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
               }}
             >
               <Upload size={16} />
@@ -698,13 +712,20 @@ export const StyleGuideManager: React.FC = () => {
             </button>
             <button
               onClick={exportStyleGuide}
-              className="glass-button"
               title="Export style guide as JSON"
               style={{ 
-                color: '#111827 !important', 
-                backgroundColor: '#E5E7EB !important',
-                borderColor: '#D1D5DB !important',
-                border: '1px solid #D1D5DB'
+                background: '#E5E7EB',
+                border: '1px solid #D1D5DB',
+                borderRadius: '16px',
+                padding: '12px 16px',
+                color: '#111827',
+                fontWeight: '500',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
               }}
             >
               <Download size={16} />
@@ -712,13 +733,20 @@ export const StyleGuideManager: React.FC = () => {
             </button>
             <button
               onClick={handleClearStyleGuide}
-              className="glass-button"
               title="Reset style guide to defaults"
               style={{ 
-                color: '#111827 !important', 
-                backgroundColor: '#E5E7EB !important',
-                borderColor: '#D1D5DB !important',
-                border: '1px solid #D1D5DB'
+                background: '#E5E7EB',
+                border: '1px solid #D1D5DB',
+                borderRadius: '16px',
+                padding: '12px 16px',
+                color: '#111827',
+                fontWeight: '500',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
               }}
             >
               <Trash2 size={16} style={{ color: '#111827' }} />
