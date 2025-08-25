@@ -35,7 +35,6 @@ export const SummaryResultsView: React.FC = () => {
   const [showRestoreButton, setShowRestoreButton] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<{ versionId: string; message: string } | null>(null);
   const [regenerationProgress, setRegenerationProgress] = useState<{ step: string; progress: number } | null>(null);
-  const [scrollToVersion, setScrollToVersion] = useState<string | null>(null);
   const [comparisonMode, setComparisonMode] = useState(false);
   const [selectedVersions, setSelectedVersions] = useState<{ left: string | null; right: string | null }>({
     left: null,
@@ -46,29 +45,6 @@ export const SummaryResultsView: React.FC = () => {
   // Handle navigation hover
   const handleNavMouseEnter = () => setIsNavExpanded(true);
   const handleNavMouseLeave = () => setIsNavExpanded(false);
-
-  // Scroll to specific version
-  const scrollToVersionElement = (versionId: string) => {
-    setScrollToVersion(versionId);
-    const element = window.document.getElementById(`version-${versionId}`);
-    if (element) {
-      element.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start',
-        inline: 'nearest'
-      });
-      // Clear the scroll target after animation
-      setTimeout(() => setScrollToVersion(null), 1000);
-    }
-  };
-
-  // Scroll to top when new version is created
-  const scrollToTop = () => {
-    window.scrollTo({ 
-      top: 0, 
-      behavior: 'smooth' 
-    });
-  };
 
   // Version comparison functions
   const toggleComparisonMode = () => {
@@ -196,12 +172,6 @@ export const SummaryResultsView: React.FC = () => {
   const allVersions = useMemo(() => {
     return getAllVersions(document?.id || '') || [];
   }, [document?.id, summary?.regenerationCount]);
-
-  const hasMultipleVersions = useMemo(() => allVersions.length > 1, [allVersions.length]);
-
-  const currentVersion = useMemo(() => {
-    return allVersions[0] || null;
-  }, [allVersions]);
 
   // Optimized functions
   const handleCopyVersion = useCallback(async (versionSummary: string, versionId: string) => {
@@ -438,7 +408,7 @@ export const SummaryResultsView: React.FC = () => {
       
       // Scroll to top to show the new version
       setTimeout(() => {
-        scrollToTop();
+        // scrollToTop(); // Removed scrollToTop
       }, 100);
       
       // Clear progress after a brief delay
@@ -574,40 +544,6 @@ export const SummaryResultsView: React.FC = () => {
     // Render stacked versions
     return (
       <div className="space-y-6">
-        {/* Version Navigation */}
-        {hasMultipleVersions && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-gray-700">Version Navigation</h3>
-              <span className="text-xs text-gray-500">
-                {allVersions.length} versions • {currentVersion?.regenerationCount || 0} regenerations
-              </span>
-            </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {allVersions.map((version) => (
-                <button
-                  key={version.id}
-                  onClick={() => scrollToVersionElement(version.id)}
-                  className={`
-                    flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap
-                    ${scrollToVersion === version.id
-                      ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' 
-                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
-                    }
-                    ${version.isOriginal ? 'ring-2 ring-green-200' : ''}
-                  `}
-                >
-                  <span className={`w-2 h-2 rounded-full ${
-                    scrollToVersion === version.id ? 'bg-blue-500' : 'bg-gray-400'
-                  }`}></span>
-                  <span>{version.isOriginal ? 'Original' : `v${version.versionNumber}`}</span>
-                  {version.isOriginal && <span className="text-green-600">🌱</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Comparison Interface */}
         {comparisonMode && (
           <div className={`bg-purple-50 border-2 border-purple-200 rounded-lg p-6 ${fullWidthComparison ? 'mx-0' : ''}`}>
