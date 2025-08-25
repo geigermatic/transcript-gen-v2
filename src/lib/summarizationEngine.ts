@@ -789,21 +789,157 @@ export class SummarizationEngine {
   }
 
   /**
+   * Generate combined summary using a truly fast approach
+   */
+  private static async generateCombinedSummary(
+    document: Document,
+    styleGuide: StyleGuide
+  ): Promise<{ rawSummary: string; styledSummary: string }> {
+    // SMART FAST PATH: Use intelligent sampling to maintain quality while reducing time
+    
+    console.log('🚀 Using smart fast path with intelligent sampling...');
+    
+    // For very large documents, use smart sampling to reduce LLM input
+    if (document.text.length > 50000) {
+      console.log('📊 Large document detected, using intelligent sampling...');
+      
+      try {
+        const sampledText = this.sampleDocumentIntelligently(document.text);
+        const prompt = this.buildSmartSummaryPrompt(document, sampledText, styleGuide);
+        
+        // Send only the sampled text to LLM (much faster)
+        const response = await ollama.chat([{
+          role: 'user',
+          content: prompt
+        }]);
+        
+        // Parse the response
+        const cleanedResponse = this.cleanJsonResponse(response);
+        const parsed = JSON.parse(cleanedResponse);
+        
+        if (parsed.rawSummary && parsed.styledSummary) {
+          return { 
+            rawSummary: parsed.rawSummary.trim(), 
+            styledSummary: parsed.styledSummary.trim() 
+          };
+        }
+      } catch (error) {
+        console.warn('Smart sampling failed, falling back to simple approach:', error);
+      }
+    }
+    
+    // For smaller documents or as fallback, use the simple approach
+    console.log('📝 Using simple fast path for smaller document...');
+    const rawSummary = this.generateSimpleSummary(document);
+    const styledSummary = this.applySimpleStyling(rawSummary, styleGuide);
+    
+    return { rawSummary, styledSummary };
+  }
+  
+  /**
+   * Intelligently sample document sections for optimal LLM processing
+   */
+  private static sampleDocumentIntelligently(fullText: string): string {
+    const textLength = fullText.length;
+    
+    // For very large documents, sample key strategic sections
+    if (textLength > 100000) { // 100KB+
+      // Sample: beginning (context), middle (core content), end (conclusions)
+      const sampleSize = 6000; // 6K characters per section (reduced from 8K)
+      const beginning = fullText.substring(0, sampleSize);
+      const middle = fullText.substring(Math.floor(textLength / 2) - sampleSize / 2, Math.floor(textLength / 2) + sampleSize / 2);
+      const end = fullText.substring(textLength - sampleSize);
+      
+      return `[BEGINNING - Context and Introduction]\n${beginning}\n\n[MIDDLE - Core Content]\n${middle}\n\n[ENDING - Conclusions and Key Points]\n${end}`;
+    } else if (textLength > 50000) { // 50KB+
+      // Sample: beginning and end sections (most important content)
+      const sampleSize = 8000; // 8K characters per section (reduced from 10K)
+      const beginning = fullText.substring(0, sampleSize);
+      const end = fullText.substring(textLength - sampleSize);
+      
+      return `[BEGINNING - Introduction and Key Concepts]\n${beginning}\n\n[ENDING - Conclusions and Takeaways]\n${end}`;
+    }
+    
+    // For smaller documents, return the full text
+    return fullText;
+  }
+  
+  /**
+   * Build intelligent summary prompt using sampled text
+   */
+  private static buildSmartSummaryPrompt(
+    document: Document,
+    sampledText: string,
+    styleGuide: StyleGuide
+  ): string {
+    const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
+    
+    return `You are an expert at creating comprehensive summaries from document samples. Create a high-quality summary that captures the essence of the full document.
+
+DOCUMENT TITLE: ${document.title}
+
+STYLE GUIDE: ${styleInstructions}
+
+DOCUMENT SAMPLE (this represents key strategic sections of a larger document):
+${sampledText}
+
+TASK: Create a comprehensive, high-quality summary that covers the main content, key insights, and notable points from this document sample. Since this is a sample, focus on the themes, patterns, and key information that would be representative of the full document.
+
+REQUIRED STRUCTURE (use this exact format):
+# ${document.title}
+
+## Synopsis
+[Exactly 4 sentences emphasizing WHY and WHAT benefits - compelling and benefit-focused]
+
+## Learning Objectives
+[What students will learn - bulleted list]
+
+## Key Takeaways
+[Main insights and lessons - bulleted list]
+
+## Topics
+[Subject areas covered - bulleted list]
+
+## Techniques
+[Specific methods, practices, exercises taught - bulleted list]
+
+## Notable Quotes
+[Memorable quotes from the lesson - bulleted list]
+
+## Open Questions
+[Questions for reflection or further exploration - bulleted list]
+
+CRITICAL REQUIREMENTS:
+1. Follow the exact structure above - ALL sections must be included
+2. Use the document sample to extract specific, factual content
+3. Focus on actionable insights and practical applications
+4. Maintain high quality and detail despite working from a sample
+5. Use the style guide to inform the tone and approach
+6. Make the summary compelling and benefit-focused
+
+Please provide your response in this exact JSON format:
+{
+  "rawSummary": "A comprehensive, high-quality summary of the key content and insights...",
+  "styledSummary": "A stylized version following the style guide while maintaining quality..."
+}
+
+Make both summaries detailed, informative, and high-quality, focusing on the most important content from the sample.`;
+  }
+  
+  /**
    * Clean JSON response from LLM
    */
   private static cleanJsonResponse(response: string): string {
+    // Remove markdown formatting and extract JSON
+    let cleaned = response.trim();
+    
     // Remove markdown code blocks
-    let cleaned = response.replace(/```json\s*/gi, '').replace(/```\s*$/g, '');
+    cleaned = cleaned.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
     
-    // Remove any leading/trailing whitespace
-    cleaned = cleaned.trim();
-    
-    // Find the first { and last } to extract just the JSON
-    const firstBrace = cleaned.indexOf('{');
-    const lastBrace = cleaned.lastIndexOf('}');
-    
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    // Find JSON content between curly braces
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return jsonMatch[0];
     }
     
     return cleaned;
@@ -1066,25 +1202,6 @@ Generate ONLY the markdown summary, no other text:`;
     return summary;
   }
 
-  /**
-   * Generate combined summary using a truly fast approach
-   */
-  private static async generateCombinedSummary(
-    document: Document,
-    styleGuide: StyleGuide
-  ): Promise<{ rawSummary: string; styledSummary: string }> {
-    // TRULY FAST PATH: Skip complex LLM processing entirely
-    // Use simple text analysis and direct summary generation
-    
-    console.log('🚀 Using truly fast path - no complex LLM processing...');
-    
-    // Generate a simple, direct summary without sending large text to LLM
-    const rawSummary = this.generateSimpleSummary(document);
-    const styledSummary = this.applySimpleStyling(rawSummary, styleGuide);
-    
-    return { rawSummary, styledSummary };
-  }
-  
   /**
    * Generate a simple summary without LLM calls
    */
