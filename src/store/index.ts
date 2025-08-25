@@ -766,9 +766,6 @@ This style guide captures the distinctive voice and approach for creating engagi
           // Clear logs
           logs: [],
           
-          // Clear user preferences (but keep settings and style guide)
-          preferences: [],
-          
           // Keep UI state and settings intact
           // isDarkMode, isUserTestingMode, hasCompletedOnboarding, styleGuide, settings stay the same
         })),
