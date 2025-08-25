@@ -32,7 +32,6 @@ export const SummaryResultsView: React.FC = () => {
   const [isNavExpanded, setIsNavExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [showRestoreButton, setShowRestoreButton] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<{ versionId: string; message: string } | null>(null);
   const [regenerationProgress, setRegenerationProgress] = useState<{ step: string; progress: number } | null>(null);
   const [comparisonMode, setComparisonMode] = useState(false);
@@ -199,37 +198,6 @@ export const SummaryResultsView: React.FC = () => {
     }
   }, []);
 
-  const handleCopy = useCallback(async () => {
-    const content = activeTab === 'stylized' 
-      ? (summary?.styledSummary || 'No stylized summary available')
-      : (summary?.rawSummary || 'No raw summary available');
-    
-    if (!content) return;
-    
-    try {
-      await navigator.clipboard.writeText(content);
-      setCopyFeedback({ versionId: 'current', message: 'Copied!' });
-      setTimeout(() => setCopyFeedback(null), 2000);
-    } catch (error) {
-      console.error('Failed to copy summary:', error);
-      // Fallback for older browsers or clipboard issues
-      try {
-        const textArea = window.document.createElement('textarea');
-        textArea.value = content;
-        window.document.body.appendChild(textArea);
-        textArea.select();
-        window.document.execCommand('copy');
-        window.document.body.removeChild(textArea);
-        setCopyFeedback({ versionId: 'current', message: 'Copied!' });
-        setTimeout(() => setCopyFeedback(null), 2000);
-      } catch (fallbackError) {
-        console.error('Fallback copy also failed:', fallbackError);
-        setCopyFeedback({ versionId: 'current', message: 'Copy failed' });
-        setTimeout(() => setCopyFeedback(null), 2000);
-      }
-    }
-  }, [activeTab, summary?.styledSummary, summary?.rawSummary]);
-
   // Initialize document and summary data
   useEffect(() => {
     try {
@@ -299,7 +267,7 @@ export const SummaryResultsView: React.FC = () => {
     // Get the latest version history from the store
     const history = getSummaryHistory(document.id);
     if (history && history.versions.length > 1) {
-      setShowRestoreButton(true);
+      // setShowRestoreButton(true); // Removed showRestoreButton state
     }
     
     // Force a re-render when versions change
@@ -345,7 +313,6 @@ export const SummaryResultsView: React.FC = () => {
             false, // Not original
             currentModel
           );
-          setShowRestoreButton(true);
           
           console.log('✅ Current version saved to history');
           setRegenerationProgress({ step: 'Current version saved...', progress: 50 });
@@ -420,32 +387,6 @@ export const SummaryResultsView: React.FC = () => {
       // Could show error message here
     } finally {
       setIsRegenerating(false);
-    }
-  };
-
-  const handleRestore = () => {
-    if (!document || !summary) return;
-    
-    const history = getSummaryHistory(document.id);
-    if (!history || history.versions.length === 0) return;
-    
-    // Get the previous version (second to last, since last is current)
-    const previousVersion = history.versions[history.versions.length - 2];
-    if (!previousVersion) return;
-    
-    // Restore the previous version
-    const restoredSummary: SummarizationResult = {
-      ...summary,
-      styledSummary: previousVersion.summary,
-      regenerationCount: (summary.regenerationCount || 1) - 1,
-      currentVersionId: previousVersion.id
-    };
-    
-    setSummary(restoredSummary);
-    
-    // Check if we should hide restore button (back to original)
-    if (previousVersion.isOriginal) {
-      setShowRestoreButton(false);
     }
   };
 
@@ -1055,30 +996,6 @@ export const SummaryResultsView: React.FC = () => {
                           <span>Regenerate</span>
                         </>
                       )}
-                    </button>
-                    
-                    {/* Restore Button - Only show when there are previous versions */}
-                    {showRestoreButton && (
-                      <button
-                        onClick={handleRestore}
-                        disabled={!summary}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                        </svg>
-                        <span>Restore</span>
-                      </button>
-                    )}
-                    
-                    {/* Copy Button */}
-                    <button
-                      onClick={handleCopy}
-                      disabled={!summary}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Copy size={16} />
-                      <span>Copy Current</span>
                     </button>
                   </div>
                 </div>
