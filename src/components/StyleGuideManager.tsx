@@ -656,8 +656,14 @@ export const StyleGuideManager: React.FC = () => {
           <div className="flex gap-4">
             <button
               onClick={() => setShowTextInput(!showTextInput)}
-              className={`glass-button-secondary ${showTextInput ? 'bg-green-400 bg-opacity-20 text-green-300 border-green-400 border-opacity-30' : 'text-green-400 hover:bg-green-400 hover:bg-opacity-10'}`}
+              className="glass-button"
               title={`Analyze newsletter text to refine style guide${ollamaStatus !== 'available' ? ' (Requires Ollama)' : ''}`}
+              style={{ 
+                color: '#111827 !important', 
+                backgroundColor: '#E5E7EB !important',
+                borderColor: '#D1D5DB !important',
+                border: '1px solid #D1D5DB'
+              }}
             >
               <span className="flex items-center gap-2">
                 {showTextInput ? (
@@ -680,7 +686,12 @@ export const StyleGuideManager: React.FC = () => {
               onClick={importStyleGuide}
               className="glass-button"
               title="Import style guide from JSON"
-              style={{ color: '#111827', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderColor: 'rgba(255, 255, 255, 0.3)' }}
+              style={{ 
+                color: '#111827 !important', 
+                backgroundColor: '#E5E7EB !important',
+                borderColor: '#D1D5DB !important',
+                border: '1px solid #D1D5DB'
+              }}
             >
               <Upload size={16} />
               Import
@@ -689,15 +700,26 @@ export const StyleGuideManager: React.FC = () => {
               onClick={exportStyleGuide}
               className="glass-button"
               title="Export style guide as JSON"
-              style={{ color: '#111827', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderColor: 'rgba(255, 255, 255, 0.3)' }}
+              style={{ 
+                color: '#111827 !important', 
+                backgroundColor: '#E5E7EB !important',
+                borderColor: '#D1D5DB !important',
+                border: '1px solid #D1D5DB'
+              }}
             >
               <Download size={16} />
               Export
             </button>
             <button
               onClick={handleClearStyleGuide}
-              className="glass-button-secondary text-red-400 hover:bg-red-400 hover:bg-opacity-10 border-red-400 border-opacity-30"
+              className="glass-button"
               title="Reset style guide to defaults"
+              style={{ 
+                color: '#111827 !important', 
+                backgroundColor: '#E5E7EB !important',
+                borderColor: '#D1D5DB !important',
+                border: '1px solid #D1D5DB'
+              }}
             >
               <Trash2 size={16} />
               Clear Style Guide
