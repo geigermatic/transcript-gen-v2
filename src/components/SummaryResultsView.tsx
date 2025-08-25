@@ -227,31 +227,7 @@ export const SummaryResultsView: React.FC = () => {
     try {
       console.log('🔄 Starting regeneration for document:', document.id);
       
-      // Save current version before regenerating
-      if (summary.styledSummary) {
-        setRegenerationProgress({ step: 'Saving current version...', progress: 25 });
-        
-        try {
-          const currentModel = summary.processingStats.modelUsed || 'unknown';
-          console.log('💾 Saving current version with model:', currentModel);
-          
-          // Add current version to history with proper metadata
-          addSummaryVersion(
-            document.id, 
-            summary.styledSummary, 
-            false, // Not original
-            currentModel
-          );
-          
-          console.log('✅ Current version saved to history');
-          setRegenerationProgress({ step: 'Current version saved...', progress: 50 });
-        } catch (error) {
-          console.warn('Failed to save summary version:', error);
-          // Continue with regeneration even if versioning fails
-        }
-      }
-      
-      setRegenerationProgress({ step: 'Generating new summary...', progress: 75 });
+      setRegenerationProgress({ step: 'Generating new summary...', progress: 50 });
       
       // Use the existing chunked content to regenerate just the styled summary
       const regeneratedSummary = await SummarizationEngine.regenerateStyledSummary(
@@ -301,11 +277,6 @@ export const SummaryResultsView: React.FC = () => {
       // This ensures the UI updates with the new version from the store
       console.log('✅ Summary updated, UI should refresh');
       setRegenerationProgress({ step: 'Complete!', progress: 100 });
-      
-      // Scroll to top to show the new version
-      setTimeout(() => {
-        // scrollToTop(); // Removed scrollToTop
-      }, 100);
       
       // Clear progress after a brief delay
       setTimeout(() => setRegenerationProgress(null), 1500);
