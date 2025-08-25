@@ -116,7 +116,7 @@ export function SettingsPage() {
 
                              {/* Theme */}
                <div className="glass-panel p-6">
-                 <h2 className="text-hierarchy-h2" style={{ color: '#111827' }}>Theme</h2>
+                 <h2 className="text-hierarchy-h2" style={{ color: '#111827', fontWeight: '700', fontSize: '2rem', lineHeight: '1.2', letterSpacing: '-0.03em' }}>Theme</h2>
                 <div className="space-y-4">
                   <div className="flex flex-col space-y-2">
                                     <button 
