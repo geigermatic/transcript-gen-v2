@@ -373,6 +373,82 @@ CRITICAL REQUIREMENTS:
 Generate both summaries now:`
 };
 
+/**
+ * Get all prompts from localStorage or defaults
+ */
+export function getPrompts(): Record<string, string> {
+  try {
+    const savedPrompts = localStorage.getItem('ai-prompts');
+    if (savedPrompts) {
+      const prompts: PromptTemplate[] = JSON.parse(savedPrompts);
+      const result: Record<string, string> = {};
+      prompts.forEach(prompt => {
+        result[prompt.id] = prompt.template;
+      });
+      return result;
+    }
+  } catch {
+    console.error('Failed to load saved prompts');
+  }
+  
+  return DEFAULT_PROMPTS;
+}
+
+/**
+ * Save a prompt template
+ */
+export function savePrompt(promptId: string, template: string): void {
+  try {
+    const savedPrompts = localStorage.getItem('ai-prompts');
+    let prompts: PromptTemplate[] = [];
+    
+    if (savedPrompts) {
+      prompts = JSON.parse(savedPrompts);
+    }
+    
+    const existingIndex = prompts.findIndex(p => p.id === promptId);
+    if (existingIndex >= 0) {
+      prompts[existingIndex].template = template;
+    } else {
+      // Create new prompt entry
+      prompts.push({
+        id: promptId,
+        name: promptId,
+        description: `${promptId} prompt`,
+        category: 'summarization',
+        template: template,
+        variables: []
+      });
+    }
+    
+    localStorage.setItem('ai-prompts', JSON.stringify(prompts));
+  } catch (error) {
+    console.error('Failed to save prompt:', error);
+    throw error;
+  }
+}
+
+/**
+ * Reset a prompt to default
+ */
+export function resetPromptToDefault(promptId: string): void {
+  try {
+    const savedPrompts = localStorage.getItem('ai-prompts');
+    let prompts: PromptTemplate[] = [];
+    
+    if (savedPrompts) {
+      prompts = JSON.parse(savedPrompts);
+    }
+    
+    // Remove the custom prompt to revert to default
+    prompts = prompts.filter(p => p.id !== promptId);
+    localStorage.setItem('ai-prompts', JSON.stringify(prompts));
+  } catch (error) {
+    console.error('Failed to reset prompt:', error);
+    throw error;
+  }
+}
+
 export class PromptService {
   /**
    * Get a prompt template by ID
