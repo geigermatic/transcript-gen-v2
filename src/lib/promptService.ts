@@ -78,7 +78,7 @@ REQUIRED STRUCTURE (use this exact format):
 # {{documentTitle}}
 
 ## Mini Synopsis
-[Exactly 1 sentence emphasizing WHY and WHAT benefits - in author's voice]
+[EXACTLY 1 SENTENCE - NO MORE, NO LESS. This must be a single, complete sentence that captures the essence and benefits. Do not use periods or breaks within this section. The sentence should end with a single period and nothing else.]
 
 ## 4-Sentence Synopsis
 [Exactly 4 sentences emphasizing WHY and WHAT benefits - in author's voice]
@@ -110,7 +110,11 @@ INSTRUCTIONS:
 6. Use lesson-appropriate language - start with phrases like "Here's the thing", "What I want you to notice is", "Let's get real for a moment"
 7. If a section has no content in the extracted facts, write "No specific [section name] identified in this lesson"
 
-CRITICAL SYNOPSIS REQUIREMENTS: The synopsis is the MOST IMPORTANT section and must be written 100% in the author's voice using the style guide above. Apply ALL tone settings, keywords, example phrases, and writing patterns heavily in the synopsis. Use the author's preferred openings, transitions, and voice markers. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect? Make this section sound exactly like the author would write it. LIMIT TO EXACTLY 4 SENTENCES.
+CRITICAL SYNOPSIS REQUIREMENTS: The synopsis is the MOST IMPORTANT section and must be written 100% in the author's voice using the style guide above. Apply ALL tone settings, keywords, example phrases, and writing patterns heavily in the synopsis. Use the author's preferred openings, transitions, and voice markers. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect? Make this section sound exactly like the author would write it. 
+
+MINI SYNOPSIS ENFORCEMENT: The Mini Synopsis must be EXACTLY 1 SENTENCE. Count your sentences carefully. If you write more than one sentence, you have failed this task. After writing, verify: Does this contain exactly one period? One complete thought? If not, rewrite to be exactly one sentence.
+
+4-SENTENCE SYNOPSIS ENFORCEMENT: LIMIT TO EXACTLY 4 SENTENCES. Count your sentences carefully. If you write more or fewer than 4 sentences, you have failed this task.
 
 MARKDOWN SUMMARY:`,
 
@@ -141,7 +145,7 @@ REQUIRED STRUCTURE (use this exact format):
 # {{documentTitle}}
 
 ## Mini Synopsis
-[Exactly 1 sentence emphasizing WHY and WHAT benefits - in author's voice - MAKE THIS DRAMATICALLY DIFFERENT]
+[EXACTLY 1 SENTENCE - NO MORE, NO LESS. This must be a single, complete sentence that captures the essence and benefits. Do not use periods or breaks within this section. The sentence should end with a single period and nothing else. MAKE THIS DRAMATICALLY DIFFERENT from any previous version.]
 
 ## 4-Sentence Synopsis
 [Exactly 4 sentences emphasizing WHY and WHAT benefits - in author's voice - MAKE THIS DRAMATICALLY DIFFERENT]
@@ -202,6 +206,10 @@ INSTRUCTIONS:
 7. If a section has no content in the extracted facts, write "No specific [section name] identified in this lesson"
 
 🚨 FINAL CHECK: Before submitting, ask yourself: "Is this DRAMATICALLY different from a typical summary?" If not, rewrite it!
+
+MINI SYNOPSIS ENFORCEMENT: The Mini Synopsis must be EXACTLY 1 SENTENCE. Count your sentences carefully. If you write more than one sentence, you have failed this task. After writing, verify: Does this contain exactly one period? One complete thought? If not, rewrite to be exactly one sentence.
+
+4-SENTENCE SYNOPSIS ENFORCEMENT: LIMIT TO EXACTLY 4 SENTENCES. Count your sentences carefully. If you write more or fewer than 4 sentences, you have failed this task.
 
 MARKDOWN SUMMARY:`,
 
