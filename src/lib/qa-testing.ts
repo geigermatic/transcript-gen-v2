@@ -423,7 +423,7 @@ The most important thing to remember is that presentation skills improve with pr
         },
         keywords: ['presentation', 'skills', 'practice'],
         example_phrases: {
-          preferred_openings: ['In this lesson'],
+          preferred_openings: ['Here\'s the thing'],
           preferred_transitions: ['Additionally', 'Furthermore'],
           preferred_conclusions: ['To summarize'],
           avoid_phrases: ['Actually', 'Um', 'Like']

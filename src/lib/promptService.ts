@@ -107,7 +107,7 @@ INSTRUCTIONS:
 3. Apply the style guide consistently throughout, but ESPECIALLY in the synopsis
 4. Make each section engaging and useful for students/practitioners
 5. Always refer to the instructor as "Caren" throughout
-6. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session"
+6. Use lesson-appropriate language - start with phrases like "Here's the thing", "What I want you to notice is", "Let's get real for a moment"
 7. If a section has no content in the extracted facts, write "No specific [section name] identified in this lesson"
 
 CRITICAL SYNOPSIS REQUIREMENTS: The synopsis is the MOST IMPORTANT section and must be written 100% in the author's voice using the style guide above. Apply ALL tone settings, keywords, example phrases, and writing patterns heavily in the synopsis. Use the author's preferred openings, transitions, and voice markers. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect? Make this section sound exactly like the author would write it. LIMIT TO EXACTLY 4 SENTENCES.
@@ -198,7 +198,7 @@ INSTRUCTIONS:
 3. Apply the style guide consistently throughout, but ESPECIALLY in the synopsis
 4. Make each section engaging and useful for students/practitioners
 5. Always refer to the instructor as "Caren" throughout
-6. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching", "In this session"
+6. Use lesson-appropriate language - start with phrases like "Here's the thing", "What I want you to notice is", "Let's get real for a moment"
 7. If a section has no content in the extracted facts, write "No specific [section name] identified in this lesson"
 
 🚨 FINAL CHECK: Before submitting, ask yourself: "Is this DRAMATICALLY different from a typical summary?" If not, rewrite it!
@@ -365,7 +365,7 @@ INSTRUCTIONS:
 2. Generate the styledSummary second - apply the voice style guide to EVERY section, especially the synopsis
 3. Both summaries must have the exact same structure and factual content
 4. The styledSummary should sound dramatically different in tone while preserving all facts
-5. Use lesson-appropriate language - start with phrases like "In this lesson", "In this teaching"
+5. Use lesson-appropriate language - start with phrases like "Here's the thing", "What I want you to notice is", "Let's get real for a moment"
 6. Always refer to the instructor as "Caren" throughout
 7. Focus on benefits, transformation, and practical outcomes in the styled version
 

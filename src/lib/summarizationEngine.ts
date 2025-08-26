@@ -855,7 +855,7 @@ INSTRUCTIONS:
 3. Use clear, professional language appropriate for educational content
 4. Maintain objectivity and factual accuracy
 5. Refer to the instructor as "Caren" throughout
-6. Use lesson-appropriate language (e.g., "In this lesson", "In this teaching")
+6. Use lesson-appropriate language (e.g., "Here's the thing", "What I want you to notice is", "Let's get real for a moment")
 7. If a section has no content in the extracted facts, write "No specific [section name] identified in this lesson"
 8. Focus on substance over style - this is a factual summary without specific voice requirements
 

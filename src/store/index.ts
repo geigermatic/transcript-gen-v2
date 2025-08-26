@@ -164,88 +164,111 @@ export const useAppStore = create<AppState>()(
 
       // Style Guide
       styleGuide: {
-        instructions_md: `## Writing Style Analysis
+        instructions_md: `# Caren's Voice & Teaching Style Guide
 
-This style guide captures the distinctive voice and approach for creating engaging, transformative content that resonates with readers seeking personal growth and practical wisdom.
+## VOICE OVERVIEW
+Write in a warm, conversational, and approachable voice that feels like sitting down for coffee with a trusted teacher or friend. Caren's communication blends wisdom with humor, making even complex spiritual or psychological concepts feel accessible and relatable. She doesn't talk *at* people, she talks *with* them—always leaving space for curiosity, compassion, and discovery.
 
-### Core Writing Principles
+Her teaching style is grounded yet expansive. She draws from Buddhist philosophy, neuroscience, and personal storytelling, weaving these threads together in a way that feels both intimate and universally relevant. She avoids cleverness or jargon and instead favors honesty, simplicity, and a bit of playful humor to keep things light even when the topic is deep.
 
-**Transformative Focus**: Every piece of content should focus on transformation and practical outcomes. Ask yourself: What problems does this solve? What will the reader feel/experience? How will they be different after engaging with this content?
+Above all, Caren's voice is marked by compassion. She reassures her students that setbacks, overwhelm, and human struggles are natural. She consistently reminds them they are not broken, and that wisdom and goodness already live within them. Her words create a safe space where students feel both guided and empowered.
 
-**Benefit-Oriented Language**: Emphasize benefits over features. Instead of describing what something is, explain what it does for the reader and how it improves their life.
+## TONE CHARACTERISTICS
+- **Formality:** Casual to semi-formal. She speaks like a wise, down-to-earth mentor, not an academic or corporate lecturer.
+- **Energy Level:** Calm and steady with flashes of enthusiasm when something feels especially important or liberating.
+- **Warmth vs. Directness:** Warm, kind, and compassionate first. Direct when clarity or encouragement is needed.
+- **Authority vs. Collaboration:** Balanced. She has authority as a teacher but emphasizes shared humanity, speaking as someone who walks the path alongside her students.
 
-**Authentic Connection**: Write as if speaking directly to a friend who trusts your guidance. Use inclusive language that creates a sense of partnership and shared journey.
+## TEACHING APPROACH
+Introduce new concepts by grounding them in everyday struggles or relatable experiences before moving into philosophy or practice. When handling complex or difficult topics, soften them with warmth, humor, and reassurance—reminding students they're not alone.
 
-**Practical Wisdom**: Balance inspiration with actionable insights. Every concept should have a practical application or reflection point.
+Practical application is central. Don't just explain ideas, give students simple ways to notice, reflect, and experiment in their daily lives. Motivate by emphasizing progress over perfection, encouraging students to celebrate small steps and "little victories."
 
-### Voice Characteristics
+## CONTENT STYLE PREFERENCES
+- Use **first person** ("I want to share…") and **second person** ("You'll notice that…") to maintain intimacy.
+- Stories, examples, and analogies are essential. They should be personal, practical, or drawn from timeless wisdom like the Bhagavad Gita.
+- Favor guided discovery over rigid instruction—ask reflective questions, encourage noticing.
+- Relate to students as a **mentor-guide**: wise but approachable, compassionate but real, both teacher and fellow traveler.
 
-**Warm and Encouraging**: Maintain a tone that uplifts and supports, even when discussing challenges or difficult topics.
+## SYNOPSIS WRITING STYLE
+When writing a 4-sentence lesson summary:
+- **Start with a hook**: a relatable struggle or observation ("We all know what it's like to…")
+- **Highlight the transformation**: emphasize relief, confidence, or clarity students will gain.
+- **Use inspirational yet grounded language**: "There's nothing wrong with you. You already have what you need."
+- **Balance heart and practice**: end with a practical application students can try right away.
 
-**Confident and Grounded**: Express certainty about the value and effectiveness of the practices and insights shared.
-
-**Accessible and Clear**: Make complex concepts understandable without oversimplifying. Use analogies and examples that resonate with everyday experience.
-
-**Reflective and Contemplative**: Encourage readers to pause, reflect, and integrate insights rather than just consuming information.
-
-### Content Structure Guidelines
-
-**Opening Engagement**: Start with a hook that immediately connects to the reader's experience or challenges. Use questions, scenarios, or relatable situations.
-
-**Progressive Revelation**: Build understanding step by step, allowing readers to see how each piece connects to the whole.
-
-**Practical Integration**: End each major section with reflection questions or simple practices that help readers apply the insights.
-
-**Closing Inspiration**: Conclude with a vision of possibility and a clear next step that readers can take immediately.`,
+## STRUCTURAL PREFERENCES
+- Lessons should flow from **story → teaching → application → encouragement.**
+- Use bullet points for clarity when listing practices, benefits, or steps.
+- Use **bold** or *italics* for emphasis, not all caps.
+- Section names should be simple, real, and clear (e.g., "Noticing What's Really Happening," "The Courage to Be Yourself"). Avoid overly clever or abstract titles.`,
         tone_settings: {
-          formality: 35,
-          enthusiasm: 75,
-          technicality: 40,
+          formality: 25,
+          enthusiasm: 70,
+          technicality: 30,
         },
         keywords: [
-          "that said",
-          "here's the thing",
-          "the truth is",
-          "what I've found",
-          "here's what happens",
-          "the beautiful part",
-          "here's the magic",
-          "what's fascinating",
-          "the key insight",
-          "here's the shift"
+          "practice",
+          "notice",
+          "pay attention",
+          "isn't that interesting",
+          "inner battle",
+          "spaciousness",
+          "gentle curiosity",
+          "blindspots",
+          "overwhelm",
+          "wisdom already within you",
+          "patterns of thought",
+          "compassionate awareness",
+          "epic moment",
+          "real, not perfect",
+          "show up as you are",
+          "kindness to yourself",
+          "learning to be responsive, not reactive",
+          "life as practice",
+          "trust the process",
+          "little victories",
+          "gentle humor",
+          "warm smile"
         ],
         example_phrases: {
           preferred_openings: [
-            "In this lesson",
-            "What I want you to know",
-            "Here's what I've discovered",
-            "The thing about this is",
-            "Let me share something with you"
+            "Here's the thing…",
+            "What I want you to notice is…",
+            "Let's get real for a moment.",
+            "You know how…",
+            "This is the part that matters.",
+            "I want to share something with you…",
+            "Let's take a step back and…",
+            "You know what's funny about this…"
           ],
           preferred_transitions: [
-            "That said",
-            "Here's the thing",
-            "The truth is",
-            "What's fascinating",
-            "Here's what happens"
+            "Now, here's where it gets interesting…",
+            "That brings us to…",
+            "And at the same time…",
+            "Let's look at it another way…",
+            "Which means that…",
+            "Here's how this shows up in real life…",
+            "The good news is…",
+            "And here's the thing that always makes me smile…"
           ],
           preferred_conclusions: [
-            "The beautiful part is",
-            "Here's the magic",
-            "The key insight here",
-            "What this means for you",
-            "Here's your next step"
+            "So the key takeaway here is…",
+            "What this means for you is…",
+            "If you remember one thing, let it be this…",
+            "That's how we start to shift.",
+            "This is how practice helps us in everyday life.",
+            "So next time you notice this, you'll know what to do."
           ],
           avoid_phrases: [
-            "In conclusion",
-            "To summarize",
-            "As mentioned above",
-            "It is important to note",
-            "Furthermore"
+            "Academic jargon (e.g., 'epistemological framework')",
+            "Corporate speak (e.g., 'synergy,' 'leverage your potential')",
+            "Overly casual slang (e.g., 'YOLO,' 'lol')",
+            "Clever wordplay that distracts from sincerity"
           ],
         },
         source_content: [
-          "Default style guide created from proven client objectives and writing patterns"
+          "Caren's Voice & Teaching Style Guide - Client-provided style guide for warm, conversational, compassionate teaching voice"
         ],
       },
       updateStyleGuide: (updates) =>
@@ -255,88 +278,107 @@ This style guide captures the distinctive voice and approach for creating engagi
       resetStyleGuide: () =>
         set(() => ({
           styleGuide: {
-            instructions_md: `## Writing Style Analysis
+            instructions_md: `# Caren's Voice & Teaching Style Guide
 
-This style guide captures the distinctive voice and approach for creating engaging, transformative content that resonates with readers seeking personal growth and practical wisdom.
+## VOICE OVERVIEW
+Write in a warm, conversational, and approachable voice that feels like sitting down for coffee with a trusted teacher or friend. Caren's communication blends wisdom with humor, making even complex spiritual or psychological concepts feel accessible and relatable. She doesn't talk *at* people, she talks *with* them—always leaving space for curiosity, compassion, and discovery.
 
-### Core Writing Principles
+Her teaching style is grounded yet expansive. She draws from Buddhist philosophy, neuroscience, and personal storytelling, weaving these threads together in a way that feels both intimate and universally relevant. She avoids cleverness or jargon and instead favors honesty, simplicity, and a bit of playful humor to keep things light even when the topic is deep.
 
-**Transformative Focus**: Every piece of content should focus on transformation and practical outcomes. Ask yourself: What problems does this solve? What will the reader feel/experience? How will they be different after engaging with this content?
+Above all, Caren's voice is marked by compassion. She reassures her students that setbacks, overwhelm, and human struggles are natural. She consistently reminds them they are not broken, and that wisdom and goodness already live within them. Her words create a safe space where students feel both guided and empowered.
 
-**Benefit-Oriented Language**: Emphasize benefits over features. Instead of describing what something is, explain what it does for the reader and how it improves their life.
+## TONE CHARACTERISTICS
+- **Formality:** Casual to semi-formal. She speaks like a wise, down-to-earth mentor, not an academic or corporate lecturer.
+- **Energy Level:** Calm and steady with flashes of enthusiasm when something feels especially important or liberating.
+- **Warmth vs. Directness:** Warm, kind, and compassionate first. Direct when clarity or encouragement is needed.
+- **Authority vs. Collaboration:** Balanced. She has authority as a teacher but emphasizes shared humanity, speaking as someone who walks the path alongside her students.
 
-**Authentic Connection**: Write as if speaking directly to a friend who trusts your guidance. Use inclusive language that creates a sense of partnership and shared journey.
+## TEACHING APPROACH
+Introduce new concepts by grounding them in everyday struggles or relatable experiences before moving into philosophy or practice. When handling complex or difficult topics, soften them with warmth, humor, and reassurance—reminding students they're not alone.
 
-**Practical Wisdom**: Balance inspiration with actionable insights. Every concept should have a practical application or reflection point.
+Practical application is central. Don't just explain ideas, give students simple ways to notice, reflect, and experiment in their daily lives. Motivate by emphasizing progress over perfection, encouraging students to celebrate small steps and "little victories."
 
-### Voice Characteristics
+## CONTENT STYLE PREFERENCES
+- Use **first person** ("I want to share…") and **second person** ("You'll notice that…") to maintain intimacy.
+- Stories, examples, and analogies are essential. They should be personal, practical, or drawn from timeless wisdom like the Bhagavad Gita.
+- Favor guided discovery over rigid instruction—ask reflective questions, encourage noticing.
+- Relate to students as a **mentor-guide**: wise but approachable, compassionate but real, both teacher and fellow traveler.
 
-**Warm and Encouraging**: Maintain a tone that uplifts and supports, even when discussing challenges or difficult topics.
+## SYNOPSIS WRITING STYLE
+When writing a 4-sentence lesson summary:
+- **Start with a hook**: a relatable struggle or observation ("We all know what it's like to…")
+- **Highlight the transformation**: emphasize relief, confidence, or clarity students will gain.
+- **Use inspirational yet grounded language**: "There's nothing wrong with you. You already have what you need."
+- **Balance heart and practice**: end with a practical application students can try right away.
 
-**Confident and Grounded**: Express certainty about the value and effectiveness of the practices and insights shared.
-
-**Accessible and Clear**: Make complex concepts understandable without oversimplifying. Use analogies and examples that resonate with everyday experience.
-
-**Reflective and Contemplative**: Encourage readers to pause, reflect, and integrate insights rather than just consuming information.
-
-### Content Structure Guidelines
-
-**Opening Engagement**: Start with a hook that immediately connects to the reader's experience or challenges. Use questions, scenarios, or relatable situations.
-
-**Progressive Revelation**: Build understanding step by step, allowing readers to see how each piece connects to the whole.
-
-**Practical Integration**: End each major section with reflection questions or simple practices that help readers apply the insights.
-
-**Closing Inspiration**: Conclude with a vision of possibility and a clear next step that readers can take immediately.`,
+## STRUCTURAL PREFERENCES
+- Lessons should flow from **story → teaching → application → encouragement.**
+- Use bullet points for clarity when listing practices, benefits, or steps.
+- Use **bold** or *italics* for emphasis, not all caps.
+- Section names should be simple, real, and clear (e.g., "Noticing What's Really Happening," "The Courage to Be Yourself"). Avoid overly clever or abstract titles.`,
             tone_settings: {
-              formality: 35,
-              enthusiasm: 75,
-              technicality: 40,
+              formality: 25,
+              enthusiasm: 70,
+              technicality: 30,
             },
             keywords: [
-              "that said",
-              "here's the thing",
-              "the truth is",
-              "what I've found",
-              "here's what happens",
-              "the beautiful part",
-              "here's the magic",
-              "what's fascinating",
-              "the key insight",
-              "here's the shift"
+              "practice",
+              "notice",
+              "pay attention",
+              "isn't that interesting",
+              "inner battle",
+              "spaciousness",
+              "gentle curiosity",
+              "blindspots",
+              "overwhelm",
+              "wisdom already within you",
+              "patterns of thought",
+              "compassionate awareness",
+              "epic moment",
+              "real, not perfect",
+              "show up as you are",
+              "kindness to yourself",
+              "learning to be responsive, not reactive",
+              "life as practice",
+              "trust the process",
+              "little victories"
             ],
             example_phrases: {
               preferred_openings: [
-                "In this lesson",
-                "What I want you to know",
-                "What I've discovered",
-                "The thing about this is",
-                "Let me share something with you"
+                "Here's the thing…",
+                "What I want you to notice is…",
+                "Let's get real for a moment.",
+                "You know how…",
+                "This is the part that matters.",
+                "I want to share something with you…",
+                "Let's take a step back and…"
               ],
               preferred_transitions: [
-                "That said",
-                "Here's the thing",
-                "The truth is",
-                "What's fascinating",
-                "Here's what happens"
+                "Now, here's where it gets interesting…",
+                "That brings us to…",
+                "And at the same time…",
+                "Let's look at it another way…",
+                "Which means that…",
+                "Here's how this shows up in real life…",
+                "The good news is…"
               ],
               preferred_conclusions: [
-                "The beautiful part is",
-                "Here's the magic",
-                "The key insight here",
-                "What this means for you",
-                "Here's your next step"
+                "So the key takeaway here is…",
+                "What this means for you is…",
+                "If you remember one thing, let it be this…",
+                "That's how we start to shift.",
+                "This is how practice helps us in everyday life.",
+                "So next time you notice this, you'll know what to do."
               ],
               avoid_phrases: [
-                "In conclusion",
-                "To summarize",
-                "As mentioned above",
-                "It is important to note",
-                "Furthermore"
+                "Academic jargon (e.g., 'epistemological framework')",
+                "Corporate speak (e.g., 'synergy,' 'leverage your potential')",
+                "Overly casual slang (e.g., 'YOLO,' 'lol')",
+                "Clever wordplay that distracts from sincerity"
               ],
             },
             source_content: [
-              "Default style guide created from proven client objectives and writing patterns"
+              "Caren's Voice & Teaching Style Guide - Client-provided style guide for warm, conversational, compassionate teaching voice"
             ],
           },
         })),
