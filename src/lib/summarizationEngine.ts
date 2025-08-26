@@ -122,7 +122,8 @@ export class SummarizationEngine {
     document: Document,
     styleGuide: StyleGuide,
     onProgress?: (current: number, total: number, status?: string) => void,
-    modelId?: string
+    modelId?: string,
+    rawSummaryEnabled: boolean = true
   ): Promise<SummarizationResult> {
     const startTime = Date.now();
     
@@ -205,8 +206,19 @@ export class SummarizationEngine {
         onProgress?.(20, 100, 'Generating combined summary (ultra-fast path)...');
         
         try {
-          // OPTIMIZED: Single Ollama call for both raw and styled summary
-          const { rawSummary, styledSummary } = await this.generateCombinedSummary(document, styleGuide);
+          let rawSummary: string | undefined;
+          let styledSummary: string;
+          
+          if (rawSummaryEnabled) {
+            // OPTIMIZED: Single Ollama call for both raw and styled summary
+            const combinedResult = await this.generateCombinedSummary(document, styleGuide);
+            rawSummary = combinedResult.rawSummary;
+            styledSummary = combinedResult.styledSummary;
+          } else {
+            // Generate only styled summary for faster processing
+            onProgress?.(20, 100, 'Generating styled summary (fast path)...');
+            styledSummary = await this.generateStyledSummaryDirect(document, styleGuide);
+          }
           
           // For backward compatibility, keep markdownSummary as the styled version
           const markdownSummary = styledSummary;
@@ -288,12 +300,20 @@ export class SummarizationEngine {
       onProgress?.(70, 100, 'Merging facts from all chunks...');
       const mergedFacts = this.mergeFacts(chunkFacts);
       
-      // Generate both raw and styled summaries
-      onProgress?.(80, 100, 'Generating raw summary...');
-      const rawSummary = await this.generateRawSummary(document, mergedFacts);
+      // Generate summaries based on settings
+      let rawSummary: string | undefined;
+      let styledSummary: string;
       
-      onProgress?.(85, 100, 'Generating styled summary...');
-      const styledSummary = await this.generateStyledSummary(document, mergedFacts, styleGuide);
+      if (rawSummaryEnabled) {
+        onProgress?.(80, 100, 'Generating raw summary...');
+        rawSummary = await this.generateRawSummary(document, mergedFacts);
+        
+        onProgress?.(85, 100, 'Generating styled summary...');
+        styledSummary = await this.generateStyledSummary(document, mergedFacts, styleGuide);
+      } else {
+        onProgress?.(80, 100, 'Generating styled summary...');
+        styledSummary = await this.generateStyledSummary(document, mergedFacts, styleGuide);
+      }
       
       // For backward compatibility, keep markdownSummary as the styled version
       const markdownSummary = styledSummary;
@@ -1270,6 +1290,61 @@ Apply the voice style guide now:`;
     }
     
     return { isLarge, isExtremelyLarge, suggestedMode, warning };
+  }
+
+  /**
+   * Generate styled summary directly from document (fast path without raw summary)
+   */
+  private static async generateStyledSummaryDirect(
+    document: Document,
+    styleGuide: StyleGuide
+  ): Promise<string> {
+    const prompt = this.buildStyledSummaryDirectPrompt(document, styleGuide);
+    
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: prompt
+      }]);
+      
+      return response.trim();
+      
+    } catch (error) {
+      logError('SUMMARIZE', 'Failed to generate styled summary directly', { error: error instanceof Error ? error.message : String(error) });
+      throw new Error(`Styled summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Build prompt for styled summary generation directly from document
+   */
+  private static buildStyledSummaryDirectPrompt(
+    document: Document,
+    styleGuide: StyleGuide
+  ): string {
+    const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
+    const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
+    
+    return PromptService.buildPrompt('summary-generation', {
+      styleInstructions,
+      formalityLevel: styleGuide.tone_settings.formality.toString(),
+      enthusiasmLevel: styleGuide.tone_settings.enthusiasm.toString(),
+      technicalityLevel: styleGuide.tone_settings.technicality.toString(),
+      keywords: styleGuide.keywords.join(', ') || 'None specified',
+      examplePhrasesSection,
+      documentTitle: document.title,
+      extractedFacts: JSON.stringify({
+        learning_objectives: [],
+        key_takeaways: [],
+        topics: [],
+        techniques: [],
+        notable_quotes: [],
+        action_items: [],
+        class_title: document.title,
+        date_or_series: '',
+        audience: ''
+      }, null, 2)
+    });
   }
 
   /**

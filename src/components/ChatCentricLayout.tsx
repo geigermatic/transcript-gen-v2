@@ -206,7 +206,8 @@ export const ChatCentricLayout: React.FC = () => {
           (current: number, total: number, status?: string) => {
             setProgress({ current, total, status: status || 'Processing...' });
           },
-          settings.chat_default
+          settings.chat_default,
+          settings.rawSummaryEnabled
         );
         
         // Create AB summary pair to store the result for future access

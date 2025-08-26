@@ -47,7 +47,9 @@ export function SummarizationManager({ document }: SummarizationManagerProps) {
         styleGuide,
         (current: number, total: number, status?: string) => {
           setProgress({ current, total, status: status || '' });
-        }
+        },
+        undefined,
+        true // Default to enabled for backward compatibility
       );
 
       setResult(summaryResult);

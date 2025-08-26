@@ -50,7 +50,41 @@ export function SettingsPage() {
             {/* Voice & Style Guide - Top Level Section */}
             <StyleGuideManager />
 
-                         {/* Configuration Sections in Columns */}
+                         {/* Processing Options */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Processing Options</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900">Raw Summary Generation</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Generate both raw and styled summaries. Disable to make processing faster.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => updateSettings({ rawSummaryEnabled: !settings.rawSummaryEnabled })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      settings.rawSummaryEnabled ? 'bg-blue-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        settings.rawSummaryEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                {!settings.rawSummaryEnabled && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="text-sm text-yellow-800">
+                      ⚡ Raw summary generation is disabled. Processing will be faster, but you'll only see styled summaries.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Configuration Sections in Columns */}
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                {/* AI Model Configuration */}
                              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">

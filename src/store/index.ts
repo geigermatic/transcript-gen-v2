@@ -392,6 +392,7 @@ When writing a 4-sentence lesson summary:
         chat_default: 'llama3.1:8b-instruct-q4_K_M',
         theme: 'dark',
         developer_mode: true,
+        rawSummaryEnabled: true,
       },
       updateSettings: (updates) =>
         set((state) => ({
