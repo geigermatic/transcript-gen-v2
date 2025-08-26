@@ -275,10 +275,25 @@ export const ChatCentricLayout: React.FC = () => {
         setProgress({ current: 0, total: 0, status: '' });
         setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id));
         
+        // Create more specific error message based on the error type
+        let errorContent = `❌ Sorry, I encountered an error while processing your document.`;
+        
+        if (error instanceof Error) {
+          if (error.message.includes('Ollama is not running')) {
+            errorContent = `❌ **Ollama is not running.** Please start Ollama with \`ollama serve\` and try again.`;
+          } else if (error.message.includes('timed out')) {
+            errorContent = `❌ **Request timed out.** Ollama may be unresponsive. Please check if Ollama is running and try again.`;
+          } else if (error.message.includes('Chat request failed')) {
+            errorContent = `❌ **Ollama connection failed.** Please ensure Ollama is running on http://127.0.0.1:11434 and try again.`;
+          } else {
+            errorContent = `❌ **Processing error:** ${error.message}`;
+          }
+        }
+        
         const errorMessage = {
           id: `error-${crypto.randomUUID()}`,
           role: 'assistant' as const,
-          content: `❌ Sorry, I encountered an error while processing your document. Please try again or check if your AI instance is running.`,
+          content: errorContent,
           timestamp: new Date().toISOString()
         };
         
@@ -438,10 +453,25 @@ export const ChatCentricLayout: React.FC = () => {
     } catch (error) {
       console.error('Chat processing failed:', error);
       
+      // Create more specific error message for chat
+      let chatErrorContent = `❌ Sorry, I encountered an error while processing your message.`;
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Ollama is not running')) {
+          chatErrorContent = `❌ **Ollama is not running.** Please start Ollama with \`ollama serve\` and try again.`;
+        } else if (error.message.includes('timed out')) {
+          chatErrorContent = `❌ **Request timed out.** Ollama may be unresponsive. Please check if Ollama is running and try again.`;
+        } else if (error.message.includes('Chat request failed')) {
+          chatErrorContent = `❌ **Ollama connection failed.** Please ensure Ollama is running on http://127.0.0.1:11434 and try again.`;
+        } else {
+          chatErrorContent = `❌ **Chat error:** ${error.message}`;
+        }
+      }
+      
       const errorMessage = {
         id: `ai-error-${crypto.randomUUID()}`,
         role: 'assistant' as const,
-        content: `❌ Sorry, I encountered an error while processing your message. Please check if your AI instance is running and try again.`,
+        content: chatErrorContent,
         timestamp: new Date().toISOString()
       };
       

@@ -137,6 +137,32 @@ export class SummarizationEngine {
       });
     }
     
+    // Pre-flight check: Verify Ollama is available before starting processing
+    onProgress?.(0, 100, 'Checking Ollama availability...');
+    let isOllamaAvailable = await ollama.isAvailable();
+    
+    if (!isOllamaAvailable) {
+      // Attempt to start Ollama (best effort)
+      onProgress?.(0, 100, 'Ollama not running. Attempting to start...');
+      const startAttempted = await ollama.attemptStartOllama();
+      
+      if (startAttempted) {
+        // Wait a moment for Ollama to start, then check again
+        onProgress?.(0, 100, 'Waiting for Ollama to start...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        isOllamaAvailable = await ollama.isAvailable();
+      }
+      
+      if (!isOllamaAvailable) {
+        const errorMessage = 'Ollama is not running and could not be started automatically. Please start Ollama manually with "ollama serve" and try again.';
+        logError('SUMMARIZE', `Ollama availability check failed for document: ${document.title}`, {
+          documentId: document.id,
+          error: errorMessage
+        });
+        throw new Error(errorMessage);
+      }
+    }
+    
     // Update the Ollama client to use the selected model if provided
     if (modelId) {
       ollama.updateModel(modelId);
