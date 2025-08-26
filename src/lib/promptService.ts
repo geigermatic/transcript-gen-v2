@@ -110,7 +110,9 @@ INSTRUCTIONS:
 6. Use lesson-appropriate language - start with phrases like "Here's the thing", "What I want you to notice is", "Let's get real for a moment"
 7. If a section has no content in the extracted facts, write "No specific [section name] identified in this lesson"
 
-CRITICAL SYNOPSIS REQUIREMENTS: The synopsis is the MOST IMPORTANT section and must be written 100% in the author's voice using the style guide above. Apply ALL tone settings, keywords, example phrases, and writing patterns heavily in the synopsis. Use the author's preferred openings, transitions, and voice markers. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect? Make this section sound exactly like the author would write it. 
+CRITICAL SYNOPSIS REQUIREMENTS: The synopsis is the MOST IMPORTANT section and must be written 100% in the author's voice using the style guide above. Apply ALL tone settings, keywords, example phrases, and writing patterns heavily in the synopsis. Use the author's preferred openings, transitions, and voice markers. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect? Make this section sound exactly like the author would write it.
+
+WARM HUMOR REQUIREMENT: Include a very subtle sense of warm humor throughout, as if talking to a close friend—a gentle, knowing smile in the voice that makes serious topics feel approachable and human. This isn't jokes or punchlines, but rather a gentle, knowing warmth that comes from someone who's been through the same struggles and can smile about them with compassion. 
 
 MINI SYNOPSIS ENFORCEMENT: The Mini Synopsis must be EXACTLY 1 SENTENCE. Count your sentences carefully. If you write more than one sentence, you have failed this task. After writing, verify: Does this contain exactly one period? One complete thought? If not, rewrite to be exactly one sentence.
 
@@ -206,6 +208,8 @@ INSTRUCTIONS:
 7. If a section has no content in the extracted facts, write "No specific [section name] identified in this lesson"
 
 🚨 FINAL CHECK: Before submitting, ask yourself: "Is this DRAMATICALLY different from a typical summary?" If not, rewrite it!
+
+WARM HUMOR REQUIREMENT: Include a very subtle sense of warm humor throughout, as if talking to a close friend—a gentle, knowing smile in the voice that makes serious topics feel approachable and human. This isn't jokes or punchlines, but rather a gentle, knowing warmth that comes from someone who's been through the same struggles and can smile about them with compassion.
 
 MINI SYNOPSIS ENFORCEMENT: The Mini Synopsis must be EXACTLY 1 SENTENCE. Count your sentences carefully. If you write more than one sentence, you have failed this task. After writing, verify: Does this contain exactly one period? One complete thought? If not, rewrite to be exactly one sentence.
 
