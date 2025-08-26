@@ -228,8 +228,8 @@ When writing a 4-sentence lesson summary:
           "life as practice",
           "trust the process",
           "little victories",
-          "gentle humor",
-          "warm smile"
+          "gentle warmth",
+          "compassionate presence"
         ],
         example_phrases: {
           preferred_openings: [
@@ -240,7 +240,7 @@ When writing a 4-sentence lesson summary:
             "This is the part that matters.",
             "I want to share something with you…",
             "Let's take a step back and…",
-            "You know what's funny about this…"
+            "You know what's beautiful about this…"
           ],
           preferred_transitions: [
             "Now, here's where it gets interesting…",
@@ -250,7 +250,7 @@ When writing a 4-sentence lesson summary:
             "Which means that…",
             "Here's how this shows up in real life…",
             "The good news is…",
-            "And here's the thing that always makes me smile…"
+            "And here's what always touches my heart…"
           ],
           preferred_conclusions: [
             "So the key takeaway here is…",
