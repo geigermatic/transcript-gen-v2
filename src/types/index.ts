@@ -201,7 +201,6 @@ export interface AppSettings {
   chat_default: string;
   theme: 'light' | 'dark';
   developer_mode: boolean;
-  rawSummaryEnabled: boolean;
 }
 
 // Chat types

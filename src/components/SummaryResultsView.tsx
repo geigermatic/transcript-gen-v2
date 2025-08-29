@@ -19,7 +19,6 @@ export const SummaryResultsView: React.FC = () => {
   const { 
     documents, 
     styleGuide, 
-    settings,
     getDocumentSummary, 
     addSummaryVersion, 
     getSummaryHistory,
@@ -87,10 +86,7 @@ export const SummaryResultsView: React.FC = () => {
     try {
       const summaryResult = await SummarizationEngine.summarizeDocument(
         doc, 
-        styleGuide,
-        undefined,
-        undefined,
-        settings.rawSummaryEnabled
+        styleGuide
       );
       setSummary(summaryResult);
     } catch (error) {
@@ -393,9 +389,7 @@ export const SummaryResultsView: React.FC = () => {
             >
               {activeTab === 'stylized' 
                 ? (summary.styledSummary || 'No stylized summary available')
-                : !settings.rawSummaryEnabled
-                  ? 'Raw summary generation is disabled to make processing faster. To enable, go to the Settings view and turn on "Raw Summary Generation".'
-                  : (summary.rawSummary || 'No raw summary available')
+                : (summary.rawSummary || 'No raw summary available')
               }
             </ReactMarkdown>
           </div>
@@ -754,9 +748,7 @@ export const SummaryResultsView: React.FC = () => {
                 >
                   {activeTab === 'stylized' 
                     ? version.summary
-                    : !settings.rawSummaryEnabled
-                      ? 'Raw summary generation is disabled to make processing faster. To enable, go to the Settings view and turn on "Raw Summary Generation".'
-                      : (summary.rawSummary || version.summary)
+                    : (summary.rawSummary || version.summary)
                   }
                 </ReactMarkdown>
               </div>

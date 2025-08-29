@@ -47,7 +47,7 @@ export const SummaryWorkspace: React.FC<SummaryWorkspaceProps> = ({
     const stopTimer = logTime('SUMMARIZE', 'Summary generation');
 
     try {
-      const result = await SummarizationEngine.summarizeDocument(selectedDocument, styleGuide, undefined, undefined, true);
+      const result = await SummarizationEngine.summarizeDocument(selectedDocument, styleGuide);
       setSummaryResult(result);
       onSummaryGenerated?.();
       

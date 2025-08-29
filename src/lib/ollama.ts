@@ -70,7 +70,7 @@ export class OllamaClient {
 
   async chat(messages: ChatMessage[]): Promise<string> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout for chat
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for chat
     
     try {
       const response = await fetch(`${this.config.baseUrl}/api/chat`, {
@@ -97,7 +97,7 @@ export class OllamaClient {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Chat request timed out after 10 seconds. Ollama may be unresponsive or not running.');
+        throw new Error('Chat request timed out after 60 seconds. Ollama may be unresponsive.');
       }
       throw error;
     }
@@ -105,7 +105,7 @@ export class OllamaClient {
 
   async generateEmbedding(text: string): Promise<number[]> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout for embeddings
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for embeddings
     
     try {
       const response = await fetch(`${this.config.baseUrl}/api/embeddings`, {
@@ -134,28 +134,6 @@ export class OllamaClient {
         throw new Error('Embedding request timed out after 30 seconds. Ollama may be unresponsive.');
       }
       throw error;
-    }
-  }
-
-  /**
-   * Attempt to start Ollama server (this is a best-effort attempt)
-   * Note: This may not work in all environments due to security restrictions
-   */
-  async attemptStartOllama(): Promise<boolean> {
-    try {
-      // This is a best-effort attempt - in many environments, 
-      // we can't programmatically start system services
-      console.log('Attempting to start Ollama server...');
-      
-      // We can't actually start Ollama from the browser due to security restrictions
-      // But we can provide helpful instructions
-      console.log('Ollama startup attempt: Browser security restrictions prevent automatic startup');
-      console.log('Please start Ollama manually with: ollama serve');
-      
-      return false; // Always return false since we can't actually start it
-    } catch (error) {
-      console.error('Failed to start Ollama:', error);
-      return false;
     }
   }
 }

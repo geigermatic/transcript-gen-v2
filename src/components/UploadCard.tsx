@@ -58,9 +58,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({ onUploadComplete, onProg
         (current, total, status) => {
           logInfo('SUMMARIZE', status || `Progress: ${current}%`);
           onProgress?.(current, total, status);
-        },
-        undefined,
-        true // Default to enabled for backward compatibility
+        }
       );
 
       // Create AB summary pair
