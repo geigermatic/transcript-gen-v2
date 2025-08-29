@@ -25,13 +25,13 @@ export interface SummarizationResult {
   markdownSummary: string;
   rawSummary?: string; // Summary without style guide applied
   styledSummary?: string; // Summary with style guide applied
-        processingStats: {
-        totalChunks: number;
-        successfulChunks: number;
-        failedChunks: number;
-        processingTime: number;
-        modelUsed?: string; // Store which model was used
-      };
+  processingStats: {
+    totalChunks: number;
+    successfulChunks: number;
+    failedChunks: number;
+    processingTime: number;
+    modelUsed?: string; // Store which model was used
+  };
 }
 
 export class SummarizationEngine {
@@ -47,7 +47,7 @@ export class SummarizationEngine {
     regenerationCount: number = 1
   ): Promise<string> {
     logInfo('SUMMARIZE', `Regenerating stylized summary for: ${document.title || document.filename || 'Unknown Document'}`);
-    
+
     try {
       // Use the special regeneration prompt for variation
       const timestamp = Date.now();
@@ -90,24 +90,24 @@ export class SummarizationEngine {
           content: regenerationPrompt
         }
       ]);
-      
+
       console.log('🔄 REGENERATION RESPONSE:', {
         responseLength: response.length,
         responseStart: response.substring(0, 200),
         responseEnd: response.substring(response.length - 200),
         isIdentical: false // We'll check this in the calling code
       });
-      
+
       logInfo('SUMMARIZE', 'Ollama response received', {
         responseLength: response.length,
         responsePreview: response.substring(0, 200) + '...',
         fullResponse: response // Log the full response for debugging
       });
-      
+
       logInfo('SUMMARIZE', `Stylized summary regenerated for: ${document.title || document.filename || 'Unknown Document'}`, {
         summaryLength: response.length
       });
-      
+
       return response;
     } catch (error) {
       logError('SUMMARIZE', `Failed to regenerate stylized summary for: ${document.title || document.filename || 'Unknown Document'}`, { error: error instanceof Error ? error.message : String(error) });
@@ -125,7 +125,7 @@ export class SummarizationEngine {
     modelId?: string
   ): Promise<SummarizationResult> {
     const startTime = Date.now();
-    
+
     // Check document size and provide early warnings
     const sizeCheck = this.checkDocumentSize(document, modelId);
     if (sizeCheck.warning) {
@@ -135,15 +135,15 @@ export class SummarizationEngine {
         suggestedMode: sizeCheck.suggestedMode
       });
     }
-    
+
     // Update the Ollama client to use the selected model if provided
     if (modelId) {
       ollama.updateModel(modelId);
       logInfo('SUMMARIZE', `Using selected model: ${modelId}`);
     }
-    
+
     logInfo('SUMMARIZE', `Starting summarization for document: ${document.title}`, {
-      documentId: document.id, 
+      documentId: document.id,
       textLength: document.text.length,
       selectedModel: modelId || 'default',
       sizeWarning: sizeCheck.warning,
@@ -154,37 +154,37 @@ export class SummarizationEngine {
       // Split document into chunks optimized for the selected model
       onProgress?.(0, 100, 'Splitting document into chunks...');
       let chunks: TextChunk[];
-      
+
       try {
-        chunks = modelId 
+        chunks = modelId
           ? TextSplitter.splitTextForModel(document.text, document.id, modelId)
           : TextSplitter.splitText(document.text, document.id);
       } catch (chunkingError) {
         console.warn('⚠️ Initial chunking failed, falling back to fast chunking:', chunkingError);
-        
+
         // Fast fallback to aggressive chunking
         chunks = TextSplitter.splitText(document.text, document.id, {
           chunkSize: 3000, // Larger chunks for speed
           overlap: 100,    // Minimal overlap for speed
           maxChunks: 20    // Higher limit for speed
         });
-        
+
         logInfo('SUMMARIZE', `Fast fallback chunking successful: ${chunks.length} chunks`, {
           documentId: document.id,
           fallbackChunkSize: 3000
         });
       }
-      
+
       logInfo('SUMMARIZE', `Document split into ${chunks.length} chunks for fact extraction`, {
-        documentId: document.id, 
+        documentId: document.id,
         chunkCount: chunks.length,
         selectedModel: modelId || 'default',
         contextWindow: modelId ? TextSplitter.getModelContextWindow(modelId) : 'unknown'
       });
 
-      // Check if we can use the fast path for large-context models
+      // Check if we can use the fast path for single-chunk documents
       const contextWindow = modelId ? TextSplitter.getModelContextWindow(modelId) : 4096;
-      const canUseFastPath = chunks.length === 1 && contextWindow >= 32768; // 32K+ context models
+      const canUseFastPath = chunks.length === 1; // Any single-chunk document can use fast path
 
       console.log('🔍 Fast Path Debug:', {
         modelId,
@@ -201,20 +201,34 @@ export class SummarizationEngine {
           modelId,
           contextWindow
         });
-        
-        onProgress?.(20, 100, 'Generating combined summary (ultra-fast path)...');
-        
+
+        onProgress?.(20, 100, 'Generating raw summary (fast path)...');
+
         try {
-          // OPTIMIZED: Single Ollama call for both raw and styled summary
-          const { rawSummary, styledSummary } = await this.generateCombinedSummary(document, styleGuide);
-          
+          // HYBRID APPROACH: Fast model for raw, quality model for styling
+          onProgress?.(30, 100, 'Generating raw summary (ultra-fast)...');
+
+          // Use current fast model for raw summary
+          const rawSummary = await this.generateRawSummaryDirect(document);
+
+          onProgress?.(60, 100, 'Applying voice styling (quality model)...');
+
+          // Switch to quality model for voice styling
+          const originalModel = ollama.getCurrentModel();
+          ollama.updateModel('gemma3:4b'); // Better for voice styling
+
+          const styledSummary = await this.generateStyledSummaryFromRaw(document, rawSummary, styleGuide);
+
+          // Switch back to original model
+          ollama.updateModel(originalModel);
+
           // For backward compatibility, keep markdownSummary as the styled version
           const markdownSummary = styledSummary;
-          
+
           onProgress?.(95, 100, 'Finalizing summaries...');
-          
+
           const processingTime = Date.now() - startTime;
-          
+
           // Create minimal chunk facts for compatibility
           const chunkFacts: ChunkFacts[] = [{
             chunkId: chunks[0].id,
@@ -224,7 +238,7 @@ export class SummarizationEngine {
             rawResponse: 'Fast path - no fact extraction needed',
             error: undefined,
           }];
-          
+
           const result: SummarizationResult = {
             document,
             chunkFacts,
@@ -250,17 +264,17 @@ export class SummarizationEngine {
               modelUsed: modelId || 'default',
             }
           };
-          
+
           logInfo('SUMMARIZE', `Fast path summarization completed for document: ${document.title}`, {
             documentId: document.id,
             ...result.processingStats,
             summaryLength: markdownSummary.length,
             fastPath: true
           });
-          
+
           onProgress?.(100, 100, 'Summary completed successfully (fast path)!');
           return result;
-          
+
         } catch (fastPathError) {
           console.warn('⚠️ Fast path failed, falling back to standard processing:', fastPathError);
           logInfo('SUMMARIZE', `Fast path failed, falling back to standard processing`, {
@@ -277,9 +291,9 @@ export class SummarizationEngine {
       // Extract facts from each chunk (with configurable parallel processing)
       const config = ChunkingConfigManager.getCurrentConfig();
       const chunkFacts: ChunkFacts[] = await this.processChunks(
-        chunks, 
-        styleGuide, 
-        document.id, 
+        chunks,
+        styleGuide,
+        document.id,
         config,
         onProgress
       );
@@ -287,14 +301,14 @@ export class SummarizationEngine {
       // Merge facts from all chunks
       onProgress?.(70, 100, 'Merging facts from all chunks...');
       const mergedFacts = this.mergeFacts(chunkFacts);
-      
+
       // Generate both raw and styled summaries
       onProgress?.(80, 100, 'Generating raw summary...');
       const rawSummary = await this.generateRawSummary(document, mergedFacts);
-      
+
       onProgress?.(85, 100, 'Generating styled summary...');
       const styledSummary = await this.generateStyledSummary(document, mergedFacts, styleGuide);
-      
+
       // For backward compatibility, keep markdownSummary as the styled version
       const markdownSummary = styledSummary;
 
@@ -302,7 +316,7 @@ export class SummarizationEngine {
 
       const processingTime = Date.now() - startTime;
       const successfulChunks = chunkFacts.filter(cf => cf.parseSuccess).length;
-      
+
       const result: SummarizationResult = {
         document,
         chunkFacts,
@@ -331,7 +345,7 @@ export class SummarizationEngine {
 
     } catch (error) {
       logError('SUMMARIZE', `Summarization failed for document: ${document.title}`, {
-        documentId: document.id, 
+        documentId: document.id,
         error: error instanceof Error ? error.message : error
       });
       throw error;
@@ -347,36 +361,36 @@ export class SummarizationEngine {
     chunkIndex: number
   ): Promise<{ facts: Partial<ExtractedFacts>; parseSuccess: boolean; rawResponse: string; error?: string }> {
     const prompt = this.buildFactExtractionPrompt(chunkText, styleGuide, chunkIndex);
-    
+
     let lastError: string = '';
-    
+
     for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
       try {
         const response = await ollama.chat([{
           role: 'user',
           content: prompt
         }]);
-        
+
         // Try to parse the JSON response
         const cleanedResponse = this.cleanJsonResponse(response);
         const facts = JSON.parse(cleanedResponse);
-        
+
         return {
           facts,
           parseSuccess: true,
           rawResponse: response,
         };
-        
+
       } catch (error) {
         lastError = error instanceof Error ? error.message : 'Unknown parsing error';
-        
+
         if (attempt < this.MAX_RETRIES - 1) {
           // Wait before retry
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
     }
-    
+
     return {
       facts: {},
       parseSuccess: false,
@@ -391,25 +405,25 @@ export class SummarizationEngine {
   private static buildExamplePhrasesSection(styleGuide: StyleGuide): string {
     const phrases = styleGuide.example_phrases;
     if (!phrases) return '';
-    
+
     let section = '';
-    
+
     if (phrases.preferred_openings?.length > 0) {
       section += `Preferred Opening Phrases:\n- ${phrases.preferred_openings.join('\n- ')}\n\n`;
     }
-    
+
     if (phrases.preferred_transitions?.length > 0) {
       section += `Preferred Transition Phrases:\n- ${phrases.preferred_transitions.join('\n- ')}\n\n`;
     }
-    
+
     if (phrases.preferred_conclusions?.length > 0) {
       section += `Preferred Conclusion Phrases:\n- ${phrases.preferred_conclusions.join('\n- ')}\n\n`;
     }
-    
+
     if (phrases.avoid_phrases?.length > 0) {
       section += `Phrases to Avoid:\n- ${phrases.avoid_phrases.join('\n- ')}\n\n`;
     }
-    
+
     return section.trim() ? `EXAMPLE PHRASES:\n${section}` : '';
   }
 
@@ -423,7 +437,7 @@ export class SummarizationEngine {
   ): string {
     const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
     const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
-    
+
     return PromptService.buildPrompt('fact-extraction', {
       styleInstructions,
       formalityLevel: styleGuide.tone_settings.formality.toString(),
@@ -444,13 +458,13 @@ export class SummarizationEngine {
     let currentCombined = '';
     let startIndex = 0;
     let chunkIndex = 0;
-    
+
     // Target size for combined chunks (aim for ~8-12K characters)
     const targetSize = 10000;
-    
+
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
-      
+
       // If adding this chunk would exceed target size, save current combined chunk
       if (currentCombined.length + chunk.text.length > targetSize && currentCombined.length > 0) {
         combined.push({
@@ -461,7 +475,7 @@ export class SummarizationEngine {
           endIndex: startIndex + currentCombined.length,
           chunkIndex: chunkIndex++
         });
-        
+
         // Start new combined chunk
         currentCombined = chunk.text;
         startIndex = chunk.startIndex;
@@ -475,7 +489,7 @@ export class SummarizationEngine {
         }
       }
     }
-    
+
     // Add the last combined chunk
     if (currentCombined.length > 0) {
       combined.push({
@@ -487,10 +501,10 @@ export class SummarizationEngine {
         chunkIndex: chunkIndex
       });
     }
-    
+
     return combined;
   }
-  
+
   /**
    * Process combined chunks efficiently
    */
@@ -502,13 +516,13 @@ export class SummarizationEngine {
     onProgress?: (current: number, total: number, status?: string) => void
   ): Promise<ChunkFacts[]> {
     const chunkFacts: ChunkFacts[] = [];
-    
+
     // Process combined chunks sequentially for better control
     for (let i = 0; i < combinedChunks.length; i++) {
       const chunk = combinedChunks[i];
-      onProgress?.(10 + i * 60 / combinedChunks.length, 100, 
+      onProgress?.(10 + i * 60 / combinedChunks.length, 100,
         `Processing combined section ${i + 1}/${combinedChunks.length}...`);
-      
+
       try {
         const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);
         chunkFacts.push({
@@ -519,14 +533,14 @@ export class SummarizationEngine {
           rawResponse: facts.rawResponse,
           error: facts.error,
         });
-        
+
         logInfo('SUMMARIZE', `Processed combined chunk ${i + 1}/${combinedChunks.length}`, {
-          documentId, 
-          chunkId: chunk.id, 
+          documentId,
+          chunkId: chunk.id,
           parseSuccess: facts.parseSuccess,
           factKeys: Object.keys(facts.facts)
         });
-        
+
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         chunkFacts.push({
@@ -537,18 +551,18 @@ export class SummarizationEngine {
           rawResponse: '',
           error: errorMessage,
         });
-        
+
         logError('SUMMARIZE', `Failed to process combined chunk ${i + 1}/${combinedChunks.length}`, {
           documentId, chunkId: chunk.id, error: errorMessage
         });
       }
-      
+
       // Small delay between combined chunks
       if (i < combinedChunks.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
-    
+
     return chunkFacts;
   }
 
@@ -556,48 +570,48 @@ export class SummarizationEngine {
    * Process chunks with configurable parallel processing
    */
   private static async processChunks(
-    chunks: TextChunk[], 
-    styleGuide: StyleGuide, 
-    documentId: string, 
+    chunks: TextChunk[],
+    styleGuide: StyleGuide,
+    documentId: string,
     config: ProcessingConfig,
     onProgress?: (current: number, total: number, status?: string) => void
   ): Promise<ChunkFacts[]> {
     const chunkFacts: ChunkFacts[] = [];
-    
+
     // OPTIMIZATION: For large documents, combine chunks to reduce LLM calls
     if (chunks.length > 8) {
       console.log(`🚀 Large document detected (${chunks.length} chunks). Combining chunks for efficiency...`);
-      
+
       // Combine chunks into larger sections to reduce LLM calls
       const combinedChunks = this.combineChunksForEfficiency(chunks);
       console.log(`📦 Reduced from ${chunks.length} to ${combinedChunks.length} combined chunks`);
-      
+
       // Process combined chunks instead
       return this.processCombinedChunks(combinedChunks, styleGuide, documentId, config, onProgress);
     }
-    
+
     // Check if we have too many chunks and need to fall back to more conservative chunking
     if (chunks.length > 15) {
       console.warn(`⚠️ Document has ${chunks.length} chunks, which may cause processing issues. Consider using 'ultra-fast' mode for very large documents.`);
     }
-    
+
     if (config.enableParallelFactExtraction && config.chunking.parallelProcessing) {
       // Parallel processing in batches with detailed progress updates
       const batchSize = config.chunking.batchSize;
       let completedChunks = 0;
-      
+
       const processChunk = async (chunk: TextChunk): Promise<ChunkFacts> => {
         const chunkNumber = completedChunks + 1;
-        onProgress?.(10 + (chunkNumber - 1) * 60 / chunks.length, 100, 
+        onProgress?.(10 + (chunkNumber - 1) * 60 / chunks.length, 100,
           `Extracting facts from chunk ${chunkNumber}/${chunks.length}...`);
-        
+
         try {
           const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);
           completedChunks++;
-          
-          onProgress?.(10 + completedChunks * 60 / chunks.length, 100, 
+
+          onProgress?.(10 + completedChunks * 60 / chunks.length, 100,
             `Completed chunk ${completedChunks}/${chunks.length}`);
-          
+
           return {
             chunkId: chunk.id,
             chunkIndex: chunk.chunkIndex,
@@ -609,10 +623,10 @@ export class SummarizationEngine {
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           completedChunks++;
-          
-          onProgress?.(10 + completedChunks * 60 / chunks.length, 100, 
+
+          onProgress?.(10 + completedChunks * 60 / chunks.length, 100,
             `Failed chunk ${completedChunks}/${chunks.length} - ${errorMessage}`);
-          
+
           return {
             chunkId: chunk.id,
             chunkIndex: chunk.chunkIndex,
@@ -623,19 +637,19 @@ export class SummarizationEngine {
           };
         }
       };
-      
+
       for (let i = 0; i < chunks.length; i += batchSize) {
         const batch = chunks.slice(i, i + batchSize);
         const batchResults = await Promise.all(batch.map(processChunk));
         chunkFacts.push(...batchResults);
-        
+
         // Log batch completion
         logInfo('SUMMARIZE', `Completed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(chunks.length / batchSize)} (${batchResults.length} chunks)`, {
           documentId,
           batchSize: batchResults.length,
           successful: batchResults.filter(r => r.parseSuccess).length
         });
-        
+
         // Small delay between batches to avoid overwhelming Ollama
         if (i + batchSize < chunks.length) {
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -645,9 +659,9 @@ export class SummarizationEngine {
       // Sequential processing with detailed progress updates
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
-        onProgress?.(10 + i * 60 / chunks.length, 100, 
+        onProgress?.(10 + i * 60 / chunks.length, 100,
           `Extracting facts from chunk ${i + 1}/${chunks.length}...`);
-        
+
         try {
           const facts = await this.extractFactsFromChunk(chunk.text, styleGuide, chunk.chunkIndex);
           chunkFacts.push({
@@ -658,14 +672,14 @@ export class SummarizationEngine {
             rawResponse: facts.rawResponse,
             error: facts.error,
           });
-          
+
           logInfo('SUMMARIZE', `Extracted facts from chunk ${i + 1}/${chunks.length}`, {
-            documentId, 
-            chunkId: chunk.id, 
+            documentId,
+            chunkId: chunk.id,
             parseSuccess: facts.parseSuccess,
             factKeys: Object.keys(facts.facts)
           });
-          
+
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           chunkFacts.push({
@@ -676,17 +690,17 @@ export class SummarizationEngine {
             rawResponse: '',
             error: errorMessage,
           });
-          
+
           logError('SUMMARIZE', `Failed to extract facts from chunk ${i + 1}/${chunks.length}`, {
             documentId, chunkId: chunk.id, error: errorMessage
           });
         }
-        
+
         // Small delay to avoid overwhelming Ollama
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
-    
+
     return chunkFacts;
   }
 
@@ -696,18 +710,18 @@ export class SummarizationEngine {
   private static cleanJsonResponse(response: string): string {
     // Remove markdown code blocks
     let cleaned = response.replace(/```json\s*/gi, '').replace(/```\s*$/g, '');
-    
+
     // Remove any leading/trailing whitespace
     cleaned = cleaned.trim();
-    
+
     // Find the first { and last } to extract just the JSON
     const firstBrace = cleaned.indexOf('{');
     const lastBrace = cleaned.lastIndexOf('}');
-    
+
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
       cleaned = cleaned.substring(firstBrace, lastBrace + 1);
     }
-    
+
     return cleaned;
   }
 
@@ -727,11 +741,11 @@ export class SummarizationEngine {
     };
 
     const successfulChunks = chunkFacts.filter(cf => cf.parseSuccess);
-    
+
     // Take the first non-empty values for singular fields
     for (const chunkFact of successfulChunks) {
       const facts = chunkFact.facts;
-      
+
       if (!merged.class_title && facts.class_title) {
         merged.class_title = facts.class_title;
       }
@@ -753,11 +767,11 @@ export class SummarizationEngine {
       const allValues = successfulChunks
         .flatMap(cf => cf.facts[field] || [])
         .filter(value => value && value.trim().length > 0);
-      
+
       // Deduplicate while preserving order
       const unique = Array.from(new Set(allValues.map(v => v.toLowerCase())))
         .map(lowercased => allValues.find(v => v.toLowerCase() === lowercased)!);
-      
+
       (merged[field] as string[]) = unique;
     });
 
@@ -772,15 +786,15 @@ export class SummarizationEngine {
     mergedFacts: ExtractedFacts
   ): Promise<string> {
     const prompt = this.buildRawSummaryPrompt(document, mergedFacts);
-    
+
     try {
       const response = await ollama.chat([{
         role: 'user',
         content: prompt
       }]);
-      
+
       return response.trim();
-      
+
     } catch (error) {
       logError('SUMMARIZE', 'Failed to generate raw summary', { error: error instanceof Error ? error.message : String(error) });
       throw new Error(`Raw summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -796,15 +810,15 @@ export class SummarizationEngine {
     styleGuide: StyleGuide
   ): Promise<string> {
     const prompt = this.buildSummaryPrompt(document, mergedFacts, styleGuide);
-    
+
     try {
       const response = await ollama.chat([{
         role: 'user',
         content: prompt
       }]);
-      
+
       return response.trim();
-      
+
     } catch {
       // Fallback: generate summary from facts
       return this.generateFallbackSummary(document, mergedFacts);
@@ -874,7 +888,7 @@ Generate ONLY the markdown summary, no other text:`;
   ): string {
     const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
     const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
-    
+
     return PromptService.buildPrompt('summary-generation', {
       styleInstructions,
       formalityLevel: styleGuide.tone_settings.formality.toString(),
@@ -895,11 +909,11 @@ Generate ONLY the markdown summary, no other text:`;
     mergedFacts: ExtractedFacts
   ): string {
     let summary = `# ${mergedFacts.class_title || document.title}\n\n`;
-    
+
     if (mergedFacts.date_or_series) {
       summary += `**Date/Series:** ${mergedFacts.date_or_series}\n\n`;
     }
-    
+
     if (mergedFacts.audience) {
       summary += `**Audience:** ${mergedFacts.audience}\n\n`;
     }
@@ -980,15 +994,15 @@ Generate ONLY the markdown summary, no other text:`;
     document: Document
   ): Promise<string> {
     const prompt = this.buildRawSummaryDirectPrompt(document);
-    
+
     try {
       const response = await ollama.chat([{
         role: 'user',
         content: prompt
       }]);
-      
-      return response.trim();
-      
+
+      return this.cleanModelCommentary(response.trim());
+
     } catch (error) {
       logError('SUMMARIZE', 'Failed to generate raw summary directly', { error: error instanceof Error ? error.message : String(error) });
       throw new Error(`Raw summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1005,19 +1019,43 @@ Generate ONLY the markdown summary, no other text:`;
     styleGuide: StyleGuide
   ): Promise<string> {
     const prompt = this.buildStyleApplicationPrompt(document, rawSummary, styleGuide);
-    
+
     try {
       const response = await ollama.chat([{
         role: 'user',
         content: prompt
       }]);
-      
-      return response.trim();
-      
+
+      return this.cleanModelCommentary(response.trim());
+
     } catch (error) {
       logError('SUMMARIZE', 'Failed to apply style guide to summary', { error: error instanceof Error ? error.message : String(error) });
       // Fallback: return raw summary if styling fails
       return rawSummary;
+    }
+  }
+
+  /**
+   * Generate styled summary directly from document (faster than two-step process)
+   */
+  private static async generateStyledSummaryDirect(
+    document: Document,
+    styleGuide: StyleGuide
+  ): Promise<string> {
+    const prompt = this.buildStyledSummaryDirectPrompt(document, styleGuide);
+
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: prompt
+      }]);
+
+      return this.cleanModelCommentary(response.trim());
+
+    } catch (error) {
+      logError('SUMMARIZE', 'Failed to generate styled summary directly', { error: error instanceof Error ? error.message : String(error) });
+      // Fallback: generate raw summary and return it
+      return await this.generateRawSummaryDirect(document);
     }
   }
 
@@ -1027,45 +1065,10 @@ Generate ONLY the markdown summary, no other text:`;
   private static buildRawSummaryDirectPrompt(
     document: Document
   ): string {
-    return `You are a professional transcript summarizer. Create a clear, factual summary of the following lesson/teaching transcript.
-
-DOCUMENT: ${document.title}
-
-TRANSCRIPT:
-${document.text}
-
-REQUIRED FORMAT (follow exactly):
-# ${document.title}
-
-## Synopsis
-[Exactly 4 sentences emphasizing WHY and WHAT benefits - compelling and benefit-focused]
-
-## Learning Objectives
-[What students will learn - bulleted list]
-
-## Key Takeaways
-[Main insights and lessons - bulleted list]
-
-## Topics
-[Subject areas covered - bulleted list]
-
-## Techniques
-[Specific methods, practices, exercises taught - bulleted list]
-
-## Notable Quotes
-[Memorable quotes from the lesson - bulleted list]
-
-## Open Questions
-[Questions for reflection or further exploration - bulleted list]
-
-INSTRUCTIONS:
-1. Follow the exact structure above - ALL sections must be included in this order
-2. Keep each section concise but comprehensive
-3. Focus on factual content and actionable insights
-4. Use clear, professional language
-5. No specific styling - just the facts and structure
-
-Generate the raw summary now:`;
+    return PromptService.buildPrompt('raw-summary-direct', {
+      documentTitle: document.title,
+      documentText: document.text
+    });
   }
 
   /**
@@ -1078,7 +1081,7 @@ Generate the raw summary now:`;
   ): string {
     const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
     const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
-    
+
     return `You are a professional content stylist. Rewrite the following summary to match the specified voice style guide.
 
 DOCUMENT: ${document.title}
@@ -1113,6 +1116,22 @@ Apply the voice style guide now:`;
   }
 
   /**
+   * Build prompt for direct styled summary generation (optimized for smaller models)
+   */
+  private static buildStyledSummaryDirectPrompt(
+    document: Document,
+    styleGuide: StyleGuide
+  ): string {
+    const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
+
+    return PromptService.buildPrompt('styled-summary-direct', {
+      documentTitle: document.title,
+      documentText: document.text,
+      styleInstructions: styleInstructions
+    });
+  }
+
+  /**
    * Generate combined summary (raw + styled) directly from document (ultra-fast path)
    */
   private static async generateCombinedSummary(
@@ -1120,25 +1139,25 @@ Apply the voice style guide now:`;
     styleGuide: StyleGuide
   ): Promise<{ rawSummary: string; styledSummary: string }> {
     const prompt = this.buildCombinedSummaryPrompt(document, styleGuide);
-    
+
     try {
       const response = await ollama.chat([{
         role: 'user',
         content: prompt
       }]);
-      
+
       // Attempt to parse the JSON response
       try {
         const cleanedResponse = this.cleanJsonResponse(response);
         const parsed = JSON.parse(cleanedResponse);
-        
+
         // Validate the response structure
         if (parsed.rawSummary && parsed.styledSummary) {
           // QUALITY CHECK: Ensure we have sufficient detail
           if (this.hasSufficientDetail(parsed.rawSummary)) {
-            return { 
-              rawSummary: parsed.rawSummary.trim(), 
-              styledSummary: parsed.styledSummary.trim() 
+            return {
+              rawSummary: parsed.rawSummary.trim(),
+              styledSummary: parsed.styledSummary.trim()
             };
           } else {
             logInfo('SUMMARIZE', 'Combined summary lacks sufficient detail, falling back to separate generation', {
@@ -1156,17 +1175,17 @@ Apply the voice style guide now:`;
           responsePreview: response.substring(0, 200) + '...'
         });
       }
-      
+
       // Fallback: generate summaries separately (still faster than the old approach)
       logInfo('SUMMARIZE', 'Using fallback separate generation for better detail', {
         documentId: document.id
       });
-      
+
       const rawSummary = await this.generateRawSummaryDirect(document);
       const styledSummary = await this.generateStyledSummaryFromRaw(document, rawSummary, styleGuide);
-      
+
       return { rawSummary, styledSummary };
-      
+
     } catch (error) {
       logError('SUMMARIZE', 'Failed to generate combined summary', { error: error instanceof Error ? error.message : String(error) });
       throw new Error(`Combined summary generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -1182,7 +1201,7 @@ Apply the voice style guide now:`;
   ): string {
     const styleInstructions = styleGuide.instructions_md || 'Use a professional, clear tone.';
     const examplePhrasesSection = this.buildExamplePhrasesSection(styleGuide);
-    
+
     return PromptService.buildPrompt('combined-summary-generation', {
       styleInstructions,
       formalityLevel: styleGuide.tone_settings.formality.toString(),
@@ -1204,36 +1223,36 @@ Apply the voice style guide now:`;
     if (rawSummary.length < 200) {
       return false;
     }
-    
+
     // Check for specific content indicators
-    const hasNotableQuotes = rawSummary.includes('## Notable Quotes') && 
-                             rawSummary.includes('## Notable Quotes') && 
-                             !rawSummary.includes('## Notable Quotes\n\n');
-    
-    const hasLearningObjectives = rawSummary.includes('## Learning Objectives') && 
-                                 rawSummary.includes('## Learning Objectives') && 
-                                 !rawSummary.includes('## Learning Objectives\n\n');
-    
-    const hasKeyTakeaways = rawSummary.includes('## Key Takeaways') && 
-                           rawSummary.includes('## Key Takeaways') && 
-                           !rawSummary.includes('## Key Takeaways\n\n');
-    
-    const hasTechniques = rawSummary.includes('## Techniques') && 
-                         rawSummary.includes('## Techniques') && 
-                         !rawSummary.includes('## Techniques\n\n');
-    
+    const hasNotableQuotes = rawSummary.includes('## Notable Quotes') &&
+      rawSummary.includes('## Notable Quotes') &&
+      !rawSummary.includes('## Notable Quotes\n\n');
+
+    const hasLearningObjectives = rawSummary.includes('## Learning Objectives') &&
+      rawSummary.includes('## Learning Objectives') &&
+      !rawSummary.includes('## Learning Objectives\n\n');
+
+    const hasKeyTakeaways = rawSummary.includes('## Key Takeaways') &&
+      rawSummary.includes('## Key Takeaways') &&
+      !rawSummary.includes('## Key Takeaways\n\n');
+
+    const hasTechniques = rawSummary.includes('## Techniques') &&
+      rawSummary.includes('## Techniques') &&
+      !rawSummary.includes('## Techniques\n\n');
+
     // Check if sections have actual content (not just headers)
-    const hasContentInQuotes = rawSummary.includes('## Notable Quotes') && 
-                               rawSummary.includes('## Notable Quotes') && 
-                               rawSummary.split('## Notable Quotes')[1]?.includes('-');
-    
-    const hasContentInObjectives = rawSummary.includes('## Learning Objectives') && 
-                                  rawSummary.includes('## Learning Objectives') && 
-                                  rawSummary.split('## Learning Objectives')[1]?.includes('-');
-    
+    const hasContentInQuotes = rawSummary.includes('## Notable Quotes') &&
+      rawSummary.includes('## Notable Quotes') &&
+      rawSummary.split('## Notable Quotes')[1]?.includes('-');
+
+    const hasContentInObjectives = rawSummary.includes('## Learning Objectives') &&
+      rawSummary.includes('## Learning Objectives') &&
+      rawSummary.split('## Learning Objectives')[1]?.includes('-');
+
     // Return true only if we have sufficient content indicators
     return hasNotableQuotes && hasLearningObjectives && hasKeyTakeaways && hasTechniques &&
-           hasContentInQuotes && hasContentInObjectives;
+      hasContentInQuotes && hasContentInObjectives;
   }
 
   /**
@@ -1246,21 +1265,21 @@ Apply the voice style guide now:`;
     warning?: string;
   } {
     const textLength = document.text.length;
-    
+
     // Fast size check - only warn for very large documents
     if (textLength <= 50000) { // 50KB - safe for most processing
       return { isLarge: false, isExtremelyLarge: false, suggestedMode: 'balanced' };
     }
-    
+
     const estimatedTokens = Math.ceil(textLength / 4);
     const contextWindow = modelId ? TextSplitter.getModelContextWindow(modelId) : 4096;
-    
+
     const isLarge = estimatedTokens > contextWindow * 0.8;
     const isExtremelyLarge = estimatedTokens > contextWindow * 2;
-    
+
     let suggestedMode = 'balanced';
     let warning: string | undefined;
-    
+
     if (isExtremelyLarge) {
       suggestedMode = 'ultra-fast';
       warning = `Large document detected. Using 'ultra-fast' mode recommended.`;
@@ -1268,8 +1287,42 @@ Apply the voice style guide now:`;
       suggestedMode = 'fast';
       warning = `Large document detected. Consider 'fast' mode for better performance.`;
     }
-    
+
     return { isLarge, isExtremelyLarge, suggestedMode, warning };
+  }
+
+  /**
+   * Clean model commentary and meta-text from responses
+   */
+  private static cleanModelCommentary(response: string): string {
+    // Remove common model commentary patterns
+    const cleanedResponse = response
+      // Remove opening commentary
+      .replace(/^(Here's|Here is|I'll|I will|Let me|Now I'll|I'm going to).*?(?=\n|$)/gim, '')
+      // Remove "Here's the summary" type phrases
+      .replace(/^(Here's the|Here is the|Below is the|The following is).*?summary.*?(?=\n|$)/gim, '')
+      // Remove explanatory phrases
+      .replace(/^(Based on|According to|From).*?(?=\n|$)/gim, '')
+      // Remove meta instructions that leaked through
+      .replace(/^\[.*?\].*?(?=\n|$)/gim, '')
+      // Clean up multiple newlines
+      .replace(/\n\s*\n\s*\n/g, '\n\n')
+      .trim();
+
+    // If the response starts with a title (# ), keep it as is
+    // Otherwise, ensure it starts with content, not commentary
+    const lines = cleanedResponse.split('\n');
+    const firstContentLineIndex = lines.findIndex(line =>
+      line.trim().startsWith('#') ||
+      line.trim().startsWith('##') ||
+      (line.trim().length > 0 && !line.toLowerCase().includes('summary') && !line.toLowerCase().includes('here'))
+    );
+
+    if (firstContentLineIndex > 0) {
+      return lines.slice(firstContentLineIndex).join('\n').trim();
+    }
+
+    return cleanedResponse;
   }
 
   /**

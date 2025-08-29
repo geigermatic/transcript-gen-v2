@@ -43,11 +43,16 @@ export class OllamaClient {
     this.config.chatModel = modelId;
   }
 
+  // Get current model
+  getCurrentModel(): string {
+    return this.config.chatModel;
+  }
+
   async isAvailable(): Promise<boolean> {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-      
+
       try {
         const response = await fetch(`${this.config.baseUrl}/api/tags`, {
           signal: controller.signal
@@ -70,8 +75,8 @@ export class OllamaClient {
 
   async chat(messages: ChatMessage[]): Promise<string> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for chat
-    
+    const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout for chat (larger models need more time)
+
     try {
       const response = await fetch(`${this.config.baseUrl}/api/chat`, {
         method: 'POST',
@@ -85,9 +90,9 @@ export class OllamaClient {
         }),
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       if (!response.ok) {
         throw new Error(`Chat request failed: ${response.statusText}`);
       }
@@ -106,7 +111,7 @@ export class OllamaClient {
   async generateEmbedding(text: string): Promise<number[]> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for embeddings
-    
+
     try {
       const response = await fetch(`${this.config.baseUrl}/api/embeddings`, {
         method: 'POST',
@@ -119,9 +124,9 @@ export class OllamaClient {
         }),
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       if (!response.ok) {
         throw new Error(`Embedding request failed: ${response.statusText}`);
       }

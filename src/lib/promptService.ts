@@ -324,6 +324,109 @@ IMPORTANT: Respond ONLY with valid JSON, no other text.
 Newsletter/Content Sample:
 {{contentSample}}`,
 
+  'raw-summary-direct': `You are a professional transcript summarizer. Create a clear, factual summary of the following lesson/teaching transcript.
+
+DOCUMENT: {{documentTitle}}
+
+TRANSCRIPT:
+{{documentText}}
+
+REQUIRED FORMAT (follow exactly):
+# {{documentTitle}}
+
+## Synopsis
+[4 factual sentences describing what this content covers and its main purpose]
+
+## Learning Objectives
+[What students will learn - bulleted list]
+
+## Key Takeaways
+[Main insights and lessons - bulleted list]
+
+## Topics
+[Subject areas covered - bulleted list]
+
+## Techniques
+[Specific methods, practices, exercises taught - bulleted list]
+
+## Notable Quotes
+[Memorable quotes from the lesson - bulleted list]
+
+## Open Questions
+[Questions for reflection or further exploration - bulleted list]
+
+CRITICAL INSTRUCTIONS:
+1. Follow the exact structure above - ALL sections must be included in this order
+2. Keep each section concise but comprehensive
+3. Focus on factual content and actionable insights
+4. Use clear, neutral, professional language
+5. NO voice styling - just the facts and structure
+6. DO NOT include any commentary, explanations, or meta-text about what you're doing
+7. DO NOT include phrases like "Here's the summary" or "I'll now provide"
+8. START IMMEDIATELY with the title and content - no preamble
+
+Generate ONLY the structured summary content:`,
+
+  'styled-summary-direct': `Create a summary using this EXACT format and Caren's warm, conversational voice:
+
+# {{documentTitle}}
+
+## Synopsis
+[Exactly 4 sentences emphasizing WHY and WHAT benefits - compelling and benefit-focused, using Caren's encouraging tone]
+
+## Learning Objectives
+- [What you'll learn 1 - written in Caren's warm, personal style]
+- [What you'll learn 2 - written in Caren's warm, personal style]
+- [What you'll learn 3 - written in Caren's warm, personal style]
+
+## Key Takeaways
+- [Main insight 1 - expressed with Caren's compassionate wisdom]
+- [Main insight 2 - expressed with Caren's compassionate wisdom]
+- [Main insight 3 - expressed with Caren's compassionate wisdom]
+
+## Topics
+- [Subject area 1 - described in Caren's accessible way]
+- [Subject area 2 - described in Caren's accessible way]
+- [Subject area 3 - described in Caren's accessible way]
+
+## Techniques
+- [Practical technique 1 - explained with Caren's gentle guidance]
+- [Practical technique 2 - explained with Caren's gentle guidance]
+- [Practical technique 3 - explained with Caren's gentle guidance]
+
+## Notable Quotes
+> "[Important quote from the content]"
+
+> "[Another meaningful quote]"
+
+## Open Questions
+- [Question for reflection 1 - posed in Caren's thoughtful, inviting manner]
+- [Question for reflection 2 - posed in Caren's thoughtful, inviting manner]
+
+VOICE STYLE GUIDE: {{styleInstructions}}
+
+CONTENT TO SUMMARIZE:
+{{documentText}}
+
+CRITICAL SYNOPSIS REQUIREMENTS: The synopsis is the MOST IMPORTANT section and must be written 100% in the author's voice using the style guide above. Apply ALL tone settings, keywords, example phrases, and writing patterns heavily in the synopsis. Use the author's preferred openings, transitions, and voice markers. Focus on benefits, transformation, and practical outcomes rather than just describing content. Answer questions like: What problems does this solve? What will you feel/experience? How will you be different after? What specific results can you expect? Make this section sound exactly like the author would write it.
+
+WARMTH WITH SUBTLE HUMOR REQUIREMENT: Include a very subtle sense of warmth with gentle humor throughout, as if talking to a close friend—a gentle, knowing presence in the voice that makes serious topics feel approachable and human. This is not jokes or punchlines, but rather a warm, compassionate tone with a very subtle, gentle sense of humor that comes from someone who's been through the same struggles and can offer understanding with both warmth and a light, knowing touch.
+
+CRITICAL VOICE INSTRUCTIONS:
+- Follow the format above EXACTLY
+- Use Caren's warm, encouraging, conversational voice throughout
+- Write as if speaking directly to a friend who trusts your wisdom
+- Use "you" language to make it personal and engaging
+- Include gentle encouragement and compassionate understanding
+- Avoid academic jargon - use accessible, heartfelt language
+- Make benefits and insights feel achievable and inspiring
+- Apply the author's voice heavily in the synopsis section especially
+- Include subtle warmth and gentle humor as described above
+- DO NOT include any commentary, explanations, or meta-text about what you're doing
+- DO NOT include phrases like "Here's the summary" or "I'll now provide"
+- START IMMEDIATELY with the title and content - no preamble
+- Generate ONLY the structured summary content with Caren's voice applied`,
+
   'combined-summary-generation': `You are a professional transcript summarizer and content stylist. Your task is to generate BOTH a raw factual summary AND a stylized version in a single response.
 
 DOCUMENT: {{documentTitle}}
@@ -408,7 +511,7 @@ export function getPrompts(): Record<string, string> {
   } catch {
     console.error('Failed to load saved prompts');
   }
-  
+
   return DEFAULT_PROMPTS;
 }
 
@@ -419,11 +522,11 @@ export function savePrompt(promptId: string, template: string): void {
   try {
     const savedPrompts = localStorage.getItem('ai-prompts');
     let prompts: PromptTemplate[] = [];
-    
+
     if (savedPrompts) {
       prompts = JSON.parse(savedPrompts);
     }
-    
+
     const existingIndex = prompts.findIndex(p => p.id === promptId);
     if (existingIndex >= 0) {
       prompts[existingIndex].template = template;
@@ -438,7 +541,7 @@ export function savePrompt(promptId: string, template: string): void {
         variables: []
       });
     }
-    
+
     localStorage.setItem('ai-prompts', JSON.stringify(prompts));
   } catch (error) {
     console.error('Failed to save prompt:', error);
@@ -453,11 +556,11 @@ export function resetPromptToDefault(promptId: string): void {
   try {
     const savedPrompts = localStorage.getItem('ai-prompts');
     let prompts: PromptTemplate[] = [];
-    
+
     if (savedPrompts) {
       prompts = JSON.parse(savedPrompts);
     }
-    
+
     // Remove the custom prompt to revert to default
     prompts = prompts.filter(p => p.id !== promptId);
     localStorage.setItem('ai-prompts', JSON.stringify(prompts));
@@ -484,7 +587,7 @@ export class PromptService {
     } catch {
       console.error('Failed to load saved prompt');
     }
-    
+
     // Fallback to default
     return DEFAULT_PROMPTS[promptId] || '';
   }
@@ -494,13 +597,13 @@ export class PromptService {
    */
   static buildPrompt(promptId: string, variables: Record<string, string>): string {
     let template = this.getPrompt(promptId);
-    
+
     // Replace all {{variable}} placeholders
     Object.entries(variables).forEach(([key, value]) => {
       const placeholder = new RegExp(`{{${key}}}`, 'g');
       template = template.replace(placeholder, value || '');
     });
-    
+
     return template;
   }
 
@@ -518,10 +621,10 @@ export class PromptService {
     try {
       const savedPrompts = localStorage.getItem('ai-prompts');
       if (!savedPrompts) return false;
-      
+
       const prompts: PromptTemplate[] = JSON.parse(savedPrompts);
-      return prompts.some(prompt => 
-        DEFAULT_PROMPTS[prompt.id] && 
+      return prompts.some(prompt =>
+        DEFAULT_PROMPTS[prompt.id] &&
         DEFAULT_PROMPTS[prompt.id] !== prompt.template
       );
     } catch {

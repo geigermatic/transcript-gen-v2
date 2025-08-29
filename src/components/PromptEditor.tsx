@@ -16,7 +16,7 @@ interface PromptTemplate {
 // Get the actual templates from promptService
 const getActualTemplates = (): PromptTemplate[] => {
   const servicePrompts = getPrompts();
-  
+
   return [
     {
       id: 'fact-extraction',
@@ -44,6 +44,24 @@ const getActualTemplates = (): PromptTemplate[] => {
       icon: <MessageSquare size={16} />,
       variables: ['summarySection', 'formatRequirements', 'styleInstructions', 'formalityLevel', 'enthusiasmLevel', 'technicalityLevel', 'keywords', 'examplePhrasesSection', 'contextMessages', 'sourceChunks', 'userQuery'],
       template: servicePrompts['chat-response'] || ''
+    },
+    {
+      id: 'raw-summary-direct',
+      name: 'Raw Summary (Direct)',
+      description: 'Generates structured raw summaries directly from documents',
+      category: 'summarization',
+      icon: <FileText size={16} />,
+      variables: ['documentTitle', 'documentText'],
+      template: servicePrompts['raw-summary-direct'] || ''
+    },
+    {
+      id: 'styled-summary-direct',
+      name: 'Styled Summary (Direct)',
+      description: 'Generates styled summaries with voice guide applied',
+      category: 'summarization',
+      icon: <FileText size={16} />,
+      variables: ['documentTitle', 'documentText', 'styleInstructions'],
+      template: servicePrompts['styled-summary-direct'] || ''
     },
     {
       id: 'summary-regeneration',
@@ -93,10 +111,10 @@ export const PromptEditor: React.FC = () => {
     try {
       // Save to promptService
       savePrompt(currentPrompt.id, editingPrompt);
-      
+
       // Update local state
-      setPrompts(prompts.map(p => 
-        p.id === currentPrompt.id 
+      setPrompts(prompts.map(p =>
+        p.id === currentPrompt.id
           ? { ...p, template: editingPrompt }
           : p
       ));
@@ -126,10 +144,10 @@ export const PromptEditor: React.FC = () => {
       try {
         // Reset in promptService
         resetPromptToDefault(currentPrompt.id);
-        
+
         // Reload templates from service
         setPrompts(getActualTemplates());
-        
+
         addLog({
           level: 'info',
           category: 'PROMPT',
@@ -165,7 +183,7 @@ export const PromptEditor: React.FC = () => {
 
   const filteredPrompts = prompts.filter(prompt => {
     const matchesSearch = prompt.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         prompt.description.toLowerCase().includes(searchTerm.toLowerCase());
+      prompt.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || prompt.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -223,24 +241,24 @@ export const PromptEditor: React.FC = () => {
 
         {/* Global Actions */}
         <div className="flex gap-2">
-                      <button
-              onClick={resetCurrentPrompt}
-              title="Reset to default"
-              style={{ 
-                background: '#FEF2F2',
-                border: '1px solid #FECACA',
-                borderRadius: '16px',
-                padding: '12px 16px',
-                color: '#DC2626',
-                fontWeight: '500',
-                transition: 'all 0.2s ease',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-            >
+          <button
+            onClick={resetCurrentPrompt}
+            title="Reset to default"
+            style={{
+              background: '#FEF2F2',
+              border: '1px solid #FECACA',
+              borderRadius: '16px',
+              padding: '12px 16px',
+              color: '#DC2626',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
             <RotateCcw size={16} />
             Reset All to Defaults
           </button>
@@ -256,11 +274,10 @@ export const PromptEditor: React.FC = () => {
               <button
                 key={prompt.id}
                 onClick={() => setSelectedPrompt(prompt.id)}
-                className={`w-full text-left p-4 rounded-lg border transition-all ${
-                  selectedPrompt === prompt.id
+                className={`w-full text-left p-4 rounded-lg border transition-all ${selectedPrompt === prompt.id
                     ? 'bg-blue-100 border-blue-300 shadow-lg'
                     : 'bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className={selectedPrompt === prompt.id ? 'text-blue-600' : 'text-gray-600'}>
@@ -269,11 +286,10 @@ export const PromptEditor: React.FC = () => {
                   <span className="font-semibold text-gray-900">{prompt.name}</span>
                 </div>
                 <p className="text-sm text-gray-600 mb-2 leading-relaxed">{prompt.description}</p>
-                <span className={`inline-block px-2 py-1 text-xs rounded font-medium ${
-                  selectedPrompt === prompt.id 
-                    ? 'bg-blue-200 text-blue-800' 
+                <span className={`inline-block px-2 py-1 text-xs rounded font-medium ${selectedPrompt === prompt.id
+                    ? 'bg-blue-200 text-blue-800'
                     : 'bg-gray-200 text-gray-600'
-                }`}>
+                  }`}>
                   {prompt.category}
                 </span>
               </button>
@@ -297,7 +313,7 @@ export const PromptEditor: React.FC = () => {
                   <button
                     onClick={copyPromptToClipboard}
                     title="Copy to clipboard"
-                    style={{ 
+                    style={{
                       background: '#E5E7EB',
                       border: '1px solid #D1D5DB',
                       borderRadius: '16px',
@@ -317,7 +333,7 @@ export const PromptEditor: React.FC = () => {
                   <button
                     onClick={resetCurrentPrompt}
                     title="Reset to default"
-                    style={{ 
+                    style={{
                       background: '#FFFBEB',
                       border: '1px solid #FED7AA',
                       borderRadius: '16px',
