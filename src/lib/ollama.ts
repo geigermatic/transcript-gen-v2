@@ -32,7 +32,7 @@ export class OllamaClient {
   constructor(config: Partial<OllamaConfig> = {}) {
     this.config = {
       baseUrl: 'http://127.0.0.1:11434',
-      chatModel: 'llama3.1:8b-instruct-q4_K_M',
+      chatModel: 'gemma3:4b',
       embeddingModel: 'nomic-embed-text',
       ...config,
     };

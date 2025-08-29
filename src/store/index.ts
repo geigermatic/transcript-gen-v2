@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { 
-  Document, 
-  StyleGuide, 
-  AppSettings, 
-  ChatMessage, 
+import type {
+  Document,
+  StyleGuide,
+  AppSettings,
+  ChatMessage,
   LogEntry,
   UserPreference,
   EmbeddedChunk,
@@ -22,41 +22,41 @@ interface AppState {
   addDocument: (document: Document) => void;
   removeDocument: (id: string) => void;
   updateDocument: (id: string, updates: Partial<Document>) => void;
-  
+
   // Embeddings
   embeddings: Map<string, EmbeddedChunk[]>; // documentId -> embedded chunks
   addEmbeddings: (documentId: string, chunks: EmbeddedChunk[]) => void;
   removeEmbeddings: (documentId: string) => void;
   getAllEmbeddings: () => Map<string, EmbeddedChunk[]>;
-  
+
   // Embedding progress tracking
   embeddingProgress: Map<string, EmbeddingProgress>; // documentId -> progress
   setEmbeddingProgress: (documentId: string, progress: EmbeddingProgress) => void;
   clearEmbeddingProgress: (documentId: string) => void;
-  
+
   // Style Guide
   styleGuide: StyleGuide;
   updateStyleGuide: (updates: Partial<StyleGuide>) => void;
   resetStyleGuide: () => void;
-  
+
   // Settings
   settings: AppSettings;
   updateSettings: (updates: Partial<AppSettings>) => void;
-  
+
   // Model Selection
   availableModels: ModelOption[];
   getAvailableModels: () => ModelOption[];
   getCurrentModel: () => ModelOption;
-  
+
   // Chat
   chatMessages: ChatMessage[];
   addChatMessage: (message: ChatMessage) => void;
   clearChat: () => void;
-  
+
   // User Preferences (A/B testing)
   preferences: UserPreference[];
   addPreference: (preference: UserPreference) => void;
-  
+
   // A/B Testing
   abSummaryPairs: ABSummaryPair[];
   addABSummaryPair: (pair: ABSummaryPair) => void;
@@ -64,7 +64,7 @@ interface AppState {
   updateABSummaryFeedback: (pairId: string, feedback: UserPreference) => void;
   getABSummaryPair: (pairId: string) => ABSummaryPair | undefined;
   getDocumentSummary: (documentId: string) => SummarizationResult | undefined;
-  
+
   // Summary History Management
   summaryHistory: Map<string, SummaryHistory>; // documentId -> version history
   addSummaryVersion: (documentId: string, summary: string, isOriginal?: boolean, modelUsed?: string) => void;
@@ -76,12 +76,12 @@ interface AppState {
   clearSummaryHistory: (documentId: string) => void;
   cleanupSummaryHistory: () => void; // Memory management
   deleteSummaryVersion: (documentId: string, versionId: string) => void;
-  
+
   // Developer Console
   logs: LogEntry[];
   addLog: (log: Omit<LogEntry, 'id' | 'timestamp'>) => void;
   clearLogs: () => void;
-  
+
   // UI State
   isDarkMode: boolean;
   toggleDarkMode: () => void;
@@ -93,11 +93,11 @@ interface AppState {
   // Onboarding
   hasCompletedOnboarding: boolean;
   setOnboardingComplete: (completed: boolean) => void;
-  
+
   // Store Hydration State
   isHydrated: boolean;
   setHydrated: (hydrated: boolean) => void;
-  
+
   // Data Management
   clearAllData: () => void;
 }
@@ -388,8 +388,8 @@ When writing a 4-sentence lesson summary:
 
       // Settings
       settings: {
-        default_model: 'llama3.1:8b-instruct-q4_K_M',
-        chat_default: 'llama3.1:8b-instruct-q4_K_M',
+        default_model: 'gemma3:4b',
+        chat_default: 'gemma3:4b',
         theme: 'dark',
         developer_mode: true,
       },
@@ -397,7 +397,7 @@ When writing a 4-sentence lesson summary:
         set((state) => ({
           settings: { ...state.settings, ...updates }
         })),
-      
+
       // Model Selection
       availableModels: [
         {
@@ -479,17 +479,17 @@ When writing a 4-sentence lesson summary:
           oldPairsCount: get().abSummaryPairs.length,
           updatedPair: updatedPair
         });
-        
+
         set((state) => {
           const newPairs = state.abSummaryPairs.map((pair) =>
             pair.id === updatedPair.id ? updatedPair : pair
           );
-          
+
           console.log('Store: AB summary pairs after update', {
             newPairsCount: newPairs.length,
             updatedPairFound: newPairs.find(p => p.id === updatedPair.id)
           });
-          
+
           return { abSummaryPairs: newPairs };
         });
       },
@@ -503,7 +503,7 @@ When writing a 4-sentence lesson summary:
         const state = get();
         return state.abSummaryPairs.find((pair) => pair.id === pairId);
       },
-      
+
       // Get summary for a specific document (from AB pairs)
       getDocumentSummary: (documentId: string) => {
         const state = get();
@@ -520,26 +520,26 @@ When writing a 4-sentence lesson summary:
       addSummaryVersion: (documentId, summary, isOriginal = false, modelUsed?: string) =>
         set((state) => {
           // Ensure summaryHistory is a Map (handle rehydration from persistence)
-          const summaryHistory = state.summaryHistory instanceof Map 
-            ? state.summaryHistory 
+          const summaryHistory = state.summaryHistory instanceof Map
+            ? state.summaryHistory
             : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
-          
+
           const existingHistory = summaryHistory.get(documentId);
-          
+
           // Check for duplicate content to prevent multiple identical versions
           if (existingHistory && existingHistory.versions && existingHistory.versions.length > 0) {
-            const isDuplicate = existingHistory.versions.some(version => 
+            const isDuplicate = existingHistory.versions.some(version =>
               version.summary === summary && version.isOriginal === isOriginal
             );
-            
+
             if (isDuplicate) {
               console.log('🔄 Skipping duplicate version creation:', { documentId, isOriginal, contentLength: summary.length });
               return state; // Don't create duplicate, return current state
             }
           }
-          
+
           const nextVersionNumber = (existingHistory?.versions.length || 0) + 1;
-          
+
           const newVersion: SummaryVersion = {
             id: crypto.randomUUID(),
             versionNumber: nextVersionNumber,
@@ -550,7 +550,7 @@ When writing a 4-sentence lesson summary:
             characterCount: summary.length,
             modelUsed,
           };
-          
+
           const updatedHistory: SummaryHistory = {
             documentId,
             versions: [newVersion, ...(existingHistory?.versions || [])], // Prepend new version at top
@@ -559,69 +559,69 @@ When writing a 4-sentence lesson summary:
             totalSize: (existingHistory?.totalSize || 0) + summary.length,
             currentVersionIndex: 0, // New version is always at index 0
           };
-          
+
           // Enforce max versions limit (remove oldest versions from bottom)
           if (updatedHistory.versions.length > updatedHistory.maxVersions) {
             const removedVersions = updatedHistory.versions.splice(updatedHistory.maxVersions);
             const removedSize = removedVersions.reduce((total, version) => total + version.characterCount, 0);
             updatedHistory.totalSize -= removedSize;
           }
-          
+
           const newHistory = new Map<string, SummaryHistory>(summaryHistory);
           newHistory.set(documentId, updatedHistory);
-          
+
           console.log('✅ Added new version:', { documentId, versionNumber: nextVersionNumber, isOriginal, contentLength: summary.length });
-          
+
           return { summaryHistory: newHistory };
         }),
       getSummaryHistory: (documentId) => {
         const state = get();
         // Ensure summaryHistory is a Map (handle rehydration from persistence)
-        const summaryHistory = state.summaryHistory instanceof Map 
-          ? state.summaryHistory 
+        const summaryHistory = state.summaryHistory instanceof Map
+          ? state.summaryHistory
           : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
         return summaryHistory.get(documentId);
       },
-      
+
       // New methods for stacked version view
       getAllVersions: (documentId) => {
         const state = get();
         const history = state.summaryHistory.get(documentId);
         return history?.versions || [];
       },
-      
+
       setCurrentVersion: (documentId, versionIndex) => {
         set((state) => {
-          const summaryHistory = state.summaryHistory instanceof Map 
-            ? state.summaryHistory 
+          const summaryHistory = state.summaryHistory instanceof Map
+            ? state.summaryHistory
             : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
-          
+
           const history = summaryHistory.get(documentId);
           if (!history || versionIndex < 0 || versionIndex >= history.versions.length) {
             return state;
           }
-          
+
           const updatedHistory = { ...history, currentVersionIndex: versionIndex, lastAccessed: Date.now() };
           const newHistory = new Map<string, SummaryHistory>(summaryHistory);
           newHistory.set(documentId, updatedHistory);
-          
+
           return { summaryHistory: newHistory };
         });
       },
-      
+
       clearVersionHistory: (documentId) => {
         set((state) => {
-          const summaryHistory = state.summaryHistory instanceof Map 
-            ? state.summaryHistory 
+          const summaryHistory = state.summaryHistory instanceof Map
+            ? state.summaryHistory
             : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
-          
+
           // Keep only the original version
           const history = summaryHistory.get(documentId);
           if (!history) return state;
-          
+
           const originalVersion = history.versions.find(v => v.isOriginal);
           if (!originalVersion) return state;
-          
+
           const clearedHistory: SummaryHistory = {
             documentId,
             versions: [originalVersion],
@@ -630,20 +630,20 @@ When writing a 4-sentence lesson summary:
             totalSize: originalVersion.characterCount,
             currentVersionIndex: 0,
           };
-          
+
           const newHistory = new Map<string, SummaryHistory>(summaryHistory);
           newHistory.set(documentId, clearedHistory);
-          
+
           return { summaryHistory: newHistory };
         });
       },
       restoreSummaryVersion: (documentId, versionId) => {
         const state = get();
         // Ensure summaryHistory is a Map (handle rehydration from persistence)
-        const summaryHistory = state.summaryHistory instanceof Map 
-          ? state.summaryHistory 
+        const summaryHistory = state.summaryHistory instanceof Map
+          ? state.summaryHistory
           : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
-        
+
         const history = summaryHistory.get(documentId);
         if (!history) return undefined;
 
@@ -678,10 +678,10 @@ When writing a 4-sentence lesson summary:
       clearSummaryHistory: (documentId) =>
         set((state) => {
           // Ensure summaryHistory is a Map (handle rehydration from persistence)
-          const summaryHistory = state.summaryHistory instanceof Map 
-            ? state.summaryHistory 
+          const summaryHistory = state.summaryHistory instanceof Map
+            ? state.summaryHistory
             : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
-          
+
           const newHistory = new Map<string, SummaryHistory>(summaryHistory);
           newHistory.delete(documentId);
           return { summaryHistory: newHistory };
@@ -689,28 +689,28 @@ When writing a 4-sentence lesson summary:
       cleanupSummaryHistory: () => {
         const state = get();
         // Ensure summaryHistory is a Map (handle rehydration from persistence)
-        const summaryHistory = state.summaryHistory instanceof Map 
-          ? state.summaryHistory 
+        const summaryHistory = state.summaryHistory instanceof Map
+          ? state.summaryHistory
           : new Map(Object.entries(state.summaryHistory || {}).map(([key, value]) => [key, value as SummaryHistory]));
-        
+
         const now = Date.now();
         const maxAge = 24 * 60 * 60 * 1000; // 24 hours
         const maxSize = 50 * 1024 * 1024; // 50MB total
-        
+
         let totalSize = 0;
         const newHistory = new Map<string, SummaryHistory>();
-        
+
         // Keep only recent and small histories
         for (const [docId, history] of summaryHistory.entries()) {
           const age = now - history.lastAccessed;
           const wouldExceedSize = totalSize + history.totalSize > maxSize;
-          
+
           if (age < maxAge && !wouldExceedSize) {
             newHistory.set(docId, history);
             totalSize += history.totalSize;
           }
         }
-        
+
         set({ summaryHistory: newHistory });
       },
       deleteSummaryVersion: (documentId: string, versionId: string) => {
@@ -728,7 +728,7 @@ When writing a 4-sentence lesson summary:
               });
             }
           }
-          
+
           const existingHistory = summaryHistory.get(documentId);
           if (!existingHistory || !existingHistory.versions) {
             return state;
@@ -736,7 +736,7 @@ When writing a 4-sentence lesson summary:
 
           // Filter out the version to delete
           const updatedVersions = existingHistory.versions.filter((v: any) => v.id !== versionId);
-          
+
           // If we're deleting the last version, clear the history
           if (updatedVersions.length === 0) {
             summaryHistory.delete(documentId);
@@ -790,13 +790,13 @@ When writing a 4-sentence lesson summary:
       hasCompletedOnboarding: false,
       setOnboardingComplete: (completed) =>
         set({ hasCompletedOnboarding: completed }),
-      
+
       // Store Hydration State
       isHydrated: false,
       setHydrated: (hydrated) => set({ isHydrated: hydrated }),
-      
+
       // Data Management
-      clearAllData: () => 
+      clearAllData: () =>
         set(() => ({
           // Clear all documents and related data
           documents: [],
@@ -804,13 +804,13 @@ When writing a 4-sentence lesson summary:
           embeddingProgress: new Map<string, EmbeddingProgress>(),
           abSummaryPairs: [],
           summaryHistory: new Map<string, SummaryHistory>(), // Clear summary history
-          
+
           // Clear chat data
           chatMessages: [],
-          
+
           // Clear logs
           logs: [],
-          
+
           // Keep UI state and settings intact
           // isDarkMode, isUserTestingMode, hasCompletedOnboarding, styleGuide, settings stay the same
         })),
@@ -826,9 +826,9 @@ When writing a 4-sentence lesson summary:
             embeddingsSize: state.embeddings?.size,
             embeddingsKeys: state.embeddings ? Array.from(state.embeddings.keys()) : []
           });
-          
+
           state.setHydrated(true);
-          
+
           console.log('🔍 onRehydrateStorage - State after hydration:', {
             documentsCount: state.documents?.length,
             embeddingsSize: state.embeddings?.size,
@@ -841,26 +841,26 @@ When writing a 4-sentence lesson summary:
         getItem: (name) => {
           const str = localStorage.getItem(name);
           if (!str) return null;
-          
+
           try {
             const parsed = JSON.parse(str);
             console.log('🔍 Storage getItem - Raw embeddings:', parsed.state?.embeddings);
             console.log('🔍 Storage getItem - Raw summaryHistory:', parsed.state?.summaryHistory);
-            
+
             if (parsed.state?.embeddings) {
               const entries = Object.entries(parsed.state.embeddings);
               console.log('🔍 Storage getItem - Entries to convert:', entries);
               parsed.state.embeddings = new Map(entries);
               console.log('🔍 Storage getItem - Converted Map:', parsed.state.embeddings);
             }
-            
+
             if (parsed.state?.summaryHistory) {
               const entries = Object.entries(parsed.state.summaryHistory);
               console.log('🔍 Storage getItem - SummaryHistory entries to convert:', entries);
               parsed.state.summaryHistory = new Map(entries);
               console.log('🔍 Storage getItem - Converted SummaryHistory Map:', parsed.state.summaryHistory);
             }
-            
+
             return parsed;
           } catch (error) {
             console.warn('Failed to parse stored state:', error);
@@ -873,20 +873,20 @@ When writing a 4-sentence lesson summary:
             console.log('🔍 Storage setItem - Is Map?', value.state.embeddings instanceof Map);
             console.log('🔍 Storage setItem - Original summaryHistory:', value.state.summaryHistory);
             console.log('🔍 Storage setItem - SummaryHistory Is Map?', value.state.summaryHistory instanceof Map);
-            
+
             const serializedState = {
               ...value,
               state: {
                 ...value.state,
-                embeddings: value.state.embeddings instanceof Map 
-                  ? Object.fromEntries(value.state.embeddings) 
+                embeddings: value.state.embeddings instanceof Map
+                  ? Object.fromEntries(value.state.embeddings)
                   : {},
-                summaryHistory: value.state.summaryHistory instanceof Map 
-                  ? Object.fromEntries(value.state.summaryHistory) 
+                summaryHistory: value.state.summaryHistory instanceof Map
+                  ? Object.fromEntries(value.state.summaryHistory)
                   : {},
               }
             };
-            
+
             console.log('🔍 Storage setItem - Serialized embeddings:', serializedState.state.embeddings);
             console.log('🔍 Storage setItem - Serialized summaryHistory:', serializedState.state.summaryHistory);
             localStorage.setItem(name, JSON.stringify(serializedState));

@@ -58,8 +58,8 @@ check_required_models() {
     local missing_models=()
     
     # Check primary LLM model
-    if ! ollama list | grep -q "llama3.1:8b-instruct-q4_K_M"; then
-        missing_models+=("llama3.1:8b-instruct-q4_K_M")
+    if ! ollama list | grep -q "gemma3:4b"; then
+        missing_models+=("gemma3:4b")
     else
         echo -e "${GREEN}✅ Primary LLM model available${NC}"
     fi
@@ -87,9 +87,9 @@ download_required_models() {
     echo ""
     
     # Download primary LLM model
-    echo -e "${BLUE}📥 Downloading primary LLM model (llama3.1:8b-instruct-q4_K_M)...${NC}"
-    echo -e "${YELLOW}This model is ~4.7GB and may take 5-15 minutes to download.${NC}"
-    if ollama pull llama3.1:8b-instruct-q4_K_M; then
+    echo -e "${BLUE}📥 Downloading primary LLM model (gemma3:4b)...${NC}"
+    echo -e "${YELLOW}This model is ~3.3GB and may take 3-10 minutes to download.${NC}"
+    if ollama pull gemma3:4b; then
         echo -e "${GREEN}✅ Primary LLM model downloaded successfully${NC}"
     else
         echo -e "${RED}❌ Failed to download primary LLM model${NC}"
