@@ -228,4 +228,4 @@ echo -e "   • View available models: ollama list"
 echo ""
 
 # Start Vite dev server
-npm run dev
+npm run dev:vite-only

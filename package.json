@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:full": "bash scripts/start-dev.sh",
+    "dev": "bash scripts/start-dev.sh",
+    "dev:vite-only": "vite",
     "setup": "bash scripts/setup-client.sh",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
