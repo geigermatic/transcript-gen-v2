@@ -11,28 +11,33 @@ import { SummarizationEngine } from '../lib/summarizationEngine';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { LeftNavigation } from './LeftNavigation';
-import type { Document, SummarizationResult } from '../types';
+import { ContextAwareChat } from './ContextAwareChat';
+import type { Document, SummarizationResult, ChatMessage } from '../types';
 
 export const SummaryResultsView: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { 
-    documents, 
-    styleGuide, 
-    getDocumentSummary, 
-    addSummaryVersion, 
+  const {
+    documents,
+    styleGuide,
+    abSummaryPairs,
+    getDocumentSummary,
+    addSummaryVersion,
     getSummaryHistory,
     getAllVersions,
     deleteSummaryVersion
   } = useAppStore();
-  
+
   const [activeTab, setActiveTab] = useState<'stylized' | 'raw'>('stylized');
-  const [followUpQuery, setFollowUpQuery] = useState('');
+
   const [document, setDocument] = useState<Document | null>(null);
   const [summary, setSummary] = useState<SummarizationResult | null>(null);
   const [isNavExpanded, setIsNavExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+
+  // Chat state for follow-up functionality
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [copyFeedback, setCopyFeedback] = useState<{ versionId: string; message: string } | null>(null);
   const [regenerationProgress, setRegenerationProgress] = useState<{ step: string; progress: number } | null>(null);
   const [comparisonMode, setComparisonMode] = useState(false);
@@ -72,20 +77,20 @@ export const SummaryResultsView: React.FC = () => {
   // Fetch summary for a document
   const fetchDocumentSummary = useCallback(async (doc: Document) => {
     if (!doc) return;
-    
+
     // First check if we already have a summary for this document
     const existingSummary = getDocumentSummary(doc.id);
-    
+
     if (existingSummary) {
       setSummary(existingSummary);
       return;
     }
-    
+
     // If no existing summary, generate a new one
     setIsLoading(true);
     try {
       const summaryResult = await SummarizationEngine.summarizeDocument(
-        doc, 
+        doc,
         styleGuide
       );
       setSummary(summaryResult);
@@ -134,11 +139,11 @@ export const SummaryResultsView: React.FC = () => {
       // Get document and summary data from navigation state
       if (location.state?.document) {
         setDocument(location.state.document);
-        
+
         if (location.state?.summary) {
           // We have both document and summary
           setSummary(location.state.summary);
-          
+
           // Initialize version history with the original summary (only if not already exists)
           if (location.state.summary.styledSummary) {
             try {
@@ -159,7 +164,7 @@ export const SummaryResultsView: React.FC = () => {
           const existingSummary = getDocumentSummary(location.state.document.id);
           if (existingSummary) {
             setSummary(existingSummary);
-            
+
             // Initialize version history with the existing summary (only if not already exists)
             if (existingSummary.styledSummary) {
               try {
@@ -193,13 +198,13 @@ export const SummaryResultsView: React.FC = () => {
   // Effect to sync UI with store when versions change
   useEffect(() => {
     if (!document) return;
-    
+
     // Get the latest version history from the store
     const history = getSummaryHistory(document.id);
     if (history && history.versions.length > 1) {
       // setShowRestoreButton(true); // Removed showRestoreButton state
     }
-    
+
     // Force a re-render when versions change
     console.log('🔄 Store versions changed, forcing UI update:', {
       documentId: document.id,
@@ -210,26 +215,26 @@ export const SummaryResultsView: React.FC = () => {
 
   const handleBack = () => {
     // Navigate back to chat with document info to preserve upload completion state
-    navigate('/', { 
-      state: { 
+    navigate('/', {
+      state: {
         returnFromSummary: true,
         document: document,
         summary: summary
-      } 
+      }
     });
   };
 
   const handleRegenerate = async () => {
     if (!document || !summary) return;
-    
+
     setIsRegenerating(true);
     setRegenerationProgress({ step: 'Preparing regeneration...', progress: 10 });
-    
+
     try {
       console.log('🔄 Starting regeneration for document:', document.id);
-      
+
       setRegenerationProgress({ step: 'Generating new summary...', progress: 50 });
-      
+
       // Use the existing chunked content to regenerate just the styled summary
       const regeneratedSummary = await SummarizationEngine.regenerateStyledSummary(
         document,
@@ -237,28 +242,28 @@ export const SummaryResultsView: React.FC = () => {
         styleGuide,
         summary.regenerationCount ? summary.regenerationCount + 1 : 1
       );
-      
+
       console.log('🔄 New summary generated, length:', regeneratedSummary.length);
       setRegenerationProgress({ step: 'Finalizing...', progress: 90 });
-      
+
       // Add the new regenerated summary to the store's version history
       try {
         const currentModel = summary.processingStats.modelUsed || 'unknown';
         console.log('💾 Adding new regenerated version to store:', { documentId: document.id, contentLength: regeneratedSummary.length });
-        
+
         addSummaryVersion(
           document.id,
           regeneratedSummary,
           false, // Not original
           currentModel
         );
-        
+
         console.log('✅ New regenerated version added to store');
       } catch (error) {
         console.warn('Failed to add regenerated version to store:', error);
         // Continue even if versioning fails
       }
-      
+
       // Update the summary with the new styled version
       const updatedSummary: SummarizationResult = {
         ...summary,
@@ -268,20 +273,20 @@ export const SummaryResultsView: React.FC = () => {
         versions: summary.versions || [],
         currentVersionIndex: 0
       };
-      
+
       setSummary(updatedSummary);
-      
+
       // Switch to stylized tab to show the new summary
       setActiveTab('stylized');
-      
+
       // Force a re-render to show the new version
       // This ensures the UI updates with the new version from the store
       console.log('✅ Summary updated, UI should refresh');
       setRegenerationProgress({ step: 'Complete!', progress: 100 });
-      
+
       // Clear progress after a brief delay
       setTimeout(() => setRegenerationProgress(null), 1500);
-      
+
     } catch (error) {
       console.error('Failed to regenerate summary:', error);
       setRegenerationProgress({ step: 'Error occurred', progress: 0 });
@@ -291,13 +296,9 @@ export const SummaryResultsView: React.FC = () => {
     }
   };
 
-  const handleFollowUpSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (followUpQuery.trim()) {
-      // TODO: Handle follow-up query - could navigate back to chat or process here
-      console.log('Follow-up query:', followUpQuery);
-      setFollowUpQuery('');
-    }
+  // Chat messages handler for shared component
+  const handleChatMessagesChange = (newMessages: ChatMessage[]) => {
+    setChatMessages(newMessages);
   };
 
   const handleDeleteVersion = useCallback(async (versionId: string) => {
@@ -318,7 +319,7 @@ export const SummaryResultsView: React.FC = () => {
 
   const renderStackedVersions = () => {
     if (!summary || !document) return null;
-    
+
     // Use the memoized allVersions for consistency
     console.log('🔍 renderStackedVersions debug:', {
       documentId: document.id,
@@ -327,7 +328,7 @@ export const SummaryResultsView: React.FC = () => {
       summaryStyledLength: summary.styledSummary?.length || 0,
       regenerationCount: summary.regenerationCount || 0
     });
-    
+
     // If no versions or only one version, show the current summary
     if (allVersions.length <= 1) {
       console.log('📝 Showing single summary view (no versions in store)');
@@ -387,7 +388,7 @@ export const SummaryResultsView: React.FC = () => {
                 ),
               }}
             >
-              {activeTab === 'stylized' 
+              {activeTab === 'stylized'
                 ? (summary.styledSummary || 'No stylized summary available')
                 : (summary.rawSummary || 'No raw summary available')
               }
@@ -396,9 +397,9 @@ export const SummaryResultsView: React.FC = () => {
         </div>
       );
     }
-    
+
     console.log('📚 Showing stacked versions view:', allVersions.length, 'versions');
-    
+
     // Render stacked versions
     return (
       <div className="space-y-6">
@@ -418,7 +419,7 @@ export const SummaryResultsView: React.FC = () => {
                 </span>
               </div>
             </div>
-            
+
             {/* Version Selection */}
             <div className="grid grid-cols-2 gap-6 mb-6">
               {/* Left Version Selection */}
@@ -429,11 +430,10 @@ export const SummaryResultsView: React.FC = () => {
                     <button
                       key={`left-${version.id}`}
                       onClick={() => selectVersionForComparison(version.id, 'left')}
-                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                        selectedVersions.left === version.id
-                          ? 'border-purple-400 bg-purple-100 text-purple-800'
-                          : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
-                      }`}
+                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${selectedVersions.left === version.id
+                        ? 'border-purple-400 bg-purple-100 text-purple-800'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium">
@@ -459,11 +459,10 @@ export const SummaryResultsView: React.FC = () => {
                     <button
                       key={`right-${version.id}`}
                       onClick={() => selectVersionForComparison(version.id, 'right')}
-                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                        selectedVersions.right === version.id
-                          ? 'border-purple-400 bg-purple-100 text-purple-800'
-                          : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
-                      }`}
+                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${selectedVersions.right === version.id
+                        ? 'border-purple-400 bg-purple-100 text-purple-800'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium">
@@ -568,7 +567,7 @@ export const SummaryResultsView: React.FC = () => {
                       </ReactMarkdown>
                     </div>
                   </div>
-                  
+
                   {/* Right Version */}
                   <div className={`bg-white border-2 border-purple-300 rounded-lg p-4 ${fullWidthComparison ? 'p-6' : 'p-4'}`}>
                     <h5 className="font-semibold text-purple-800 mb-3">
@@ -637,7 +636,7 @@ export const SummaryResultsView: React.FC = () => {
             )}
           </div>
         )}
-        
+
         {allVersions.map((version) => (
           <div key={version.id} id={`version-${version.id}`} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             {/* Version Header */}
@@ -659,37 +658,37 @@ export const SummaryResultsView: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Version Actions */}
               <div className="flex items-center gap-2">
-                  {/* Inline Copy Button */}
-                  <button
-                    onClick={() => handleCopyVersion(version.summary, version.id)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm rounded-md transition-colors"
-                  >
-                    {copyFeedback?.versionId === version.id ? (
-                      <>
-                        <Check size={14} className="text-green-600" />
-                        <span className="text-green-600 text-xs">{copyFeedback.message}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => handleDeleteVersion(version.id)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-sm rounded-md transition-colors"
-                  >
-                    <Trash2 size={14} />
-                    <span>Delete</span>
-                  </button>
-                </div>
+                {/* Inline Copy Button */}
+                <button
+                  onClick={() => handleCopyVersion(version.summary, version.id)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm rounded-md transition-colors"
+                >
+                  {copyFeedback?.versionId === version.id ? (
+                    <>
+                      <Check size={14} className="text-green-600" />
+                      <span className="text-green-600 text-xs">{copyFeedback.message}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+                {/* Delete Button */}
+                <button
+                  onClick={() => handleDeleteVersion(version.id)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-sm rounded-md transition-colors"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete</span>
+                </button>
+              </div>
             </div>
-            
+
             {/* Version Content */}
             <div className="p-6">
               <div className="prose prose-lg max-w-none">
@@ -746,7 +745,7 @@ export const SummaryResultsView: React.FC = () => {
                     ),
                   }}
                 >
-                  {activeTab === 'stylized' 
+                  {activeTab === 'stylized'
                     ? version.summary
                     : (summary.rawSummary || version.summary)
                   }
@@ -765,8 +764,8 @@ export const SummaryResultsView: React.FC = () => {
       {/* Left Navigation Panel - Collapsible on Hover */}
       <LeftNavigation
         isNavExpanded={fullWidthComparison ? false : isNavExpanded}
-        onNavMouseEnter={fullWidthComparison ? () => {} : handleNavMouseEnter}
-        onNavMouseLeave={fullWidthComparison ? () => {} : handleNavMouseLeave}
+        onNavMouseEnter={fullWidthComparison ? () => { } : handleNavMouseEnter}
+        onNavMouseLeave={fullWidthComparison ? () => { } : handleNavMouseLeave}
         currentDocumentId={document?.id}
         showNewChatButton={false}
       />
@@ -785,7 +784,7 @@ export const SummaryResultsView: React.FC = () => {
                 <span>Back to Chat</span>
               </button>
             </div>
-            
+
             {/* Document Title */}
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -813,26 +812,24 @@ export const SummaryResultsView: React.FC = () => {
                   <div className="flex bg-gray-100 rounded-lg p-1">
                     <button
                       onClick={() => setActiveTab('stylized')}
-                      className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${
-                        activeTab === 'stylized'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-800'
-                      }`}
+                      className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${activeTab === 'stylized'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-800'
+                        }`}
                     >
                       Styled Summary
                     </button>
                     <button
                       onClick={() => setActiveTab('raw')}
-                      className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${
-                        activeTab === 'raw'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-800'
-                      }`}
+                      className={`px-6 py-3 text-sm font-medium rounded-md transition-all ${activeTab === 'raw'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-800'
+                        }`}
                     >
                       Raw Summary
                     </button>
                   </div>
-                  
+
                   {/* Regeneration Progress Display */}
                   {regenerationProgress && (
                     <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
@@ -843,25 +840,24 @@ export const SummaryResultsView: React.FC = () => {
                         </span>
                       </div>
                       <div className="w-24 bg-blue-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${regenerationProgress.progress}%` }}
                         ></div>
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3">
                     {/* Comparison Mode Toggle */}
                     {allVersions.length > 1 && (
                       <button
                         onClick={toggleComparisonMode}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                          comparisonMode
-                            ? 'bg-purple-100 text-purple-700 border-2 border-purple-300'
-                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                        }`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${comparisonMode
+                          ? 'bg-purple-100 text-purple-700 border-2 border-purple-300'
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                          }`}
                       >
                         <span className="text-sm">🔍</span>
                         <span className="text-sm font-medium">
@@ -869,7 +865,7 @@ export const SummaryResultsView: React.FC = () => {
                         </span>
                       </button>
                     )}
-                    
+
                     {/* Regenerate Button */}
                     <button
                       onClick={handleRegenerate}
@@ -902,15 +898,15 @@ export const SummaryResultsView: React.FC = () => {
                       <span>Regenerated: <span className="text-gray-700">{summary.regenerationCount}x</span></span>
                     )}
                   </div>
-                  
+
                   {/* Fast Path Indicator - Subtle badge */}
-                  {summary.processingStats.totalChunks === 1 && 
-                   summary.processingStats.modelUsed && 
-                   ['gemma3:4b', 'gemma3:12b', 'gemma3:1b', 'mixtral:8x7b'].includes(summary.processingStats.modelUsed) && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
-                      🚀 Fast Path
-                    </span>
-                  )}
+                  {summary.processingStats.totalChunks === 1 &&
+                    summary.processingStats.modelUsed &&
+                    ['gemma3:4b', 'gemma3:12b', 'gemma3:1b', 'mixtral:8x7b'].includes(summary.processingStats.modelUsed) && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                        🚀 Fast Path
+                      </span>
+                    )}
                 </div>
 
                 {/* Summary Content */}
@@ -918,29 +914,16 @@ export const SummaryResultsView: React.FC = () => {
               </>
             )}
 
-            {/* Follow-up Input */}
+            {/* Context-Aware Chat */}
             <div className="max-w-4xl mx-auto">
-              <form onSubmit={handleFollowUpSubmit} className="relative">
-                <div className="flex items-center bg-gray-50 border border-gray-300 rounded-2xl px-4 py-3">
-                  {/* Input Field */}
-                  <input
-                    type="text"
-                    value={followUpQuery}
-                    onChange={(e) => setFollowUpQuery(e.target.value)}
-                    placeholder="Ask a follow-up..."
-                    className="flex-1 bg-transparent border-none outline-none text-gray-800 placeholder-gray-500"
-                  />
-
-                  {/* Send Button */}
-                  <button
-                    type="submit"
-                    disabled={!followUpQuery.trim()}
-                    className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Send size={18} />
-                  </button>
-                </div>
-              </form>
+              <ContextAwareChat
+                activeDocument={document}
+                currentSummary={summary}
+                messages={chatMessages}
+                onMessagesChange={handleChatMessagesChange}
+                placeholder="Ask about this summary or request changes..."
+                showMessagesArea={true}
+              />
             </div>
           </div>
         </div>
