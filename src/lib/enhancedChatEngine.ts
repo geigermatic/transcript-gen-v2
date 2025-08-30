@@ -1,18 +1,19 @@
 /**
- * Enhanced Chat Engine for Document Manipulation and Conversational Editing
- * Supports reformatting, rephrasing, and guided editing with Caren's voice
+ * Enhanced Chat Engine - Context-aware chat with command detection
+ * Maintains existing UI while adding intelligent functionality
  */
 
 import { ollama } from './ollama';
-import { EmbeddingEngine } from './embeddingEngine';
+import { ChatEngine } from './chatEngine';
+import { ChatContextDetector } from './chatContextDetector';
 import { useAppStore } from '../store';
-import type { 
-  ChatMessage, 
-  ChatContext, 
-  ChatResponse, 
-  Document, 
+import type {
+  ChatMessage,
+  ChatContext,
+  ChatResponse,
+  Document,
   StyleGuide,
-  ABSummaryPair 
+  ABSummaryPair
 } from '../types';
 
 export interface ChatCommand {
@@ -38,6 +39,63 @@ export class EnhancedChatEngine {
   };
 
   /**
+   * Process context-aware chat queries with intelligent routing
+   */
+  static async processContextAwareQuery(
+    query: string,
+    chatContext: ChatContext,
+    pathname: string = '/'
+  ): Promise<ChatResponse> {
+    const { addLog, documents, abSummaryPairs, styleGuide } = useAppStore.getState();
+    const startTime = Date.now();
+
+    try {
+      // Detect current context and capabilities
+      const context = ChatContextDetector.detectContext(
+        pathname,
+        documents,
+        abSummaryPairs,
+        chatContext.activeDocument,
+        styleGuide
+      );
+
+      // Detect user intent with conversation awareness
+      const intent = ChatContextDetector.detectIntent(query, context, chatContext.messages);
+
+      addLog({
+        level: 'info',
+        category: 'chat',
+        message: 'Processing context-aware chat query',
+        details: {
+          query,
+          location: context.location,
+          capability: intent.capability?.name,
+          confidence: intent.confidence,
+          isFollowUp: intent.conversationContext.isFollowUp || false
+        }
+      });
+
+      // Route to appropriate handler based on intent
+      if (intent.capability && intent.confidence > 0.3) {
+        return await this.routeToHandler(intent.capability, query, context, chatContext, intent.conversationContext);
+      } else {
+        // Fall back to regular chat engine for general Q&A
+        return await ChatEngine.processQuery(query, chatContext);
+      }
+
+    } catch (error) {
+      addLog({
+        level: 'error',
+        category: 'chat',
+        message: 'Context-aware chat processing failed',
+        details: { query, error: error instanceof Error ? error.message : error }
+      });
+
+      return this.createErrorResponse(query, error, startTime);
+    }
+  }
+
+  /**
    * Process chat message with enhanced document manipulation capabilities
    */
   static async processEnhancedQuery(
@@ -50,7 +108,7 @@ export class EnhancedChatEngine {
     try {
       // Detect if this is a command or regular question
       const command = this.detectCommand(query);
-      
+
       if (command) {
         return await this.processCommand(command, query, context);
       } else {
@@ -64,7 +122,7 @@ export class EnhancedChatEngine {
         message: 'Enhanced chat processing failed',
         details: { query, error: error instanceof Error ? error.message : error }
       });
-      
+
       return this.createErrorResponse(query, error, startTime);
     }
   }
@@ -122,7 +180,7 @@ export class EnhancedChatEngine {
     styleGuide: StyleGuide
   ): Promise<EnhancedChatResponse> {
     const prompt = this.buildReformatPrompt(command, context, styleGuide);
-    
+
     const response = await ollama.chat([{
       role: 'user',
       content: prompt
@@ -159,7 +217,7 @@ export class EnhancedChatEngine {
     styleGuide: StyleGuide
   ): Promise<EnhancedChatResponse> {
     const prompt = this.buildRephrasePrompt(command, context, styleGuide);
-    
+
     const response = await ollama.chat([{
       role: 'user',
       content: prompt
@@ -307,6 +365,122 @@ Provide just the alternatives, numbered 1. and 2.`;
   }
 
   /**
+   * Route to appropriate handler based on detected capability
+   */
+  private static async routeToHandler(
+    capability: any,
+    query: string,
+    context: any,
+    chatContext: ChatContext,
+    conversationContext: Record<string, any> = {}
+  ): Promise<ChatResponse> {
+    const handlerMap: Record<string, Function> = {
+      'handleDocumentSearch': this.handleDocumentSearch,
+      'handleUploadHelp': this.handleUploadHelp,
+      'handleLibraryManagement': this.handleLibraryManagement,
+      'handleGeneralQA': this.handleGeneralQA,
+      'handleFormatContent': this.handleFormatContent,
+      'handleRephraseVoice': this.handleRephraseVoice,
+      'handleRegenerateSections': this.handleRegenerateSections,
+      'handleAddContent': this.handleAddContent,
+      'handleStyleAdjustments': this.handleStyleAdjustments,
+      'handleDocumentQA': this.handleDocumentQA,
+      'handleContentAnalysis': this.handleContentAnalysis,
+      'handleNavigationHelp': this.handleNavigationHelp,
+      'handleWorkspaceQA': this.handleWorkspaceQA
+    };
+
+    const handler = handlerMap[capability.handler];
+    if (handler) {
+      return await handler.call(this, query, context, chatContext, conversationContext);
+    } else {
+      // Fall back to regular chat engine
+      return await ChatEngine.processQuery(query, chatContext);
+    }
+  }
+
+  /**
+   * Handle document search requests
+   */
+  private static async handleDocumentSearch(
+    query: string,
+    context: any,
+    chatContext: ChatContext,
+    conversationContext: Record<string, any> = {}
+  ): Promise<ChatResponse> {
+    const { documents } = useAppStore.getState();
+
+    // Check if this is a follow-up to a previous search
+    if (conversationContext.isFollowUp && conversationContext.previousContext?.type === 'results') {
+      // User agreed to something about search results - provide more specific help
+      return this.createSimpleResponse(
+        "Great! You can click on any document title to open it, or tell me which specific document you'd like to explore. You can also ask me to search for something more specific if needed.",
+        []
+      );
+    }
+
+    // Extract search terms from query
+    const searchTerms = query.toLowerCase()
+      .replace(/(?:search|find|look for|documents about|show me)/g, '')
+      .trim();
+
+    if (!searchTerms && !conversationContext.isFollowUp) {
+      return this.createSimpleResponse(
+        "I can help you search your documents! What topic or keyword would you like me to look for?",
+        []
+      );
+    }
+
+    // Search through document titles and content
+    const matchingDocs = documents.filter(doc =>
+      doc.title?.toLowerCase().includes(searchTerms) ||
+      doc.filename.toLowerCase().includes(searchTerms) ||
+      doc.text.toLowerCase().includes(searchTerms)
+    );
+
+    if (matchingDocs.length === 0) {
+      return this.createSimpleResponse(
+        `I couldn't find any documents matching "${searchTerms}". Try different keywords or check if you've uploaded documents on that topic.`,
+        []
+      );
+    }
+
+    const response = `I found ${matchingDocs.length} document${matchingDocs.length > 1 ? 's' : ''} matching "${searchTerms}":\n\n` +
+      matchingDocs.map(doc => `📄 **${doc.title || doc.filename}**`).join('\n') +
+      '\n\nWould you like me to open one of these documents or search for something more specific?';
+
+    return this.createSimpleResponse(response, []);
+  }
+
+  /**
+   * Handle upload assistance requests
+   */
+  private static async handleUploadHelp(
+    query: string,
+    context: any,
+    chatContext: ChatContext,
+    conversationContext: Record<string, any> = {}
+  ): Promise<ChatResponse> {
+    // Check if this is a follow-up to upload guidance
+    if (conversationContext.isFollowUp && conversationContext.previousContext?.action === 'upload-help') {
+      return this.createSimpleResponse(
+        "Perfect! Just drag your document file anywhere on this page, or look for the upload area. I'll process it automatically and create a summary for you. The whole process usually takes about 30 seconds.",
+        []
+      );
+    }
+
+    const response = `I'd be happy to help you upload documents! Here's how:\n\n` +
+      `📁 **Drag & Drop**: Simply drag any PDF, TXT, or DOCX file onto this page\n` +
+      `📂 **Click to Upload**: Look for the upload area on this page and click to browse files\n` +
+      `⚡ **Processing**: Once uploaded, I'll automatically process and summarize your document\n\n` +
+      `**Supported formats**: PDF, TXT, DOCX\n` +
+      `**Processing time**: Usually takes about 30 seconds\n\n` +
+      `What type of document are you looking to upload?`;
+
+    return this.createSimpleResponse(response, []);
+  }
+
+  /**
    * Process regular Q&A queries with enhanced context
    */
   private static async processRegularQuery(
@@ -314,9 +488,8 @@ Provide just the alternatives, numbered 1. and 2.`;
     context: ChatContext
   ): Promise<EnhancedChatResponse> {
     // Use existing ChatEngine for regular queries
-    const { ChatEngine } = await import('./chatEngine');
     const response = await ChatEngine.processQuery(query, context);
-    
+
     return {
       ...response,
       suggestions: await this.generateFollowUpSuggestions(query, response)
@@ -427,13 +600,141 @@ Provide just the alternatives, numbered 1. and 2.`;
   }
 
   /**
+   * Handle library management requests
+   */
+  private static async handleLibraryManagement(
+    query: string,
+    context: any,
+    chatContext: ChatContext,
+    conversationContext: Record<string, any> = {}
+  ): Promise<ChatResponse> {
+    const { documents } = useAppStore.getState();
+
+    const response = `Here's your document library overview:\n\n` +
+      `📚 **Total Documents**: ${documents.length}\n` +
+      `📄 **Recent uploads**: ${documents.slice(-3).map(d => d.title || d.filename).join(', ')}\n\n` +
+      `**Available actions**:\n` +
+      `• Search documents: "Find documents about [topic]"\n` +
+      `• Upload new content: "Help me upload a document"\n` +
+      `• View summaries: Navigate to any document's summary\n\n` +
+      `What would you like to do with your library?`;
+
+    return this.createSimpleResponse(response, []);
+  }
+
+  /**
+   * Handle general Q&A about app functionality
+   */
+  private static async handleGeneralQA(
+    query: string,
+    context: any,
+    chatContext: ChatContext,
+    conversationContext: Record<string, any> = {}
+  ): Promise<ChatResponse> {
+    // Use regular chat engine for general questions
+    return await ChatEngine.processQuery(query, chatContext);
+  }
+
+  /**
+   * Handle content formatting requests (summary view)
+   */
+  private static async handleFormatContent(
+    query: string,
+    context: any,
+    chatContext: ChatContext,
+    conversationContext: Record<string, any> = {}
+  ): Promise<ChatResponse> {
+    const response = `I can help you reformat your summary content! Here are some options:\n\n` +
+      `📝 **Bullet Points**: "Reformat as bullet points"\n` +
+      `🔢 **Numbered Lists**: "Make this a numbered list"\n` +
+      `📋 **Sections**: "Organize into clear sections"\n` +
+      `📊 **Tables**: "Format as a table"\n\n` +
+      `Which section would you like me to reformat, and in what style?`;
+
+    return this.createSimpleResponse(response, []);
+  }
+
+  /**
+   * Handle voice rephrasing requests (summary view)
+   */
+  private static async handleRephraseVoice(
+    query: string,
+    context: any,
+    chatContext: ChatContext,
+    conversationContext: Record<string, any> = {}
+  ): Promise<ChatResponse> {
+    const response = `I can help apply Caren's warm, compassionate voice to your content!\n\n` +
+      `🌟 **Warmer tone**: "Make this warmer and more welcoming"\n` +
+      `💝 **More compassionate**: "Add more compassion to this section"\n` +
+      `🎓 **Teaching style**: "Make this more like Caren's teaching approach"\n` +
+      `🤗 **Nurturing**: "Make this more nurturing and supportive"\n\n` +
+      `Which section would you like me to rephrase with Caren's voice?`;
+
+    return this.createSimpleResponse(response, []);
+  }
+
+  /**
+   * Create simple response helper
+   */
+  private static createSimpleResponse(content: string, sources: any[]): ChatResponse {
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content,
+      timestamp: new Date().toISOString(),
+      sources
+    };
+
+    return {
+      message,
+      hasGrounding: sources.length > 0,
+      sources,
+      responseMetrics: {
+        processingTime: 100,
+        retrievalCount: sources.length,
+        topSimilarity: 0,
+        responseLength: content.length
+      }
+    };
+  }
+
+  // Placeholder handlers for remaining capabilities
+  private static async handleRegenerateSections(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
+    return this.createSimpleResponse("Content regeneration feature coming soon! For now, you can manually edit sections.", []);
+  }
+
+  private static async handleAddContent(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
+    return this.createSimpleResponse("Content addition feature coming soon! I can help you identify where to add examples or explanations.", []);
+  }
+
+  private static async handleStyleAdjustments(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
+    return this.createSimpleResponse("Style adjustment feature coming soon! I can suggest ways to make content more beginner-friendly or advanced.", []);
+  }
+
+  private static async handleDocumentQA(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
+    return await ChatEngine.processQuery(query, chatContext);
+  }
+
+  private static async handleContentAnalysis(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
+    return await ChatEngine.processQuery(query, chatContext);
+  }
+
+  private static async handleNavigationHelp(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
+    return this.createSimpleResponse("I can help you find specific sections in your document. What are you looking for?", []);
+  }
+
+  private static async handleWorkspaceQA(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
+    return this.createSimpleResponse("This workspace helps you analyze and work with your documents. What would you like to know?", []);
+  }
+
+  /**
    * Create error response
    */
   private static createErrorResponse(
     query: string,
     error: unknown,
     startTime: number
-  ): EnhancedChatResponse {
+  ): ChatResponse {
     const message: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'assistant',

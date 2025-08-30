@@ -5,6 +5,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, MessageCircle, Bot, User } from 'lucide-react';
 import { ChatEngine } from '../lib/chatEngine';
+import { EnhancedChatEngine } from '../lib/enhancedChatEngine';
 import { useAppStore } from '../store';
 import { logInfo } from '../lib/logger';
 import type { Document } from '../types';
@@ -46,17 +47,17 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
   // Helper function to get the current summary
   const getSelectedDocumentSummary = () => {
     if (!selectedDocument) return null;
-    
+
     const recentSummary = abSummaryPairs
       .filter(pair => pair.documentId === selectedDocument.id)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-      
+
     return recentSummary?.summaryA?.markdownSummary || null;
   };
 
   // Helper function to get available summaries for context
   const getAvailableSummaries = () => {
-    return selectedDocument 
+    return selectedDocument
       ? abSummaryPairs.filter(pair => pair.documentId === selectedDocument.id)
       : abSummaryPairs;
   };
@@ -125,11 +126,11 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
         maxContextLength: 4000
       };
 
-      // Process query with ChatEngine
-      const response = await ChatEngine.processQuery(
+      // Process query with Enhanced ChatEngine for context-aware responses
+      const response = await EnhancedChatEngine.processContextAwareQuery(
         userMessage.content,
         context,
-
+        '/chat'
       );
 
       const assistantMessage: ChatMessage = {
@@ -141,8 +142,8 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
 
       setMessages(prev => [...prev, assistantMessage]);
       setIsTyping(false);
-      
-      logInfo('CHAT', 'Assistant response generated', { 
+
+      logInfo('CHAT', 'Assistant response generated', {
         responseLength: response.message.content.length,
         processingTime: response.responseMetrics.processingTime,
         retrievalCount: response.responseMetrics.retrievalCount
@@ -158,8 +159,8 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
 
       setMessages(prev => [...prev, errorMessage]);
       setIsTyping(false);
-      
-      logInfo('CHAT', 'Chat error occurred', { 
+
+      logInfo('CHAT', 'Chat error occurred', {
         error: error instanceof Error ? error.message : 'Unknown error',
         query: userMessage.content
       });
@@ -176,9 +177,9 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
   };
 
   const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -212,7 +213,7 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
                 <Bot size={16} className="text-accent" />
               </div>
             )}
-            
+
             <div className={`chat-bubble ${message.role} max-w-[80%]`}>
               <div className="text-body leading-relaxed">
                 {message.content}
@@ -239,8 +240,8 @@ export const ChatCard: React.FC<ChatCardProps> = ({ selectedDocument, onSendMess
               <div className="flex items-center gap-1">
                 <div className="flex space-x-1">
                   <div className="w-2 h-2 bg-white bg-opacity-50 rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-white bg-opacity-50 rounded-full animate-bounce" style={{animationDelay: '0.1s'}} />
-                  <div className="w-2 h-2 bg-white bg-opacity-50 rounded-full animate-bounce" style={{animationDelay: '0.2s'}} />
+                  <div className="w-2 h-2 bg-white bg-opacity-50 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                  <div className="w-2 h-2 bg-white bg-opacity-50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                 </div>
                 <span className="text-caption ml-2">AI is thinking...</span>
               </div>

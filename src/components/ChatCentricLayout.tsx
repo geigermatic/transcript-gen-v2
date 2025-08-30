@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { SummarizationEngine } from '../lib/summarizationEngine';
 import { ChatEngine } from '../lib/chatEngine';
+import { EnhancedChatEngine } from '../lib/enhancedChatEngine';
 import { EmbeddingEngine } from '../lib/embeddingEngine';
 import type { ABSummaryPair, Document } from '../types';
 import { LeftNavigation } from './LeftNavigation';
@@ -21,11 +22,11 @@ import { ChatInput } from './ChatInput';
 export const ChatCentricLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, embeddings, isHydrated, settings } = useAppStore();
-  
+  const { documents, styleGuide, addLog, addABSummaryPair, addEmbeddings, embeddings, isHydrated, settings, abSummaryPairs } = useAppStore();
+
   // Navigation state
   const [isNavExpanded, setIsNavExpanded] = useState(false);
-  
+
   // Chat state
   const [messages, setMessages] = useState<Array<{
     id: string;
@@ -43,24 +44,24 @@ export const ChatCentricLayout: React.FC = () => {
   }>>([]);
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   // Progress tracking state
   const [progress, setProgress] = useState({ current: 0, total: 0, status: '' });
   const [showProgress, setShowProgress] = useState(false);
   const [processingStartTime, setProcessingStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
-  
+
   // No need for ref tracking - we'll check the messages array directly
 
 
 
 
 
-  
+
   // Handle navigation hover
   const handleNavMouseEnter = () => setIsNavExpanded(true);
   const handleNavMouseLeave = () => setIsNavExpanded(false);
-  
+
   // Handle new chat - clear chat history
   const handleNewChat = () => {
     setMessages([]);
@@ -91,7 +92,7 @@ export const ChatCentricLayout: React.FC = () => {
   // Timer for elapsed time tracking
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    
+
     if (showProgress && processingStartTime) {
       interval = setInterval(() => {
         const now = new Date();
@@ -99,7 +100,7 @@ export const ChatCentricLayout: React.FC = () => {
         setElapsedTime(elapsed);
       }, 1000);
     }
-    
+
     return () => {
       if (interval) {
         clearInterval(interval);
@@ -111,14 +112,14 @@ export const ChatCentricLayout: React.FC = () => {
   useEffect(() => {
     if (location.state?.returnFromSummary && location.state?.document) {
       const document = location.state.document;
-      
+
       // Check if we already have a completion message for this document in the chat
-      const existingCompletionMessage = messages.find(msg => 
-        msg.type === 'document' && 
+      const existingCompletionMessage = messages.find(msg =>
+        msg.type === 'document' &&
         msg.metadata?.documentId === document.id &&
         msg.content.includes('has been successfully processed and summarized')
       );
-      
+
       // Only add completion message if one doesn't already exist
       if (!existingCompletionMessage) {
         const completionMessage = {
@@ -132,10 +133,10 @@ export const ChatCentricLayout: React.FC = () => {
             filename: document.filename
           }
         };
-        
+
         setMessages(prev => [...prev, completionMessage]);
       }
-      
+
       // Clear the navigation state to prevent re-triggering
       navigate('/', { replace: true, state: {} });
     }
@@ -153,9 +154,9 @@ export const ChatCentricLayout: React.FC = () => {
         type: 'document' as const,
         metadata: { documentId: document.id, filename: document.filename }
       };
-      
+
       setMessages(prev => [...prev, uploadMessage]);
-      
+
       // Add processing message
       const processingMessage = {
         id: `processing-${crypto.randomUUID()}`,
@@ -163,9 +164,9 @@ export const ChatCentricLayout: React.FC = () => {
         content: '🔄 Processing your document... This may take a moment.',
         timestamp: new Date().toISOString()
       };
-      
+
       setMessages(prev => [...prev, processingMessage]);
-      
+
       try {
         // Log the processing start
         addLog({
@@ -195,20 +196,20 @@ export const ChatCentricLayout: React.FC = () => {
             });
           }
         );
-        
+
         // Store embeddings in the store for chat functionality
         addEmbeddings(document.id, embeddedChunks);
-        
+
         // Process document with AI summarization with progress tracking
         const summaryResult = await SummarizationEngine.summarizeDocument(
-          document, 
+          document,
           styleGuide,
           (current: number, total: number, status?: string) => {
             setProgress({ current, total, status: status || 'Processing...' });
           },
           settings.chat_default
         );
-        
+
         // Create AB summary pair to store the result for future access
         const summaryPair: ABSummaryPair = {
           id: crypto.randomUUID(),
@@ -217,14 +218,14 @@ export const ChatCentricLayout: React.FC = () => {
           summaryA: summaryResult,
           summaryB: summaryResult, // Use same result for both A and B for now
           variantDetails: {
-            variantA: { 
-              name: 'Default', 
+            variantA: {
+              name: 'Default',
               description: 'Standard processing',
               styleModifications: {},
               promptStrategy: 'Standard summarization with style guide'
             },
-            variantB: { 
-              name: 'Default', 
+            variantB: {
+              name: 'Default',
               description: 'Standard processing',
               styleModifications: {},
               promptStrategy: 'Standard summarization with style guide'
@@ -232,10 +233,10 @@ export const ChatCentricLayout: React.FC = () => {
           },
           createdAt: new Date().toISOString()
         };
-        
+
         // Add to store so it can be retrieved later
         addABSummaryPair(summaryPair);
-        
+
         // Hide progress, reset timer, and remove processing message
         setShowProgress(false);
         setProcessingStartTime(null);
@@ -244,52 +245,52 @@ export const ChatCentricLayout: React.FC = () => {
         setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id));
 
         // Navigate to summary results view with document and summary data
-        navigate(`/summary/${document.id}`, { 
-          state: { 
-            document: document, 
-            summary: summaryResult 
-          } 
+        navigate(`/summary/${document.id}`, {
+          state: {
+            document: document,
+            summary: summaryResult
+          }
         });
-        
+
         // Log successful processing
         addLog({
           level: 'info',
           category: 'chat',
           message: `Document processing completed successfully`,
-          details: { 
-            documentId: document.id, 
+          details: {
+            documentId: document.id,
             filename: document.filename,
             processingTime: summaryResult.processingStats.processingTime,
             chunkCount: summaryResult.processingStats.totalChunks
           }
         });
-        
+
       } catch (error) {
         console.error('Document processing failed:', error);
-        
+
         // Hide progress, reset timer, and remove processing message
         setShowProgress(false);
         setProcessingStartTime(null);
         setElapsedTime(0);
         setProgress({ current: 0, total: 0, status: '' });
         setMessages(prev => prev.filter(msg => msg.id !== processingMessage.id));
-        
+
         const errorMessage = {
           id: `error-${crypto.randomUUID()}`,
           role: 'assistant' as const,
           content: `❌ Sorry, I encountered an error while processing your document. Please try again or check if your AI instance is running.`,
           timestamp: new Date().toISOString()
         };
-        
+
         setMessages(prev => [...prev, errorMessage]);
-        
+
         // Log the error
         addLog({
           level: 'error',
           category: 'chat',
           message: `Document processing failed`,
-          details: { 
-            documentId: document.id, 
+          details: {
+            documentId: document.id,
             filename: document.filename,
             error: error instanceof Error ? error.message : String(error)
           }
@@ -297,14 +298,14 @@ export const ChatCentricLayout: React.FC = () => {
       }
     } else {
       console.error('Upload failed:', message);
-      
+
       const errorMessage = {
         id: `upload-error-${crypto.randomUUID()}`,
         role: 'assistant' as const,
         content: `❌ Upload failed: ${message}`,
         timestamp: new Date().toISOString()
       };
-      
+
       setMessages(prev => [...prev, errorMessage]);
     }
   };
@@ -312,7 +313,7 @@ export const ChatCentricLayout: React.FC = () => {
   // Handle chat input submission
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isProcessing) return;
-    
+
     // Wait for store to be hydrated before processing
     if (!isHydrated) {
       const hydrationResponse = {
@@ -322,30 +323,30 @@ export const ChatCentricLayout: React.FC = () => {
         timestamp: new Date().toISOString(),
         type: 'text' as const
       };
-      
+
       setMessages(prev => [...prev, hydrationResponse]);
       setIsProcessing(false);
       return;
     }
-    
+
     const userMessage = {
       id: `user-${crypto.randomUUID()}`,
       role: 'user' as const,
       content: inputValue.trim(),
       timestamp: new Date().toISOString()
     };
-    
+
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsProcessing(true);
-    
+
     try {
       // Log the chat request
       addLog({
         level: 'info',
         category: 'chat',
         message: `Processing chat message: "${inputValue.trim().substring(0, 100)}${inputValue.trim().length > 100 ? '...' : ''}"`,
-        details: { 
+        details: {
           messageLength: inputValue.trim().length,
           hasDocuments: documents.length > 0,
           hasStyleGuide: !!styleGuide
@@ -361,7 +362,7 @@ export const ChatCentricLayout: React.FC = () => {
           timestamp: new Date().toISOString(),
           type: 'text' as const
         };
-        
+
         setMessages(prev => [...prev, noDocsResponse]);
         setIsProcessing(false);
         return;
@@ -374,7 +375,7 @@ export const ChatCentricLayout: React.FC = () => {
         embeddingsKeys: Array.from(embeddings.keys()),
         documentIds: documents.map(d => d.id)
       });
-      
+
       if (embeddings.size === 0) {
         console.log('❌ No embeddings found - showing processing message');
         const noEmbeddingsResponse = {
@@ -384,13 +385,13 @@ export const ChatCentricLayout: React.FC = () => {
           timestamp: new Date().toISOString(),
           type: 'text' as const
         };
-        
+
         setMessages(prev => [...prev, noEmbeddingsResponse]);
         setIsProcessing(false);
         return;
       }
 
-      // Create chat context for the AI engine
+      // Create enhanced chat context for the AI engine
       const chatContext = {
         messages: messages.map(msg => ({
           id: msg.id,
@@ -398,14 +399,20 @@ export const ChatCentricLayout: React.FC = () => {
           content: msg.content,
           timestamp: msg.timestamp
         })),
-        selectedDocument: documents[0], // Use the first document for now
+        documentIds: documents.map(d => d.id),
+        activeDocument: documents[0] || null, // Use the first document for now
         selectedDocumentSummary: undefined, // We'll enhance this later
-        styleGuide: styleGuide
+        availableSummaries: abSummaryPairs,
+        maxContextLength: 4000
       };
 
-      // Process with ChatEngine
-      const aiResponse = await ChatEngine.processQuery(inputValue.trim(), chatContext);
-      
+      // Process with Enhanced ChatEngine for context-aware responses
+      const aiResponse = await EnhancedChatEngine.processContextAwareQuery(
+        inputValue.trim(),
+        chatContext,
+        location.pathname
+      );
+
       const responseMessage = {
         id: `ai-${crypto.randomUUID()}`,
         role: 'assistant' as const,
@@ -417,41 +424,41 @@ export const ChatCentricLayout: React.FC = () => {
           retrievalCount: aiResponse.responseMetrics.retrievalCount,
           topSimilarity: aiResponse.responseMetrics.topSimilarity
         }
-        };
-      
+      };
+
       setMessages(prev => [...prev, responseMessage]);
-      
+
       // Log successful response
       addLog({
         level: 'info',
         category: 'chat',
         message: `Chat response generated successfully`,
-        details: { 
+        details: {
           query: inputValue.trim(),
           responseLength: aiResponse.message.content.length,
           processingTime: aiResponse.responseMetrics.processingTime,
           retrievalCount: aiResponse.responseMetrics.retrievalCount
         }
       });
-      
+
     } catch (error) {
       console.error('Chat processing failed:', error);
-      
+
       const errorMessage = {
         id: `ai-error-${crypto.randomUUID()}`,
         role: 'assistant' as const,
         content: `❌ Sorry, I encountered an error while processing your message. Please check if your AI instance is running and try again.`,
         timestamp: new Date().toISOString()
       };
-      
+
       setMessages(prev => [...prev, errorMessage]);
-      
+
       // Log the error
       addLog({
         level: 'error',
         category: 'chat',
         message: `Chat processing failed`,
-        details: { 
+        details: {
           query: inputValue.trim(),
           error: error instanceof Error ? error.message : String(error)
         }
@@ -480,7 +487,7 @@ export const ChatCentricLayout: React.FC = () => {
         showNewChatButton={true}
         onNewChat={handleNewChat}
       />
-      
+
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
         {/* Main Content */}

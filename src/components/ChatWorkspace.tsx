@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
 import { ChatEngine } from '../lib/chatEngine';
+import { EnhancedChatEngine } from '../lib/enhancedChatEngine';
 import { EmbeddingManager } from './EmbeddingManager';
 import { logInfo } from '../lib/logger';
 import type { ChatContext } from '../types';
@@ -35,10 +36,10 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
       const allEmbeddings = getAllEmbeddings();
       const docEmbeddings = allEmbeddings.get(selectedDocument.id) || [];
       setEmbeddings(docEmbeddings);
-      
+
       // Clear chat when switching documents
       setMessages([]);
-      
+
       // Add welcome message
       setMessages([{
         id: Date.now().toString(),
@@ -90,9 +91,11 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
         maxContextLength: 4000
       };
 
-      const response = await ChatEngine.processQuery(
+      // Use enhanced chat engine for context-aware responses
+      const response = await EnhancedChatEngine.processContextAwareQuery(
         userMessage.content,
-        context
+        context,
+        '/workspace'
       );
 
       const assistantMessage: ChatMessage = {
@@ -104,7 +107,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      
+
       logInfo('CHAT', 'Chat response generated', {
         documentId: selectedDocument.id,
         query: userMessage.content,
@@ -147,7 +150,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
           <p className="text-body mb-6">
             Choose a document to start asking questions about its content.
           </p>
-          
+
           {documents.length === 0 ? (
             <p className="text-gray-400">
               Upload your first document in the Upload tab to get started.
@@ -190,7 +193,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
               Ask questions about your document content
             </p>
           </div>
-                      <EmbeddingManager document={selectedDocument} />
+          <EmbeddingManager document={selectedDocument} />
         </div>
 
         {/* Document info */}
@@ -212,11 +215,10 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[70%] p-4 rounded-lg ${
-                    message.role === 'user'
-                      ? 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
-                      : 'glass-panel'
-                  }`}
+                  className={`max-w-[70%] p-4 rounded-lg ${message.role === 'user'
+                    ? 'bg-gradient-to-br from-teal-500 to-teal-600 text-white'
+                    : 'glass-panel'
+                    }`}
                 >
                   <div className="text-sm text-gray-300 mb-1">
                     {message.role === 'user' ? 'You' : 'AI Assistant'}
@@ -224,7 +226,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
                       {new Date(message.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
-                  
+
                   <div className="text-white whitespace-pre-wrap">
                     {message.content}
                   </div>
@@ -307,7 +309,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
                 <span>Send</span>
               </button>
             </div>
-            
+
             {embeddings.length === 0 && (
               <p className="text-yellow-400 text-xs mt-2">
                 ⚠️ Generate embeddings first to enable chat functionality
