@@ -79,6 +79,16 @@ export class EnhancedChatEngine {
       if (intent.capability && intent.confidence > 0.3) {
         return await this.routeToHandler(intent.capability, query, context, chatContext, intent.conversationContext);
       } else {
+        // Check if this might be a summary editing request in summary view
+        if (context.location === 'summary' && chatContext.selectedDocumentSummary) {
+          const editingKeywords = ['remove', 'delete', 'change', 'edit', 'modify', 'update', 'fix', 'correct', 'revise'];
+          const lowerQuery = query.toLowerCase();
+
+          if (editingKeywords.some(keyword => lowerQuery.includes(keyword))) {
+            return await this.processSummaryRevision(query, chatContext, 'edit');
+          }
+        }
+
         // Fall back to regular chat engine for general Q&A
         return await ChatEngine.processQuery(query, chatContext);
       }
@@ -644,14 +654,16 @@ Provide just the alternatives, numbered 1. and 2.`;
     chatContext: ChatContext,
     conversationContext: Record<string, any> = {}
   ): Promise<ChatResponse> {
-    const response = `I can help you reformat your summary content! Here are some options:\n\n` +
-      `📝 **Bullet Points**: "Reformat as bullet points"\n` +
-      `🔢 **Numbered Lists**: "Make this a numbered list"\n` +
-      `📋 **Sections**: "Organize into clear sections"\n` +
-      `📊 **Tables**: "Format as a table"\n\n` +
-      `Which section would you like me to reformat, and in what style?`;
+    // Check if user has a current summary to work with
+    if (!chatContext.selectedDocumentSummary) {
+      return this.createSimpleResponse(
+        "I don't see a summary to format. Please make sure you're viewing a document summary.",
+        []
+      );
+    }
 
-    return this.createSimpleResponse(response, []);
+    // Try to process the formatting request directly
+    return await this.processSummaryRevision(query, chatContext, 'format');
   }
 
   /**
@@ -663,14 +675,16 @@ Provide just the alternatives, numbered 1. and 2.`;
     chatContext: ChatContext,
     conversationContext: Record<string, any> = {}
   ): Promise<ChatResponse> {
-    const response = `I can help apply Caren's warm, compassionate voice to your content!\n\n` +
-      `🌟 **Warmer tone**: "Make this warmer and more welcoming"\n` +
-      `💝 **More compassionate**: "Add more compassion to this section"\n` +
-      `🎓 **Teaching style**: "Make this more like Caren's teaching approach"\n` +
-      `🤗 **Nurturing**: "Make this more nurturing and supportive"\n\n` +
-      `Which section would you like me to rephrase with Caren's voice?`;
+    // Check if user has a current summary to work with
+    if (!chatContext.selectedDocumentSummary) {
+      return this.createSimpleResponse(
+        "I don't see a summary to rephrase. Please make sure you're viewing a document summary.",
+        []
+      );
+    }
 
-    return this.createSimpleResponse(response, []);
+    // Try to process the voice rephrasing request directly
+    return await this.processSummaryRevision(query, chatContext, 'rephrase');
   }
 
   /**
@@ -698,17 +712,44 @@ Provide just the alternatives, numbered 1. and 2.`;
     };
   }
 
-  // Placeholder handlers for remaining capabilities
+  // Enhanced handlers for summary revision capabilities
   private static async handleRegenerateSections(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
-    return this.createSimpleResponse("Content regeneration feature coming soon! For now, you can manually edit sections.", []);
+    // Check if user has a current summary to work with
+    if (!chatContext.selectedDocumentSummary) {
+      return this.createSimpleResponse(
+        "I don't see a summary to regenerate. Please make sure you're viewing a document summary.",
+        []
+      );
+    }
+
+    // Process as a general edit request
+    return await this.processSummaryRevision(query, chatContext, 'edit');
   }
 
   private static async handleAddContent(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
-    return this.createSimpleResponse("Content addition feature coming soon! I can help you identify where to add examples or explanations.", []);
+    // Check if user has a current summary to work with
+    if (!chatContext.selectedDocumentSummary) {
+      return this.createSimpleResponse(
+        "I don't see a summary to modify. Please make sure you're viewing a document summary.",
+        []
+      );
+    }
+
+    // Process as a general edit request
+    return await this.processSummaryRevision(query, chatContext, 'edit');
   }
 
   private static async handleStyleAdjustments(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
-    return this.createSimpleResponse("Style adjustment feature coming soon! I can suggest ways to make content more beginner-friendly or advanced.", []);
+    // Check if user has a current summary to work with
+    if (!chatContext.selectedDocumentSummary) {
+      return this.createSimpleResponse(
+        "I don't see a summary to adjust. Please make sure you're viewing a document summary.",
+        []
+      );
+    }
+
+    // Process as a rephrase request
+    return await this.processSummaryRevision(query, chatContext, 'rephrase');
   }
 
   private static async handleDocumentQA(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
@@ -725,6 +766,496 @@ Provide just the alternatives, numbered 1. and 2.`;
 
   private static async handleWorkspaceQA(query: string, context: any, chatContext: ChatContext, conversationContext: Record<string, any> = {}): Promise<ChatResponse> {
     return this.createSimpleResponse("This workspace helps you analyze and work with your documents. What would you like to know?", []);
+  }
+
+  /**
+   * Process summary revision requests - the core functionality for modifying summaries
+   */
+  private static async processSummaryRevision(
+    query: string,
+    chatContext: ChatContext,
+    revisionType: 'format' | 'rephrase' | 'edit' | 'remove'
+  ): Promise<ChatResponse> {
+    const { addLog, styleGuide, addSummaryVersion } = useAppStore.getState();
+
+    try {
+      // Get current summary content
+      const currentSummary = chatContext.selectedDocumentSummary;
+      if (!currentSummary || !currentSummary.summaryA?.styledSummary) {
+        return this.createSimpleResponse(
+          "I don't have access to the current summary content. Please try refreshing the page.",
+          []
+        );
+      }
+
+      const originalContent = currentSummary.summaryA.styledSummary;
+      const documentId = currentSummary.documentId;
+
+      addLog({
+        level: 'info',
+        category: 'chat',
+        message: 'Processing summary revision request',
+        details: {
+          query,
+          revisionType,
+          documentId,
+          originalLength: originalContent.length
+        }
+      });
+
+      // Build revision prompt using LLM-driven analysis
+      const revisionPrompt = await this.buildRevisionPrompt(
+        query,
+        originalContent,
+        revisionType,
+        styleGuide
+      );
+
+      // Process the revision with Ollama
+      const revisedContent = await ollama.chat([{
+        role: 'user',
+        content: revisionPrompt
+      }]);
+
+      const cleanedContent = revisedContent.trim();
+
+      // Validate the revision
+      if (!cleanedContent || cleanedContent.length < 50) {
+        return this.createSimpleResponse(
+          "I wasn't able to generate a good revision. Could you be more specific about what you'd like me to change?",
+          []
+        );
+      }
+
+      // Use LLM-driven validation for all edits
+      const validationResult = await this.validateEditWithLLM(query, originalContent, cleanedContent);
+
+      if (!validationResult.isValid) {
+        // Try again with corrective feedback
+        const retryPrompt = this.buildCorrectionPrompt(query, originalContent, cleanedContent, validationResult.feedback);
+
+        try {
+          const retryContent = await ollama.chat([{
+            role: 'user',
+            content: retryPrompt
+          }]);
+
+          const retryCleanedContent = retryContent.trim();
+          if (retryCleanedContent && retryCleanedContent.length >= 50) {
+            cleanedContent = retryCleanedContent;
+
+            addLog({
+              level: 'info',
+              category: 'chat',
+              message: 'Summary revision corrected after validation feedback',
+              details: { documentId, feedback: validationResult.feedback }
+            });
+          }
+        } catch (retryError) {
+          console.warn('Retry attempt failed:', retryError);
+        }
+      }
+
+      // Add the revised summary as a new version
+      try {
+        addSummaryVersion(
+          documentId,
+          cleanedContent,
+          false, // Not original
+          'Enhanced Chat Revision'
+        );
+
+        addLog({
+          level: 'info',
+          category: 'chat',
+          message: 'Summary revision completed and saved',
+          details: {
+            documentId,
+            revisionType,
+            originalLength: originalContent.length,
+            revisedLength: cleanedContent.length
+          }
+        });
+
+        // Get change summary
+        const changesSummary = await this.summarizeChanges(originalContent, cleanedContent);
+
+        // Return success response with the revision
+        return {
+          message: {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `✅ **Summary Updated!**\n\nI've successfully ${this.getRevisionDescription(revisionType, query)} and saved it as a new version.\n\n**Changes made:**\n- ${changesSummary}\n\nThe updated summary is now displayed above. You can always restore previous versions if needed.`,
+            timestamp: new Date().toISOString()
+          },
+          hasGrounding: true,
+          sources: [],
+          responseMetrics: {
+            processingTime: 2000,
+            retrievalCount: 0,
+            topSimilarity: 1.0,
+            responseLength: 200
+          },
+          // Special flag to trigger UI update
+          summaryRevision: {
+            documentId,
+            newContent: cleanedContent,
+            revisionType
+          }
+        };
+
+      } catch (versionError) {
+        addLog({
+          level: 'error',
+          category: 'chat',
+          message: 'Failed to save revised summary version',
+          details: { documentId, error: versionError }
+        });
+
+        return this.createSimpleResponse(
+          "I created the revision but couldn't save it as a new version. The changes may not persist.",
+          []
+        );
+      }
+
+    } catch (error) {
+      addLog({
+        level: 'error',
+        category: 'chat',
+        message: 'Summary revision failed',
+        details: { query, revisionType, error: error instanceof Error ? error.message : String(error) }
+      });
+
+      return this.createSimpleResponse(
+        "I encountered an error while processing your revision request. Please try again with a more specific request.",
+        []
+      );
+    }
+  }
+
+  /**
+   * Build revision prompt using LLM-driven two-stage approach
+   */
+  private static async buildRevisionPrompt(
+    userRequest: string,
+    originalContent: string,
+    revisionType: string,
+    styleGuide?: any
+  ): Promise<string> {
+    // Stage 1: Let LLM analyze the intent
+    const intentAnalysis = await this.analyzeEditIntent(userRequest, originalContent);
+
+    // Stage 2: Build execution prompt based on LLM's understanding
+    return this.buildExecutionPrompt(userRequest, originalContent, intentAnalysis, styleGuide);
+  }
+
+  /**
+   * LLM-driven intent analysis - understand what the user wants to do
+   */
+  private static async analyzeEditIntent(userRequest: string, originalContent: string): Promise<any> {
+    const analysisPrompt = `You are analyzing a user's request to edit a document summary. Your job is to understand their intent and provide structured analysis.
+
+ORIGINAL SUMMARY:
+${originalContent}
+
+USER REQUEST: ${userRequest}
+
+Analyze this request and respond with a JSON object containing:
+{
+  "editType": "specific" | "general",
+  "action": "remove" | "add" | "modify" | "reformat" | "rephrase",
+  "target": {
+    "type": "bullet_point" | "section" | "sentence" | "word" | "paragraph" | "entire_content",
+    "identifier": "description of what to target",
+    "location": "where in the document (section name, position, etc.)",
+    "specificText": "exact text if quoted or clearly identified"
+  },
+  "instruction": "clear, specific instruction for what to do",
+  "scope": "minimal" | "moderate" | "extensive"
+}
+
+Examples:
+- "Remove the second bullet point" → {"editType": "specific", "action": "remove", "target": {"type": "bullet_point", "identifier": "second bullet point", "location": "any section"}}
+- "Make this warmer" → {"editType": "general", "action": "rephrase", "scope": "extensive"}
+- "Delete the techniques section" → {"editType": "specific", "action": "remove", "target": {"type": "section", "identifier": "techniques section"}}
+
+Respond with ONLY the JSON object:`;
+
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: analysisPrompt
+      }]);
+
+      // Parse the JSON response
+      const cleanResponse = response.trim().replace(/```json\n?|\n?```/g, '');
+      return JSON.parse(cleanResponse);
+    } catch (error) {
+      console.warn('Intent analysis failed, using fallback:', error);
+      // Fallback to simple analysis
+      return {
+        editType: "general",
+        action: "modify",
+        scope: "moderate",
+        instruction: userRequest
+      };
+    }
+  }
+
+  /**
+   * Build execution prompt based on LLM's intent analysis
+   */
+  private static buildExecutionPrompt(
+    userRequest: string,
+    originalContent: string,
+    intentAnalysis: any,
+    styleGuide?: any
+  ): string {
+    const isSpecificEdit = intentAnalysis.editType === 'specific';
+
+    if (isSpecificEdit) {
+      return this.buildSpecificEditPrompt(userRequest, originalContent, intentAnalysis, styleGuide);
+    } else {
+      return this.buildGeneralEditPrompt(userRequest, originalContent, intentAnalysis, styleGuide);
+    }
+  }
+
+  /**
+   * Build prompt for specific, targeted edits using LLM understanding
+   */
+  private static buildSpecificEditPrompt(
+    userRequest: string,
+    originalContent: string,
+    intentAnalysis: any,
+    styleGuide?: any
+  ): string {
+    const { action, target, instruction } = intentAnalysis;
+
+    return `You are making a PRECISE, SURGICAL edit to a document summary based on detailed analysis of the user's request.
+
+ORIGINAL SUMMARY:
+${originalContent}
+
+USER REQUEST: ${userRequest}
+
+INTENT ANALYSIS:
+- Action: ${action}
+- Target: ${target?.type || 'unspecified'} (${target?.identifier || 'general'})
+- Location: ${target?.location || 'anywhere in document'}
+- Specific Text: ${target?.specificText || 'none specified'}
+- Instruction: ${instruction}
+
+EXECUTION INSTRUCTIONS:
+1. Understand the document structure (sections, bullet points, paragraphs)
+2. Locate the exact target: ${target?.identifier || 'the content to modify'}
+3. Perform ONLY the requested action: ${action}
+4. Leave everything else COMPLETELY unchanged
+5. Maintain exact formatting, spacing, and structure
+6. Do NOT rephrase, improve, or modify other content
+7. Return the complete summary with ONLY the requested change
+
+CRITICAL: This is a surgical edit. Change only what was specifically requested.
+
+EDITED SUMMARY:`;
+  }
+
+  /**
+   * Build prompt for general edits using LLM understanding
+   */
+  private static buildGeneralEditPrompt(
+    userRequest: string,
+    originalContent: string,
+    intentAnalysis: any,
+    styleGuide?: any
+  ): string {
+    const { action, scope, instruction } = intentAnalysis;
+
+    return `You are revising a document summary based on detailed analysis of the user's request.
+
+ORIGINAL SUMMARY:
+${originalContent}
+
+USER REQUEST: ${userRequest}
+
+INTENT ANALYSIS:
+- Action: ${action}
+- Scope: ${scope}
+- Instruction: ${instruction}
+
+REVISION INSTRUCTIONS:
+- Apply the requested changes throughout the document as appropriate
+- Maintain the overall structure and quality of the summary
+- Keep all important information unless specifically asked to remove it
+- If this is a formatting change, apply consistently while preserving content
+- If this is a voice/tone change, adjust the language style appropriately
+- Return ONLY the revised summary content, no explanations or commentary
+
+${styleGuide ? `STYLE GUIDE TO MAINTAIN:
+- Voice: ${styleGuide.voice || 'Warm and compassionate'}
+- Tone: ${styleGuide.tone || 'Professional yet approachable'}
+- Perspective: ${styleGuide.perspective || 'Second person'}
+- Structure: ${styleGuide.structure || 'Clear sections with headers'}` : ''}
+
+REVISED SUMMARY:`;
+  }
+
+  /**
+   * LLM-driven validation - ask the AI to check if the edit was successful
+   */
+  private static async validateEditWithLLM(
+    userRequest: string,
+    originalContent: string,
+    revisedContent: string
+  ): Promise<{ isValid: boolean; feedback?: string }> {
+    const validationPrompt = `You are validating whether an edit request was successfully completed.
+
+ORIGINAL CONTENT:
+${originalContent}
+
+USER REQUEST: ${userRequest}
+
+REVISED CONTENT:
+${revisedContent}
+
+Analyze whether the user's request was successfully fulfilled. Respond with a JSON object:
+{
+  "isValid": true/false,
+  "feedback": "explanation of what was or wasn't done correctly"
+}
+
+Consider:
+- Was the specific request followed exactly?
+- If removal was requested, was the content actually removed?
+- If modification was requested, was it properly applied?
+- Were any unintended changes made?
+- Is the overall structure and quality maintained?
+
+Respond with ONLY the JSON object:`;
+
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: validationPrompt
+      }]);
+
+      const cleanResponse = response.trim().replace(/```json\n?|\n?```/g, '');
+      const validation = JSON.parse(cleanResponse);
+
+      return {
+        isValid: validation.isValid === true,
+        feedback: validation.feedback || 'No specific feedback provided'
+      };
+    } catch (error) {
+      console.warn('LLM validation failed, assuming valid:', error);
+      return { isValid: true, feedback: 'Validation check failed, assuming edit was successful' };
+    }
+  }
+
+
+
+  /**
+   * Build correction prompt based on LLM validation feedback
+   */
+  private static buildCorrectionPrompt(
+    userRequest: string,
+    originalContent: string,
+    failedRevision: string,
+    validationFeedback: string
+  ): string {
+    return `Your previous edit attempt needs correction based on validation feedback.
+
+ORIGINAL CONTENT:
+${originalContent}
+
+USER REQUEST: ${userRequest}
+
+PREVIOUS ATTEMPT:
+${failedRevision}
+
+VALIDATION FEEDBACK: ${validationFeedback}
+
+CORRECTION INSTRUCTIONS:
+- Review the validation feedback carefully
+- Understand what went wrong with the previous attempt
+- Make the edit correctly this time
+- Follow the user's request precisely
+- Return the complete, corrected summary
+
+CORRECTED SUMMARY:`;
+  }
+
+  /**
+   * Get human-readable description of revision type
+   */
+  private static getRevisionDescription(revisionType: string, query: string): string {
+    const lowerQuery = query.toLowerCase();
+
+    if (lowerQuery.includes('bullet') || lowerQuery.includes('list')) {
+      return 'reformatted the content as bullet points';
+    }
+    if (lowerQuery.includes('warmer') || lowerQuery.includes('compassionate')) {
+      return 'applied a warmer, more compassionate tone';
+    }
+    if (lowerQuery.includes('remove') || lowerQuery.includes('delete')) {
+      return 'removed the requested content';
+    }
+    if (lowerQuery.includes('add') || lowerQuery.includes('include')) {
+      return 'added the requested content';
+    }
+    if (lowerQuery.includes('rephrase') || lowerQuery.includes('reword')) {
+      return 'rephrased the content';
+    }
+
+    switch (revisionType) {
+      case 'format': return 'reformatted the content';
+      case 'rephrase': return 'rephrased the content with improved voice';
+      case 'edit': return 'made the requested edits';
+      case 'remove': return 'removed the specified content';
+      default: return 'revised the content';
+    }
+  }
+
+  /**
+   * LLM-driven change summarization
+   */
+  private static async summarizeChanges(original: string, revised: string): Promise<string> {
+    const summaryPrompt = `Compare these two versions of a document summary and describe what changed.
+
+ORIGINAL VERSION:
+${original}
+
+REVISED VERSION:
+${revised}
+
+Provide a brief, clear description of what changed. Focus on:
+- Content that was added, removed, or modified
+- Structural changes (sections, bullet points, formatting)
+- Tone or style adjustments
+- Any other notable differences
+
+Respond with a concise summary (1-2 sentences) of the changes made:`;
+
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: summaryPrompt
+      }]);
+
+      return response.trim() || 'Content was revised';
+    } catch (error) {
+      console.warn('Change summarization failed, using fallback:', error);
+
+      // Simple fallback based on length difference
+      const lengthDiff = revised.length - original.length;
+      if (Math.abs(lengthDiff) > original.length * 0.1) {
+        if (lengthDiff > 0) {
+          return `Expanded content (+${lengthDiff} characters)`;
+        } else {
+          return `Condensed content (${Math.abs(lengthDiff)} characters)`;
+        }
+      }
+      return 'Refined language and tone';
+    }
   }
 
   /**

@@ -301,6 +301,26 @@ export const SummaryResultsView: React.FC = () => {
     setChatMessages(newMessages);
   };
 
+  // Handle summary revisions from chat
+  const handleSummaryRevision = (revision: { documentId: string; newContent: string; revisionType: string }) => {
+    if (!summary || !document) return;
+
+    console.log('🔄 Applying summary revision:', revision);
+
+    // Update the current summary with the revised content
+    const updatedSummary = {
+      ...summary,
+      styledSummary: revision.newContent,
+      regenerationCount: (summary.regenerationCount || 0) + 1,
+      currentVersionId: crypto.randomUUID()
+    };
+
+    setSummary(updatedSummary);
+
+    // Force a re-render to show the updated content
+    console.log('✅ Summary updated with revision');
+  };
+
   const handleDeleteVersion = useCallback(async (versionId: string) => {
     if (!document) return;
     try {
@@ -921,6 +941,7 @@ export const SummaryResultsView: React.FC = () => {
                 currentSummary={summary}
                 messages={chatMessages}
                 onMessagesChange={handleChatMessagesChange}
+                onSummaryRevision={handleSummaryRevision}
                 placeholder="Ask about this summary or request changes..."
                 showMessagesArea={true}
               />

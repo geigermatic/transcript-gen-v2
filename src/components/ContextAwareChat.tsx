@@ -14,18 +14,21 @@ interface ContextAwareChatProps {
   // Context-specific props
   activeDocument?: Document | null;
   currentSummary?: any; // SummaryResult or ABSummaryPair
-  
+
   // Chat state management
   messages: ChatMessage[];
   onMessagesChange: (messages: ChatMessage[]) => void;
-  
+
   // UI customization
   placeholder?: string;
   className?: string;
   showMessagesArea?: boolean;
-  
+
   // Optional overrides
   customContext?: Partial<ChatContext>;
+
+  // Summary revision callback
+  onSummaryRevision?: (revision: { documentId: string; newContent: string; revisionType: string }) => void;
 }
 
 export const ContextAwareChat: React.FC<ContextAwareChatProps> = ({
@@ -36,13 +39,14 @@ export const ContextAwareChat: React.FC<ContextAwareChatProps> = ({
   placeholder = "Ask a question...",
   className = "",
   showMessagesArea = true,
-  customContext = {}
+  customContext = {},
+  onSummaryRevision
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const location = useLocation();
   const { documents, abSummaryPairs, styleGuide } = useAppStore();
 
@@ -97,7 +101,7 @@ export const ContextAwareChat: React.FC<ContextAwareChatProps> = ({
 
     try {
       const chatContext = buildChatContext();
-      
+
       // Process with Enhanced ChatEngine for context-aware responses
       const response = await EnhancedChatEngine.processContextAwareQuery(
         userMessage.content,
@@ -115,9 +119,14 @@ export const ContextAwareChat: React.FC<ContextAwareChatProps> = ({
 
       onMessagesChange([...newMessages, assistantMessage]);
 
+      // Check if this was a summary revision and trigger callback
+      if ((response as any).summaryRevision && onSummaryRevision) {
+        onSummaryRevision((response as any).summaryRevision);
+      }
+
     } catch (error) {
       console.error('Chat processing failed:', error);
-      
+
       const errorMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -150,11 +159,10 @@ export const ContextAwareChat: React.FC<ContextAwareChatProps> = ({
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-3xl rounded-lg px-4 py-3 ${
-                    message.role === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-800 border border-gray-200'
-                  }`}
+                  className={`max-w-3xl rounded-lg px-4 py-3 ${message.role === 'user'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-800 border border-gray-200'
+                    }`}
                 >
                   <div className="whitespace-pre-wrap">{message.content}</div>
                   {message.sources && message.sources.length > 0 && (
@@ -167,7 +175,7 @@ export const ContextAwareChat: React.FC<ContextAwareChatProps> = ({
                 </div>
               </div>
             ))}
-            
+
             {/* Processing indicator */}
             {isProcessing && (
               <div className="flex justify-start">
