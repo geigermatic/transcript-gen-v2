@@ -146,7 +146,13 @@ VectorSearchService → Enhanced Performance → Same API Interface
 - **Gradual Migration**: Users can rollback to previous system if needed
 - **Zero Functionality Loss**: All current features work exactly as before
 
-## User Stories - Organized by Development Streams
+## User Stories - Organized by Development Streams (TDD Approach)
+
+### TDD Development Methodology
+**All user stories follow Test-Driven Development (TDD) approach:**
+1. **Red Phase**: Write failing tests first (Week 1)
+2. **Green Phase**: Implement minimum code to pass tests (Weeks 2-6)
+3. **Refactor Phase**: Optimize while keeping tests green (Weeks 7-8)
 
 ### Stream A: Vector Database Foundation (Agent 1)
 
@@ -155,14 +161,54 @@ VectorSearchService → Enhanced Performance → Same API Interface
 - **Acceptance Criteria**: SQLite database with sqlite-vss extension working locally, no external dependencies
 - **Privacy Requirement**: All vector operations happen on user's device
 - **Current State**: Replace linear search in `EmbeddingEngine.searchSimilar()`
+- **TDD Requirements**:
+  ```typescript
+  describe('SQLite Vector Database Setup', () => {
+    it('should initialize SQLite with vector extensions', async () => {
+      const db = new VectorDatabase();
+      await expect(db.initialize()).resolves.not.toThrow();
+      expect(db.hasVectorSupport()).toBe(true);
+    });
+
+    it('should work offline without external dependencies', async () => {
+      // Simulate offline environment
+      mockNetworkOffline();
+      const db = new VectorDatabase();
+      await expect(db.initialize()).resolves.not.toThrow();
+    });
+  });
+  ```
+- **Performance Tests**: Vector extension loading <1 second
+- **Test Coverage**: >90% code coverage required
 - **Dependencies**: None
-- **Estimated Effort**: 3 days
+- **Estimated Effort**: 3 days (1 day tests, 2 days implementation)
 
 #### US-002: Basic Vector Storage
 **As a system**, I want to store document embeddings in the vector database so that they persist across app restarts.
 - **Acceptance Criteria**: Embeddings stored and retrievable from SQLite
+- **TDD Requirements**:
+  ```typescript
+  describe('Vector Storage', () => {
+    it('should store embeddings and retrieve them identically', async () => {
+      const testEmbeddings = generateTestEmbeddings(100);
+      await db.insertEmbeddings(testEmbeddings);
+      const retrieved = await db.getEmbeddings();
+      expect(retrieved).toEqual(testEmbeddings);
+    });
+
+    it('should persist embeddings across database restarts', async () => {
+      await db.insertEmbeddings(testEmbeddings);
+      await db.close();
+      await db.initialize();
+      const retrieved = await db.getEmbeddings();
+      expect(retrieved.length).toBe(testEmbeddings.length);
+    });
+  });
+  ```
+- **Performance Tests**: Insert 1000 embeddings <5 seconds
+- **Test Coverage**: >90% code coverage required
 - **Dependencies**: US-001
-- **Estimated Effort**: 2 days
+- **Estimated Effort**: 2 days (0.5 day tests, 1.5 days implementation)
 
 #### US-003: Vector Index Creation
 **As a system**, I want to build HNSW indices on stored embeddings so that searches are logarithmic complexity.
@@ -173,8 +219,34 @@ VectorSearchService → Enhanced Performance → Same API Interface
 #### US-004: Basic Vector Search
 **As a user**, I want to search documents using vector similarity so that I get relevant results quickly.
 - **Acceptance Criteria**: Vector search returns ranked results in <200ms
+- **TDD Requirements**:
+  ```typescript
+  describe('Vector Search Performance', () => {
+    it('should return results in <200ms for any query', async () => {
+      const startTime = Date.now();
+      const results = await db.searchSimilar(testQuery, { limit: 10 });
+      const endTime = Date.now();
+      expect(endTime - startTime).toBeLessThan(200);
+    });
+
+    it('should return results ranked by similarity', async () => {
+      const results = await db.searchSimilar(testQuery, { limit: 5 });
+      for (let i = 1; i < results.length; i++) {
+        expect(results[i-1].similarity).toBeGreaterThanOrEqual(results[i].similarity);
+      }
+    });
+
+    it('should scale linearly with document count', async () => {
+      const time100 = await measureSearchTime(100);
+      const time1000 = await measureSearchTime(1000);
+      expect(time1000).toBeLessThan(time100 * 2); // Sub-linear scaling
+    });
+  });
+  ```
+- **Performance Tests**: <200ms search regardless of library size
+- **Test Coverage**: >90% code coverage required
 - **Dependencies**: US-003
-- **Estimated Effort**: 2 days
+- **Estimated Effort**: 2 days (0.5 day tests, 1.5 days implementation)
 
 ### Stream B: Migration & Data Management (Agent 2)
 
@@ -195,8 +267,37 @@ VectorSearchService → Enhanced Performance → Same API Interface
 - **Acceptance Criteria**: All IndexedDB embeddings migrated to SQLite vector DB without data loss
 - **Privacy Requirement**: Migration happens entirely locally, no data leaves device
 - **Current State**: Preserve all existing documents, embeddings, chat history, and summaries
+- **TDD Requirements**:
+  ```typescript
+  describe('Data Migration Safety', () => {
+    it('should migrate all embeddings without data loss', async () => {
+      const originalEmbeddings = await indexedDB.getAllEmbeddings();
+      await migrationService.migrate();
+      const migratedEmbeddings = await vectorDB.getAllEmbeddings();
+      expect(migratedEmbeddings.length).toBe(originalEmbeddings.length);
+      expect(migratedEmbeddings).toEqual(originalEmbeddings);
+    });
+
+    it('should preserve all document metadata', async () => {
+      const originalDocs = await indexedDB.getAllDocuments();
+      await migrationService.migrate();
+      const migratedDocs = await indexedDB.getAllDocuments();
+      expect(migratedDocs).toEqual(originalDocs);
+    });
+
+    it('should handle migration rollback safely', async () => {
+      const beforeState = await captureSystemState();
+      await migrationService.migrate();
+      await migrationService.rollback();
+      const afterState = await captureSystemState();
+      expect(afterState).toEqual(beforeState);
+    });
+  });
+  ```
+- **Performance Tests**: Migration of 1000 documents <60 seconds
+- **Test Coverage**: >95% code coverage (critical for data safety)
 - **Dependencies**: US-002, US-006
-- **Estimated Effort**: 4 days
+- **Estimated Effort**: 4 days (1 day tests, 3 days implementation)
 
 #### US-008: Hybrid Storage Period
 **As a system**, I want to support both old and new storage during migration so that users can rollback if needed.
@@ -243,8 +344,37 @@ VectorSearchService → Enhanced Performance → Same API Interface
 - **Acceptance Criteria**: ChatEngine and EnhancedChatEngine use vector DB with zero functionality loss
 - **Privacy Requirement**: All chat context building remains local-only
 - **Current State**: Preserve context-aware chat, capability routing, summary editing, and conversation memory
+- **TDD Requirements**:
+  ```typescript
+  describe('Chat Engine Integration', () => {
+    it('should maintain all current chat capabilities', async () => {
+      const testQuery = "How do I meditate?";
+      const vectorResponse = await chatEngineWithVector.processQuery(testQuery);
+      const currentResponse = await chatEngineWithCurrent.processQuery(testQuery);
+
+      // Same response structure and quality
+      expect(vectorResponse).toHaveProperty('message');
+      expect(vectorResponse).toHaveProperty('sources');
+      expect(vectorResponse.sources.length).toBeGreaterThan(0);
+    });
+
+    it('should be faster than current implementation', async () => {
+      const vectorTime = await measureChatResponseTime(vectorChatEngine);
+      const currentTime = await measureChatResponseTime(currentChatEngine);
+      expect(vectorTime).toBeLessThan(currentTime);
+    });
+
+    it('should preserve conversation memory and context', async () => {
+      await chatEngine.processQuery("Tell me about meditation");
+      const followUp = await chatEngine.processQuery("How long should I do it?");
+      expect(followUp.message.content).toContain("meditation");
+    });
+  });
+  ```
+- **Performance Tests**: Chat responses <3 seconds (vs current 5-10 seconds)
+- **Test Coverage**: >90% code coverage required
 - **Dependencies**: US-013
-- **Estimated Effort**: 3 days
+- **Estimated Effort**: 3 days (1 day tests, 2 days implementation)
 
 #### US-015: Search UI Integration
 **As a user**, I want the search interface to use vector search so that I get instant results.
@@ -284,31 +414,119 @@ VectorSearchService → Enhanced Performance → Same API Interface
 - **Dependencies**: US-019
 - **Estimated Effort**: 2 days
 
-### Stream F: Testing & Quality Assurance (Agent 6)
+### Stream F: TDD Orchestration & Quality Assurance (Agent 6)
 
-#### US-021: Performance Test Suite
-**As a developer**, I want comprehensive performance tests so that I can validate the improvements.
-- **Acceptance Criteria**: Automated tests for search speed, memory usage, scalability
-- **Dependencies**: US-004
-- **Estimated Effort**: 3 days
+#### US-021: TDD Infrastructure Setup
+**As a developer**, I want comprehensive TDD infrastructure so that all development follows test-driven approach.
+- **Acceptance Criteria**:
+  - Jest/Vitest testing framework configured
+  - Performance benchmarking tools integrated
+  - Code coverage reporting >90% for all streams
+  - CI/CD pipeline runs all tests on every commit
+- **TDD Requirements**:
+  ```typescript
+  describe('TDD Infrastructure', () => {
+    it('should run all test suites in <30 seconds', async () => {
+      const startTime = Date.now();
+      await runAllTests();
+      expect(Date.now() - startTime).toBeLessThan(30000);
+    });
 
-#### US-022: Migration Testing
-**As a developer**, I want to test data migration thoroughly so that user data is safe.
-- **Acceptance Criteria**: Migration tested with various data sizes and edge cases
-- **Dependencies**: US-007
-- **Estimated Effort**: 2 days
+    it('should achieve >90% code coverage across all streams', async () => {
+      const coverage = await generateCoverageReport();
+      expect(coverage.overall).toBeGreaterThan(90);
+    });
+  });
+  ```
+- **Performance Tests**: Test suite execution time <30 seconds
+- **Test Coverage**: Infrastructure for measuring coverage across all streams
+- **Dependencies**: None (foundational)
+- **Estimated Effort**: 3 days (1 day tests, 2 days implementation)
 
-#### US-023: Load Testing
-**As a developer**, I want to test with 1K+ documents so that I can validate scalability claims.
-- **Acceptance Criteria**: Performance tests with 1K, 5K, 10K document libraries
-- **Dependencies**: US-021
-- **Estimated Effort**: 3 days
+#### US-022: Cross-Stream Integration Testing
+**As a developer**, I want integration tests between all agent streams so that parallel development doesn't break interfaces.
+- **Acceptance Criteria**:
+  - Integration tests for all agent interface contracts
+  - Automated testing of agent dependencies
+  - Performance regression detection across integrations
+- **TDD Requirements**:
+  ```typescript
+  describe('Cross-Stream Integration', () => {
+    it('should maintain interface compatibility between all agents', async () => {
+      const vectorDB = new VectorDatabase(); // Agent 1
+      const migrationService = new MigrationService(vectorDB); // Agent 2
+      const searchService = new VectorSearchService(vectorDB); // Agent 4
 
-#### US-024: Docker Performance Testing
-**As a developer**, I want to test Docker performance so that deployment recommendations are accurate.
-- **Acceptance Criteria**: Comprehensive Docker vs native performance comparison
-- **Dependencies**: US-020, US-023
-- **Estimated Effort**: 2 days
+      // All interfaces should work together
+      await expect(migrationService.migrate()).resolves.not.toThrow();
+      await expect(searchService.search("test")).resolves.toBeDefined();
+    });
+  });
+  ```
+- **Performance Tests**: Integration performance matches individual component performance
+- **Test Coverage**: >95% coverage of interface boundaries
+- **Dependencies**: All other streams (ongoing integration)
+- **Estimated Effort**: 2 days (0.5 day tests, 1.5 days implementation)
+
+#### US-023: Performance Regression Testing
+**As a developer**, I want automated performance regression testing so that optimizations don't introduce slowdowns.
+- **Acceptance Criteria**:
+  - Automated benchmarks for all performance-critical paths
+  - Performance regression alerts in CI/CD
+  - Load testing with 1K, 5K, 10K document libraries
+- **TDD Requirements**:
+  ```typescript
+  describe('Performance Regression Prevention', () => {
+    it('should never be slower than baseline performance', async () => {
+      const baseline = await loadPerformanceBaseline();
+      const current = await measureCurrentPerformance();
+      expect(current.searchTime).toBeLessThanOrEqual(baseline.searchTime);
+      expect(current.memoryUsage).toBeLessThanOrEqual(baseline.memoryUsage);
+    });
+
+    it('should scale linearly up to 10K documents', async () => {
+      const results = await testScalability([1000, 5000, 10000]);
+      results.forEach(result => {
+        expect(result.searchTime).toBeLessThan(200); // Always <200ms
+      });
+    });
+  });
+  ```
+- **Performance Tests**: Continuous benchmarking with alerts
+- **Test Coverage**: All performance-critical code paths
+- **Dependencies**: US-021, US-004
+- **Estimated Effort**: 3 days (1 day tests, 2 days implementation)
+
+#### US-024: TDD Compliance Validation
+**As a developer**, I want to validate TDD compliance across all streams so that code quality standards are maintained.
+- **Acceptance Criteria**:
+  - All user stories have tests written before implementation
+  - Code coverage >90% for all streams
+  - Performance tests pass for all components
+  - Integration tests validate all interface contracts
+- **TDD Requirements**:
+  ```typescript
+  describe('TDD Compliance', () => {
+    it('should have tests for every user story', () => {
+      const userStories = getAllUserStories();
+      const testSuites = getAllTestSuites();
+      userStories.forEach(story => {
+        expect(testSuites).toContain(story.testSuite);
+      });
+    });
+
+    it('should maintain >90% code coverage', async () => {
+      const coverage = await generateCoverageReport();
+      Object.values(coverage.streams).forEach(streamCoverage => {
+        expect(streamCoverage).toBeGreaterThan(90);
+      });
+    });
+  });
+  ```
+- **Performance Tests**: TDD compliance checking <5 seconds
+- **Test Coverage**: Meta-testing of test coverage itself
+- **Dependencies**: All streams (validation role)
+- **Estimated Effort**: 2 days (0.5 day tests, 1.5 days implementation)
 
 ### Stream G: User Experience & Polish (Agent 7)
 
@@ -382,38 +600,61 @@ VectorSearchService → Enhanced Performance → Same API Interface
 - **Dependencies**: Successful migration and rollout (Week 7)
 - **Estimated Effort**: 3 days
 
-## Implementation Timeline
+## TDD Implementation Timeline
 
-### Phase 1: Foundation (Weeks 1-2)
-- **Parallel Streams**: A (Vector DB), B (Migration Analysis), E (Docker Analysis), H (Cleanup Planning)
+### Phase 1: Test-First Development (Week 1)
+- **All Streams**: Write comprehensive test suites for all user stories
+- **TDD Focus**: Red phase - all tests fail initially (expected and good!)
+- **Deliverables**:
+  - Complete test coverage for all 32 user stories
+  - TDD infrastructure and CI/CD pipeline
+  - Performance benchmarking baselines
+  - Interface contracts validated through tests
+- **Dependencies**: None - pure test development
+- **Success Criteria**: All tests written, all tests failing, >90% intended coverage
+
+### Phase 2: Foundation Implementation (Weeks 2-3)
+- **TDD Focus**: Green phase - make foundational tests pass
+- **Parallel Streams**: A (Vector DB), B (Migration Analysis), E (Docker Analysis), F (TDD Infrastructure), H (Cleanup Planning)
 - **Deliverables**: Basic vector database, migration strategy, Docker requirements, cleanup plan
-- **Dependencies**: None - streams can work independently
+- **Dependencies**: Phase 1 test suites
+- **Success Criteria**: Foundation tests passing, integration tests still failing
 
-### Phase 2: Core Development (Weeks 3-4)
+### Phase 3: Core Development (Weeks 4-5)
+- **TDD Focus**: Green phase - make core functionality tests pass
 - **Parallel Streams**: A (Search), B (Migration Tool), C (Performance), D (Integration), H (Deprecation Markers)
-- **Deliverables**: Working vector search, data migration, performance optimization, deprecated code marked
-- **Dependencies**: Phase 1 completion
-
-### Phase 3: Integration & Testing (Weeks 5-6)
-- **Parallel Streams**: D (Full Integration), E (Docker), F (Testing), G (UX), H (Cleanup Tools)
-- **Deliverables**: Complete integration, Docker deployment, comprehensive testing, automated cleanup tools
+- **Deliverables**: Working vector search, data migration, performance optimization
 - **Dependencies**: Phase 2 completion
+- **Success Criteria**: Core functionality tests passing, performance benchmarks met
 
-### Phase 4: Launch & Migration (Week 7)
+### Phase 4: Integration & Testing (Week 6)
+- **TDD Focus**: Green phase - make integration tests pass
+- **Parallel Streams**: D (Full Integration), E (Docker), F (Cross-Stream Testing), G (UX), H (Cleanup Tools)
+- **Deliverables**: Complete integration, Docker deployment, comprehensive testing
+- **Dependencies**: Phase 3 completion
+- **Success Criteria**: All integration tests passing, performance targets met
+
+### Phase 5: Launch & Migration (Week 7)
+- **TDD Focus**: Validation phase - all tests passing in production environment
 - **All Streams**: Final testing, documentation, feature flag deployment
 - **Deliverables**: Production-ready system with gradual rollout capability
-- **Dependencies**: Phase 3 completion
+- **Dependencies**: Phase 4 completion
+- **Success Criteria**: All tests passing, performance validated, rollout ready
 
-### Phase 5: Architecture Cleanup (Week 8)
+### Phase 6: Refactor & Cleanup (Week 8)
+- **TDD Focus**: Refactor phase - optimize while keeping all tests green
 - **Primary Stream**: H (Architecture Cleanup)
-- **Supporting Streams**: F (Validation Testing), G (Documentation)
+- **Supporting Streams**: F (Regression Testing), G (Documentation)
 - **Deliverables**: Clean codebase with all tech debt removed
-- **Dependencies**: Successful migration and user adoption validation
+- **Dependencies**: Successful migration validation
+- **Success Criteria**: All tests still passing, code complexity improved, tech debt eliminated
 
-### Phase 6: Final Validation (Week 9)
+### Phase 7: Final Validation (Week 9)
+- **TDD Focus**: Validation phase - comprehensive test suite validation
 - **All Streams**: Performance validation, documentation completion, success metrics review
 - **Deliverables**: Fully optimized system with comprehensive documentation
-- **Dependencies**: Phase 5 completion
+- **Dependencies**: Phase 6 completion
+- **Success Criteria**: All success metrics achieved, documentation complete, system production-ready
 
 ## Risk Mitigation
 
@@ -437,6 +678,13 @@ VectorSearchService → Enhanced Performance → Same API Interface
 - [ ] **Performance Improved**: Search <200ms, memory <20MB peak
 - [ ] **Data Migration**: 100% successful migration of existing user data
 - [ ] **Backward Compatibility**: Users can rollback if needed
+
+### TDD Requirements (Critical for Quality)
+- [ ] **Test-First Development**: All code written after tests (100% compliance)
+- [ ] **Code Coverage**: >90% test coverage across all streams
+- [ ] **Performance Testing**: Automated benchmarks for all critical paths
+- [ ] **Integration Testing**: All agent interfaces validated through tests
+- [ ] **Regression Prevention**: Automated alerts for performance or functionality regression
 
 ### Privacy & Local-Only Requirements (Critical)
 - [ ] **No Cloud Dependencies**: SQLite vector operations entirely local
@@ -750,3 +998,29 @@ export interface VectorSearchService { ... }
 - **Measure**: Automated deprecation tracking and alerts
 - **Monitor**: Weekly deprecation report with aging analysis
 - **Escalation**: Automatic alerts when removal dates approach
+
+#### TDD Compliance Metrics
+
+##### Test Coverage Quality
+- **Target**: >90% code coverage across all streams
+- **Measure**: Line coverage, branch coverage, function coverage
+- **Monitor**: Daily coverage reports with trend analysis
+- **Alert**: Any stream dropping below 90% coverage
+
+##### Test-First Compliance
+- **Target**: 100% of code written after tests
+- **Measure**: Git commit analysis (tests committed before implementation)
+- **Monitor**: Automated checks in CI/CD pipeline
+- **Enforcement**: Block commits that add code without corresponding tests
+
+##### Performance Test Validation
+- **Target**: All performance requirements validated through automated tests
+- **Measure**: Automated benchmark results vs. target thresholds
+- **Monitor**: Continuous performance testing in CI/CD
+- **Alert**: Any performance regression >10% from baseline
+
+##### Integration Test Health
+- **Target**: All agent interfaces validated through integration tests
+- **Measure**: Integration test pass rate and coverage of interface contracts
+- **Monitor**: Daily integration test results across all agent boundaries
+- **Escalation**: Failed integration tests block all related development
