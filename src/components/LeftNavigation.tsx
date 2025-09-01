@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Plus, Trash2, Clock, Cpu, Terminal, FileText } from 'lucide-react';
+import { Settings, Plus, Trash2, Clock, Cpu, Terminal, FileText, TestTube } from 'lucide-react';
 import { useAppStore } from '../store';
 import eliraIcon from '../assets/icons/elira-leaf-extract.svg';
 
@@ -34,7 +34,7 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
     const totalSeconds = Math.floor(milliseconds / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
-    
+
     if (minutes > 0) {
       return `${minutes}m ${seconds}s`;
     } else {
@@ -71,10 +71,9 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
   };
 
   return (
-    <div 
-      className={`relative transition-all duration-300 ease-in-out ${
-        isNavExpanded ? 'w-80' : 'w-16'
-      } bg-gray-50 border-r border-gray-200`}
+    <div
+      className={`relative transition-all duration-300 ease-in-out ${isNavExpanded ? 'w-80' : 'w-16'
+        } bg-gray-50 border-r border-gray-200`}
       onMouseEnter={onNavMouseEnter}
       onMouseLeave={onNavMouseLeave}
     >
@@ -84,9 +83,9 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 flex items-center justify-center">
-              <img 
-                src={eliraIcon} 
-                alt="Elira" 
+              <img
+                src={eliraIcon}
+                alt="Elira"
                 className="w-full h-full object-contain"
               />
             </div>
@@ -98,7 +97,7 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
 
         {/* Action Buttons */}
         <div className="p-4 space-y-3">
-          <button 
+          <button
             onClick={() => {
               if (onNewChat && showNewChatButton) {
                 onNewChat();
@@ -106,9 +105,8 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
                 navigate('/');
               }
             }}
-            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${
-              !isNavExpanded ? 'justify-center' : ''
-            }`}
+            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${!isNavExpanded ? 'justify-center' : ''
+              }`}
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
               <Plus className="w-6 h-6 text-gray-600" />
@@ -119,37 +117,45 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
               </span>
             )}
           </button>
-          
-          <button 
+
+          <button
+            onClick={() => navigate('/tests')}
+            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${!isNavExpanded ? 'justify-center' : ''
+              }`}
+          >
+            <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+              <TestTube className="w-6 h-6 text-gray-600" />
+            </div>
+            {isNavExpanded && <span className="text-gray-700 ml-3">TDD Tests</span>}
+          </button>
+
+          <button
             onClick={() => navigate('/settings')}
-            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${
-              !isNavExpanded ? 'justify-center' : ''
-            }`}
+            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${!isNavExpanded ? 'justify-center' : ''
+              }`}
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
               <Settings className="w-6 h-6 text-gray-600" />
             </div>
             {isNavExpanded && <span className="text-gray-700 ml-3">Settings</span>}
           </button>
-          
+
           {/* Clear All Documents Button */}
-          <button 
+          <button
             onClick={handleClearAllDocuments}
-            className={`w-full flex items-center p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors ${
-              !isNavExpanded ? 'justify-center' : ''
-            }`}
+            className={`w-full flex items-center p-2 rounded-lg hover:bg-red-100 text-red-600 transition-colors ${!isNavExpanded ? 'justify-center' : ''
+              }`}
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
               <Trash2 className="w-6 h-6" />
             </div>
             {isNavExpanded && <span className="ml-3">Clear All Documents</span>}
           </button>
-          
+
           {/* Documents List Indicator */}
-          <button 
-            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${
-              !isNavExpanded ? 'justify-center' : ''
-            }`}
+          <button
+            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${!isNavExpanded ? 'justify-center' : ''
+              }`}
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
               <FileText className="w-6 h-6 text-gray-600" />
@@ -180,70 +186,68 @@ export const LeftNavigation: React.FC<LeftNavigationProps> = ({
                 {documents
                   .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
                   .map((doc) => (
-                  <div 
-                    key={doc.id}
-                    className={`p-2 rounded-lg cursor-pointer transition-colors ${
-                      doc.id === currentDocumentId 
-                        ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+                    <div
+                      key={doc.id}
+                      className={`p-2 rounded-lg cursor-pointer transition-colors ${doc.id === currentDocumentId
+                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
                         : 'hover:bg-gray-100 text-gray-700'
-                    }`}
-                    onClick={() => {
-                      // Navigate to summary view with document data
-                      navigate('/summary/' + doc.id, { 
-                        state: { document: doc }
-                      });
-                    }}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-800 text-sm truncate mb-1">
-                          {doc.title || doc.filename}
-                        </h4>
-                        {/* Row 1: Basic metadata */}
-                        <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
-                          <span>
-                            {new Date(doc.uploadedAt).toLocaleDateString()}
-                          </span>
-                          <span>
-                            {doc.text ? `${Math.round(doc.text.length / 1000)}k chars` : 'Unknown size'}
-                          </span>
-                        </div>
-                        
-                        {/* Row 2: Processing metadata (only show if available) */}
-                        {(getDocumentProcessingTime(doc.id) || getDocumentModel(doc.id)) && (
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
-                            {/* Processing Time */}
-                            {getDocumentProcessingTime(doc.id) && (
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {formatProcessingTime(getDocumentProcessingTime(doc.id)!)}
-                              </span>
-                            )}
-                            {/* Model Used */}
-                            {getDocumentModel(doc.id) && (
-                              <span className="flex items-center gap-1">
-                                <Cpu className="w-3 h-3" />
-                                {getDocumentModel(doc.id)}
-                              </span>
-                            )}
+                        }`}
+                      onClick={() => {
+                        // Navigate to summary view with document data
+                        navigate('/summary/' + doc.id, {
+                          state: { document: doc }
+                        });
+                      }}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-gray-800 text-sm truncate mb-1">
+                            {doc.title || doc.filename}
+                          </h4>
+                          {/* Row 1: Basic metadata */}
+                          <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
+                            <span>
+                              {new Date(doc.uploadedAt).toLocaleDateString()}
+                            </span>
+                            <span>
+                              {doc.text ? `${Math.round(doc.text.length / 1000)}k chars` : 'Unknown size'}
+                            </span>
                           </div>
-                        )}
+
+                          {/* Row 2: Processing metadata (only show if available) */}
+                          {(getDocumentProcessingTime(doc.id) || getDocumentModel(doc.id)) && (
+                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                              {/* Processing Time */}
+                              {getDocumentProcessingTime(doc.id) && (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {formatProcessingTime(getDocumentProcessingTime(doc.id)!)}
+                                </span>
+                              )}
+                              {/* Model Used */}
+                              {getDocumentModel(doc.id) && (
+                                <span className="flex items-center gap-1">
+                                  <Cpu className="w-3 h-3" />
+                                  {getDocumentModel(doc.id)}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>
         )}
-        
+
         {/* Bottom Section - Dev Console Link */}
         <div className="mt-auto p-4">
-          <button 
+          <button
             onClick={() => navigate('/dev-console')}
-            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${
-              !isNavExpanded ? 'justify-center' : ''
-            }`}
+            className={`w-full flex items-center p-2 rounded-lg hover:bg-gray-100 transition-colors ${!isNavExpanded ? 'justify-center' : ''
+              }`}
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
               <Terminal className="w-6 h-6 text-gray-600" />

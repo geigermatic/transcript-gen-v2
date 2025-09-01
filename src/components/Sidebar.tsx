@@ -4,13 +4,14 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Home, 
-  Upload, 
-  BookOpen, 
+import {
+  Home,
+  Upload,
+  BookOpen,
   FileText,
   Settings,
   Terminal,
+  TestTube,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -33,6 +34,7 @@ const navigationItems: NavItem[] = [
   { id: 'upload', label: 'Upload', icon: <Upload size={20} />, href: '/upload' },
   { id: 'glossary', label: 'Glossary', icon: <BookOpen size={20} />, href: '/glossary' },
   { id: 'library', label: 'Library', icon: <FileText size={20} />, href: '/library' },
+  { id: 'tests', label: 'TDD Tests', icon: <TestTube size={20} />, href: '/tests' },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} />, href: '/settings' },
   { id: 'dev-console', label: 'Developer Console', icon: <Terminal size={20} />, href: '/dev-console' },
 ];
@@ -47,10 +49,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   };
 
   return (
-    <aside 
-      className={`fixed top-6 left-6 bottom-6 z-40 transition-all duration-300 ease-out ${
-        collapsed ? 'w-16' : 'w-72'
-      }`}
+    <aside
+      className={`fixed top-6 left-6 bottom-6 z-40 transition-all duration-300 ease-out ${collapsed ? 'w-16' : 'w-72'
+        }`}
     >
       <div className="glass-header h-full p-4 flex flex-col">
         {/* Toggle button */}
@@ -68,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         <nav className="flex-1 space-y-2">
           {navigationItems.map((item) => {
             const isActive = location.pathname === item.href;
-            
+
             return (
               <button
                 key={item.id}

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ChatCentricLayout } from './components/ChatCentricLayout';
 import { SummaryResultsView } from './components/SummaryResultsView';
+import { TestDashboard } from './components/TestDashboard';
 import { UploadPage } from './pages/UploadPage';
 import { GlossaryPage } from './pages/GlossaryPage';
 import { LibraryPage } from './pages/LibraryPage';
@@ -46,17 +47,20 @@ function App() {
       <Routes>
         {/* Main Dashboard - Chat-centric interface */}
         <Route path="/" element={<ChatCentricLayout />} />
-        
+
         {/* Summary Results View */}
         <Route path="/summary/:documentId" element={<SummaryResultsView />} />
-        
+
+        {/* TDD Test Dashboard */}
+        <Route path="/tests" element={<TestDashboard />} />
+
         {/* Supporting Pages */}
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/glossary" element={<GlossaryPage />} />
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/dev-console" element={<DevConsolePage />} />
-        
+
         {/* Fallback - redirect to dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

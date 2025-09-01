@@ -814,7 +814,7 @@ Provide just the alternatives, numbered 1. and 2.`;
         styleGuide
       );
 
-      const cleanedContent = revisedContent.trim();
+      let cleanedContent = revisedContent.trim();
 
       // Validate the revision
       if (!cleanedContent || cleanedContent.length < 50) {
