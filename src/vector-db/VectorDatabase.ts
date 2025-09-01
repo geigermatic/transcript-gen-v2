@@ -261,18 +261,55 @@ export class VectorDatabase implements IVectorDatabase {
     if (!this.initialized) {
       throw new Error('Database is closed');
     }
-    // TODO: Implement vector similarity search
+
+    const limit = options?.limit || 10;
+    const distanceMetric = options?.distanceMetric || 'cosine';
+    const threshold = options?.threshold || 0;
+
+    // Get all embeddings and calculate similarities
+    const allEmbeddings = Array.from(this.embeddings.values());
+    const results: VectorSearchResult[] = [];
+
+    for (const embedding of allEmbeddings) {
+      const similarity = this.calculateSimilarity(queryVector, embedding.vector, distanceMetric);
+      const distance = this.calculateDistance(queryVector, embedding.vector, distanceMetric);
+
+      if (similarity >= threshold) {
+        results.push({
+          embedding,
+          similarity,
+          distance
+        });
+      }
+    }
+
+    // Sort by similarity (descending) or distance (ascending)
+    if (distanceMetric === 'euclidean') {
+      results.sort((a, b) => a.distance - b.distance);
+    } else {
+      results.sort((a, b) => b.similarity - a.similarity);
+    }
+
     await this.simulateAsyncOperation(50);
-    return [];
+    return results.slice(0, limit);
   }
 
   // Index management
-  async buildIndex(): Promise<void> {
+  async buildIndex(progressCallback?: (progress: number) => void): Promise<void> {
     if (!this.initialized) {
       throw new Error('Database is closed');
     }
-    // TODO: Build HNSW index
-    await this.simulateAsyncOperation(1000);
+
+    // Simulate index building with progress updates
+    const steps = 10;
+    for (let i = 0; i <= steps; i++) {
+      if (progressCallback) {
+        progressCallback((i / steps) * 100);
+      }
+      await this.simulateAsyncOperation(100);
+    }
+
+    // TODO: Build actual HNSW index with SQLite
   }
 
   async rebuildIndex(): Promise<void> {
@@ -297,11 +334,18 @@ export class VectorDatabase implements IVectorDatabase {
       throw new Error('Database is closed');
     }
 
+    const totalEmbeddings = this.embeddings.size;
+    const uniqueDocuments = new Set(Array.from(this.embeddings.values()).map(e => e.documentId)).size;
+
+    // Estimate sizes (rough calculation for in-memory storage)
+    const estimatedIndexSize = totalEmbeddings * (this.config.vectorDimension || 384) * 4; // 4 bytes per float
+    const estimatedDatabaseSize = estimatedIndexSize * 1.5; // Include metadata overhead
+
     return {
-      totalEmbeddings: 0,
-      totalDocuments: 0,
-      databaseSize: 0,
-      indexSize: 0,
+      totalEmbeddings,
+      totalDocuments: uniqueDocuments,
+      databaseSize: estimatedDatabaseSize,
+      indexSize: estimatedIndexSize,
       vectorDimension: this.config.vectorDimension!,
       indexStatus: 'ready',
       lastUpdated: new Date()
@@ -348,5 +392,56 @@ export class VectorDatabase implements IVectorDatabase {
   // Helper methods
   private async simulateAsyncOperation(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private calculateSimilarity(vector1: number[], vector2: number[], metric: string): number {
+    switch (metric) {
+      case 'cosine':
+        return this.cosineSimilarity(vector1, vector2);
+      case 'euclidean':
+        // Convert distance to similarity (1 / (1 + distance))
+        const distance = this.euclideanDistance(vector1, vector2);
+        return 1 / (1 + distance);
+      case 'dot_product':
+        return this.dotProduct(vector1, vector2);
+      default:
+        return this.cosineSimilarity(vector1, vector2);
+    }
+  }
+
+  private calculateDistance(vector1: number[], vector2: number[], metric: string): number {
+    switch (metric) {
+      case 'cosine':
+        // Convert similarity to distance (1 - similarity)
+        return 1 - this.cosineSimilarity(vector1, vector2);
+      case 'euclidean':
+        return this.euclideanDistance(vector1, vector2);
+      case 'dot_product':
+        // Convert dot product to distance
+        return 1 - this.dotProduct(vector1, vector2);
+      default:
+        return 1 - this.cosineSimilarity(vector1, vector2);
+    }
+  }
+
+  private cosineSimilarity(vector1: number[], vector2: number[]): number {
+    const dotProduct = this.dotProduct(vector1, vector2);
+    const magnitude1 = Math.sqrt(vector1.reduce((sum, val) => sum + val * val, 0));
+    const magnitude2 = Math.sqrt(vector2.reduce((sum, val) => sum + val * val, 0));
+
+    if (magnitude1 === 0 || magnitude2 === 0) return 0;
+    return dotProduct / (magnitude1 * magnitude2);
+  }
+
+  private euclideanDistance(vector1: number[], vector2: number[]): number {
+    const sumSquaredDiffs = vector1.reduce((sum, val, i) => {
+      const diff = val - vector2[i];
+      return sum + diff * diff;
+    }, 0);
+    return Math.sqrt(sumSquaredDiffs);
+  }
+
+  private dotProduct(vector1: number[], vector2: number[]): number {
+    return vector1.reduce((sum, val, i) => sum + val * vector2[i], 0);
   }
 }

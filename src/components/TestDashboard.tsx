@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Square, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Play, Square, RefreshCw, CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown } from 'lucide-react';
 
 interface TestResult {
   name: string;
@@ -28,6 +28,15 @@ interface TestSuite {
   };
 }
 
+interface PhaseResult {
+  name: string;
+  status: 'complete' | 'in-progress' | 'not-started';
+  suites: TestSuite[];
+  totalTests: number;
+  passedTests: number;
+  failedTests: number;
+}
+
 interface TestRunSummary {
   totalTests: number;
   passedTests: number;
@@ -43,6 +52,10 @@ interface TestRunSummary {
     branches: number;
     statements: number;
   };
+  phases?: {
+    phase1: PhaseResult;
+    phase2: PhaseResult;
+  };
 }
 
 export const TestDashboard: React.FC = () => {
@@ -52,6 +65,8 @@ export const TestDashboard: React.FC = () => {
   const [autoRun, setAutoRun] = useState(false);
   const [selectedSuite, setSelectedSuite] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [phases, setPhases] = useState<{ phase1: PhaseResult; phase2: PhaseResult } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch real test results from Vitest
   const fetchTestResults = async (): Promise<TestSuite[]> => {
@@ -106,14 +121,61 @@ export const TestDashboard: React.FC = () => {
 
   const runTests = async () => {
     setIsRunning(true);
+    setError(null);
 
     try {
+      console.log('Starting test run...');
       // Import and run the actual tests directly
       const { runVectorDatabaseTests } = await import('../lib/testRunner');
       const testResults = await runVectorDatabaseTests();
+      console.log('Test results received:', testResults);
 
       const suites = parseTestResults(testResults);
       setTestSuites(suites);
+
+      // Set phases if available
+      if (testResults.phases) {
+        setPhases(testResults.phases);
+      } else {
+        // Create phases from existing suites if not provided
+        const phase1Suites = suites.filter(suite =>
+          suite.name.includes('US-001') || suite.name.includes('US-002')
+        );
+        const phase2Suites = suites.filter(suite =>
+          suite.name.includes('US-003')
+        );
+
+        if (phase1Suites.length > 0 || phase2Suites.length > 0) {
+          const phase1Tests = phase1Suites.reduce((acc, suite) => acc + suite.tests.length, 0);
+          const phase1Passed = phase1Suites.reduce((acc, suite) =>
+            acc + suite.tests.filter(test => test.status === 'passed').length, 0);
+          const phase1Failed = phase1Tests - phase1Passed;
+
+          const phase2Tests = phase2Suites.reduce((acc, suite) => acc + suite.tests.length, 0);
+          const phase2Passed = phase2Suites.reduce((acc, suite) =>
+            acc + suite.tests.filter(test => test.status === 'passed').length, 0);
+          const phase2Failed = phase2Tests - phase2Passed;
+
+          setPhases({
+            phase1: {
+              name: 'Phase 1: Foundation',
+              status: phase1Failed === 0 ? 'complete' : 'in-progress',
+              suites: phase1Suites,
+              totalTests: phase1Tests,
+              passedTests: phase1Passed,
+              failedTests: phase1Failed
+            },
+            phase2: {
+              name: 'Phase 2: Advanced Features',
+              status: phase2Tests === 0 ? 'not-started' : phase2Failed === 0 ? 'complete' : 'in-progress',
+              suites: phase2Suites,
+              totalTests: phase2Tests,
+              passedTests: phase2Passed,
+              failedTests: phase2Failed
+            }
+          });
+        }
+      }
 
       const totalTests = suites.reduce((acc, suite) => acc + suite.tests.length, 0);
       const passedTests = suites.reduce((acc, suite) =>
@@ -138,13 +200,16 @@ export const TestDashboard: React.FC = () => {
           functions: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0,
           branches: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0,
           statements: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0
-        }
+        },
+        phases: testResults.phases
       });
     } catch (error) {
       console.error('Failed to run tests:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error occurred');
       // Show error state instead of fake data
       setTestSuites([]);
       setSummary(null);
+      setPhases(null);
     } finally {
       setIsRunning(false);
     }
@@ -193,6 +258,20 @@ export const TestDashboard: React.FC = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">TDD Test Dashboard</h1>
             <p className="text-gray-600">Real-time test results for 1K Document Architecture</p>
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <h3 className="text-red-800 font-medium mb-2">Error Loading Tests</h3>
+              <p className="text-red-700 text-sm">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
 
           {/* Controls */}
           <div className="mb-6 flex items-center gap-4">
@@ -276,6 +355,81 @@ export const TestDashboard: React.FC = () => {
                     : 'Tests are failing as expected in TDD. Implement the VectorDatabase class to make them pass.'
                 }
               </p>
+            </div>
+          )}
+
+          {/* Development Phases Overview */}
+          {phases && phases.phase1 && phases.phase2 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Development Phases</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {/* Phase 1: Foundation */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">{phases.phase1.name}</h3>
+                    <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                      ✅ Complete
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Total Tests:</span>
+                      <span className="font-medium">{phases.phase1.totalTests}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Passed:</span>
+                      <span className="font-medium text-green-600">{phases.phase1.passedTests}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Failed:</span>
+                      <span className="font-medium text-red-600">{phases.phase1.failedTests}</span>
+                    </div>
+                    <div className="mt-3 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-green-500 h-2 rounded-full"
+                        style={{ width: `${(phases.phase1.passedTests / phases.phase1.totalTests) * 100}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      {phases.phase1.suites.length} test suites • Foundation complete
+                    </div>
+                  </div>
+                </div>
+
+                {/* Phase 2: Advanced Features */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">{phases.phase2.name}</h3>
+                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                      🔄 In Progress
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Total Tests:</span>
+                      <span className="font-medium">{phases.phase2.totalTests}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Passed:</span>
+                      <span className="font-medium text-green-600">{phases.phase2.passedTests}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Failed:</span>
+                      <span className="font-medium text-red-600">{phases.phase2.failedTests}</span>
+                    </div>
+                    <div className="mt-3 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-500 h-2 rounded-full"
+                        style={{ width: `${(phases.phase2.passedTests / phases.phase2.totalTests) * 100}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      {phases.phase2.suites.length} test suite • {Math.round((phases.phase2.passedTests / phases.phase2.totalTests) * 100)}% complete
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -394,64 +548,209 @@ export const TestDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Detailed Test Suites */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {selectedCategory ? 'All Test Suites' : 'Detailed Test Results'}
-            </h2>
-            {testSuites.map((suite, index) => (
-              <div key={index} className={`border rounded-lg ${getStatusColor(suite.status)}`}>
-                <div
-                  className="p-4 cursor-pointer"
-                  onClick={() => setSelectedSuite(selectedSuite === suite.name ? null : suite.name)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(suite.status)}
-                      <span className="font-medium text-gray-900">{suite.name}</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span>{suite.tests.length} tests</span>
-                      <span>{suite.duration}ms</span>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedSuite === suite.name && (
-                  <div className="border-t border-gray-200 bg-white">
-                    {suite.tests.map((test, testIndex) => (
-                      <div key={testIndex} className="p-4 border-b border-gray-100 last:border-b-0">
-                        <div className="flex items-start gap-3 mb-2">
-                          <div className="mt-1">{getStatusIcon(test.status)}</div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-1">
-                              <span className="text-gray-900 font-medium">{test.name}</span>
-                              <span className="text-sm text-gray-500">{test.duration}ms</span>
-                              {test.category && (
-                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                  {test.category}
-                                </span>
-                              )}
-                            </div>
-                            {test.description && (
-                              <div className="text-sm text-gray-600 mt-1">
-                                {test.description}
-                              </div>
-                            )}
+          {/* Phase-Organized Test Suites */}
+          {phases && phases.phase1 && phases.phase2 ? (
+            <div className="space-y-8">
+              {/* Phase 1 Tests */}
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-3">
+                  <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                    ✅ Complete
+                  </span>
+                  Phase 1: Foundation ({phases.phase1.totalTests} tests)
+                </h2>
+                <div className="space-y-4">
+                  {phases.phase1.suites.map((suite, index) => (
+                    <div key={`phase1-${index}`} className={`border rounded-lg ${getStatusColor(suite.status)}`}>
+                      <div
+                        className="p-4 cursor-pointer"
+                        onClick={() => setSelectedSuite(selectedSuite === suite.name ? null : suite.name)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {getStatusIcon(suite.status)}
+                            <span className="font-medium text-gray-900">{suite.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {suite.tests.filter(t => t.status === 'passed').length}/{suite.tests.length} passed
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500">{suite.duration}ms</span>
+                            <ChevronDown
+                              className={`w-5 h-5 text-gray-400 transition-transform ${selectedSuite === suite.name ? 'rotate-180' : ''
+                                }`}
+                            />
                           </div>
                         </div>
-                        {test.error && (
-                          <div className="ml-7 p-3 bg-red-50 border border-red-200 rounded text-sm">
-                            <code className="text-red-800">{test.error}</code>
-                          </div>
-                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
+
+                      {selectedSuite === suite.name && (
+                        <div className="border-t border-gray-200">
+                          {suite.tests.map((test, testIndex) => (
+                            <div key={testIndex} className="p-4 border-b border-gray-100 last:border-b-0">
+                              <div className="flex items-start gap-3">
+                                <div className="mt-1">{getStatusIcon(test.status)}</div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-1">
+                                    <span className="text-gray-900 font-medium">{test.name}</span>
+                                    <span className="text-sm text-gray-500">{test.duration}ms</span>
+                                    {test.category && (
+                                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                        {test.category.replace('Phase 1: ', '')}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {test.description && (
+                                    <div className="text-sm text-gray-600 mt-1">
+                                      {test.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {test.error && (
+                                <div className="ml-7 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                                  <code className="text-red-800">{test.error}</code>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
+
+              {/* Phase 2 Tests */}
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-3">
+                  <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                    🔄 In Progress
+                  </span>
+                  Phase 2: Advanced Features ({phases.phase2.totalTests} tests)
+                </h2>
+                <div className="space-y-4">
+                  {phases.phase2.suites.map((suite, index) => (
+                    <div key={`phase2-${index}`} className={`border rounded-lg ${getStatusColor(suite.status)}`}>
+                      <div
+                        className="p-4 cursor-pointer"
+                        onClick={() => setSelectedSuite(selectedSuite === suite.name ? null : suite.name)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {getStatusIcon(suite.status)}
+                            <span className="font-medium text-gray-900">{suite.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {suite.tests.filter(t => t.status === 'passed').length}/{suite.tests.length} passed
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500">{suite.duration}ms</span>
+                            <ChevronDown
+                              className={`w-5 h-5 text-gray-400 transition-transform ${selectedSuite === suite.name ? 'rotate-180' : ''
+                                }`}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {selectedSuite === suite.name && (
+                        <div className="border-t border-gray-200">
+                          {suite.tests.map((test, testIndex) => (
+                            <div key={testIndex} className="p-4 border-b border-gray-100 last:border-b-0">
+                              <div className="flex items-start gap-3">
+                                <div className="mt-1">{getStatusIcon(test.status)}</div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-1">
+                                    <span className="text-gray-900 font-medium">{test.name}</span>
+                                    <span className="text-sm text-gray-500">{test.duration}ms</span>
+                                    {test.category && (
+                                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                        {test.category.replace('Phase 2: ', '')}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {test.description && (
+                                    <div className="text-sm text-gray-600 mt-1">
+                                      {test.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {test.error && (
+                                <div className="ml-7 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                                  <code className="text-red-800">{test.error}</code>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Fallback: Original Test Suites Display */
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {selectedCategory ? 'All Test Suites' : 'Detailed Test Results'}
+              </h2>
+              {testSuites.map((suite, index) => (
+                <div key={index} className={`border rounded-lg ${getStatusColor(suite.status)}`}>
+                  <div
+                    className="p-4 cursor-pointer"
+                    onClick={() => setSelectedSuite(selectedSuite === suite.name ? null : suite.name)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(suite.status)}
+                        <span className="font-medium text-gray-900">{suite.name}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <span>{suite.tests.length} tests</span>
+                        <span>{suite.duration}ms</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedSuite === suite.name && (
+                    <div className="border-t border-gray-200 bg-white">
+                      {suite.tests.map((test, testIndex) => (
+                        <div key={testIndex} className="p-4 border-b border-gray-100 last:border-b-0">
+                          <div className="flex items-start gap-3 mb-2">
+                            <div className="mt-1">{getStatusIcon(test.status)}</div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-1">
+                                <span className="text-gray-900 font-medium">{test.name}</span>
+                                <span className="text-sm text-gray-500">{test.duration}ms</span>
+                                {test.category && (
+                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                    {test.category}
+                                  </span>
+                                )}
+                              </div>
+                              {test.description && (
+                                <div className="text-sm text-gray-600 mt-1">
+                                  {test.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {test.error && (
+                            <div className="ml-7 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                              <code className="text-red-800">{test.error}</code>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Next Steps */}
           {summary && (
