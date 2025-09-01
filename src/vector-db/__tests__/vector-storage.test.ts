@@ -147,9 +147,8 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
       await db.initialize();
       const retrieved = await db.getAllEmbeddings();
 
-      // For in-memory storage, data is expected to be cleared on restart
-      // TODO: When SQLite is implemented, change this to expect testEmbeddings.length
-      expect(retrieved.length).toBe(0); // In-memory storage clears on restart
+      // With persistence implemented, data should be restored after restart
+      expect(retrieved.length).toBe(testEmbeddings.length); // Persistence working!
     });
 
     it('should maintain data integrity after unexpected shutdown', async () => {
