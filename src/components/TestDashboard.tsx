@@ -6,6 +6,8 @@ interface TestResult {
   status: 'passed' | 'failed' | 'pending' | 'running';
   duration?: number;
   error?: string;
+  description?: string;
+  category?: string;
   assertionResults?: Array<{
     title: string;
     status: 'passed' | 'failed' | 'pending';
@@ -49,89 +51,53 @@ export const TestDashboard: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [autoRun, setAutoRun] = useState(false);
   const [selectedSuite, setSelectedSuite] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Fetch real test results from Vitest
   const fetchTestResults = async (): Promise<TestSuite[]> => {
     try {
-      // Run tests and capture JSON output
-      const response = await fetch('/api/test-results');
+      // Execute real tests via subprocess and get actual results
+      const response = await fetch('/api/run-tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          testPath: 'src/vector-db',
+          reporter: 'json'
+        })
+      });
+
       if (response.ok) {
         const data = await response.json();
         return parseVitestResults(data);
       }
     } catch (error) {
-      console.warn('Could not fetch live test results, using simulated data');
+      console.error('Failed to execute real tests:', error);
     }
 
-    // Fallback to simulated data showing current progress
-    return [
-      {
-        name: 'VectorDatabase - US-001: SQLite Vector Database Setup',
-        status: 'passed',
-        duration: 1826,
-        tests: [
-          { name: 'should initialize SQLite with vector extensions', status: 'passed', duration: 101 },
-          { name: 'should work offline without external dependencies', status: 'passed', duration: 101 },
-          { name: 'should initialize in under 1 second', status: 'passed', duration: 102 },
-          { name: 'should handle multiple initialization calls gracefully', status: 'passed', duration: 102 },
-          { name: 'should have sqlite-vss extension loaded', status: 'passed', duration: 102 },
-          { name: 'should support vector operations', status: 'passed', duration: 101 },
-          { name: 'should support HNSW index creation', status: 'passed', duration: 101 },
-          { name: 'should use local file storage', status: 'passed', duration: 102 },
-          { name: 'should enable WAL mode for better performance', status: 'passed', duration: 101 },
-          { name: 'should have appropriate timeout settings', status: 'passed', duration: 101 },
-          { name: 'should handle corrupted database files gracefully', status: 'passed', duration: 1 },
-          { name: 'should provide meaningful error messages', status: 'passed', duration: 0 },
-          { name: 'should clean up resources on close', status: 'passed', duration: 101 },
-          { name: 'should handle close without initialization', status: 'passed', duration: 0 },
-          { name: 'should prevent operations after close', status: 'passed', duration: 101 },
-          { name: 'should initialize within performance targets', status: 'passed', duration: 507 },
-          { name: 'should have minimal memory footprint', status: 'passed', duration: 102 }
-        ]
-      },
-      {
-        name: 'VectorDatabase - US-002: Basic Vector Storage',
-        status: 'failed',
-        duration: 9548,
-        tests: [
-          { name: 'should store embeddings and retrieve them identically', status: 'failed', duration: 500, error: 'Timestamp mismatch in object comparison' },
-          { name: 'should handle single embedding insertion', status: 'failed', duration: 115, error: 'Timestamp mismatch in object comparison' },
-          { name: 'should handle batch embedding insertion', status: 'passed', duration: 307 },
-          { name: 'should preserve embedding vector precision', status: 'passed', duration: 115 },
-          { name: 'should retrieve embedding by ID', status: 'passed', duration: 306 },
-          { name: 'should return null for non-existent ID', status: 'passed', duration: 305 },
-          { name: 'should retrieve embeddings by document ID', status: 'passed', duration: 305 },
-          { name: 'should retrieve all embeddings efficiently', status: 'passed', duration: 305 },
-          { name: 'should persist embeddings across database restarts', status: 'failed', duration: 406, error: 'In-memory storage cleared on restart (expected - will fix with SQLite)' },
-          { name: 'should maintain data integrity after unexpected shutdown', status: 'passed', duration: 306 },
-          { name: 'should update existing embedding', status: 'passed', duration: 317 },
-          { name: 'should delete embedding by ID', status: 'passed', duration: 312 },
-          { name: 'should delete all embeddings for a document', status: 'passed', duration: 328 },
-          { name: 'should insert 1000 embeddings in under 5 seconds', status: 'passed', duration: 2123 },
-          { name: 'should retrieve embeddings efficiently regardless of count', status: 'passed', duration: 3495 }
-        ]
-      }
-    ];
+    // NO SIMULATED DATA - Return empty if real tests unavailable
+    return [];
   };
 
-  const parseVitestResults = (vitestData: any): TestSuite[] => {
-    // Parse Vitest JSON output into our TestSuite format
+  const parseTestResults = (testResults: any): TestSuite[] => {
+    // Parse test results into our TestSuite format
     const suites: TestSuite[] = [];
 
-    if (vitestData.testResults) {
-      vitestData.testResults.forEach((file: any) => {
-        const suite: TestSuite = {
-          name: file.name.replace('/Users/jg/transcript-gen-v2/src/vector-db/__tests__/', '').replace('.test.ts', ''),
-          status: file.status === 'passed' ? 'passed' : 'failed',
-          duration: file.endTime - file.startTime,
-          tests: file.assertionResults.map((test: any) => ({
-            name: test.title,
+    if (testResults.suites) {
+      testResults.suites.forEach((suite: any) => {
+        const testSuite: TestSuite = {
+          name: suite.name,
+          status: suite.status,
+          duration: suite.duration,
+          tests: suite.tests.map((test: any) => ({
+            name: test.name,
             status: test.status,
             duration: test.duration || 0,
-            error: test.failureMessages?.[0]
+            error: test.error,
+            description: test.description,
+            category: test.category
           }))
         };
-        suites.push(suite);
+        suites.push(testSuite);
       });
     }
 
@@ -142,8 +108,11 @@ export const TestDashboard: React.FC = () => {
     setIsRunning(true);
 
     try {
-      // Fetch real test results
-      const suites = await fetchTestResults();
+      // Import and run the actual tests directly
+      const { runVectorDatabaseTests } = await import('../lib/testRunner');
+      const testResults = await runVectorDatabaseTests();
+
+      const suites = parseTestResults(testResults);
       setTestSuites(suites);
 
       const totalTests = suites.reduce((acc, suite) => acc + suite.tests.length, 0);
@@ -165,14 +134,17 @@ export const TestDashboard: React.FC = () => {
         failedSuites,
         duration: totalDuration,
         coverage: {
-          lines: Math.round((passedTests / totalTests) * 100),
-          functions: Math.round((passedTests / totalTests) * 100),
-          branches: Math.round((passedTests / totalTests) * 100),
-          statements: Math.round((passedTests / totalTests) * 100)
+          lines: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0,
+          functions: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0,
+          branches: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0,
+          statements: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0
         }
       });
     } catch (error) {
       console.error('Failed to run tests:', error);
+      // Show error state instead of fake data
+      setTestSuites([]);
+      setSummary(null);
     } finally {
       setIsRunning(false);
     }
@@ -307,8 +279,126 @@ export const TestDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Test Suites */}
+          {/* Test Categories Summary */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Test Categories Overview</h2>
+              {selectedCategory && (
+                <div className="text-sm text-gray-600">
+                  Showing {testSuites.flatMap(suite => suite.tests).filter(test => test.category === selectedCategory).length} tests in "{selectedCategory}"
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {(() => {
+                const categories = new Map<string, { total: number; passed: number; failed: number }>();
+
+                testSuites.forEach(suite => {
+                  suite.tests.forEach(test => {
+                    const category = test.category || 'Uncategorized';
+                    if (!categories.has(category)) {
+                      categories.set(category, { total: 0, passed: 0, failed: 0 });
+                    }
+                    const stats = categories.get(category)!;
+                    stats.total++;
+                    if (test.status === 'passed') stats.passed++;
+                    if (test.status === 'failed') stats.failed++;
+                  });
+                });
+
+                return Array.from(categories.entries()).map(([category, stats]) => (
+                  <div
+                    key={category}
+                    className={`cursor-pointer transition-all duration-200 rounded-lg p-4 ${selectedCategory === category
+                      ? 'bg-blue-50 border-2 border-blue-300 shadow-md'
+                      : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                      }`}
+                    onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
+                  >
+                    <h3 className={`font-medium mb-2 ${selectedCategory === category ? 'text-blue-900' : 'text-gray-900'
+                      }`}>
+                      {category}
+                      {selectedCategory === category && (
+                        <span className="ml-2 text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">
+                          Active
+                        </span>
+                      )}
+                    </h3>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-green-600">{stats.passed} passed</span>
+                      {stats.failed > 0 && <span className="text-red-600">{stats.failed} failed</span>}
+                      <span className="text-gray-500">of {stats.total}</span>
+                    </div>
+                    <div className="mt-2 bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${selectedCategory === category ? 'bg-blue-500' : 'bg-green-500'
+                          }`}
+                        style={{ width: `${(stats.passed / stats.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+
+          {/* Category Filter View */}
+          {selectedCategory && (
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Tests in "{selectedCategory}" Category
+                </h2>
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full text-gray-700"
+                >
+                  Clear Filter
+                </button>
+              </div>
+              <div className="space-y-3">
+                {testSuites.flatMap(suite =>
+                  suite.tests
+                    .filter(test => test.category === selectedCategory)
+                    .map((test, index) => (
+                      <div key={`${suite.name}-${index}`} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1">{getStatusIcon(test.status)}</div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-1">
+                              <span className="text-gray-900 font-medium">{test.name}</span>
+                              <span className="text-sm text-gray-500">{test.duration}ms</span>
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                {test.category}
+                              </span>
+                            </div>
+                            {test.description && (
+                              <div className="text-sm text-gray-600 mt-1">
+                                {test.description}
+                              </div>
+                            )}
+                            <div className="text-xs text-gray-500 mt-2">
+                              From: {suite.name}
+                            </div>
+                          </div>
+                        </div>
+                        {test.error && (
+                          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                            <code className="text-red-800">{test.error}</code>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Detailed Test Suites */}
           <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-gray-900">
+              {selectedCategory ? 'All Test Suites' : 'Detailed Test Results'}
+            </h2>
             {testSuites.map((suite, index) => (
               <div key={index} className={`border rounded-lg ${getStatusColor(suite.status)}`}>
                 <div
@@ -331,10 +421,24 @@ export const TestDashboard: React.FC = () => {
                   <div className="border-t border-gray-200 bg-white">
                     {suite.tests.map((test, testIndex) => (
                       <div key={testIndex} className="p-4 border-b border-gray-100 last:border-b-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          {getStatusIcon(test.status)}
-                          <span className="text-gray-900">{test.name}</span>
-                          <span className="text-sm text-gray-500">{test.duration}ms</span>
+                        <div className="flex items-start gap-3 mb-2">
+                          <div className="mt-1">{getStatusIcon(test.status)}</div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-1">
+                              <span className="text-gray-900 font-medium">{test.name}</span>
+                              <span className="text-sm text-gray-500">{test.duration}ms</span>
+                              {test.category && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                  {test.category}
+                                </span>
+                              )}
+                            </div>
+                            {test.description && (
+                              <div className="text-sm text-gray-600 mt-1">
+                                {test.description}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         {test.error && (
                           <div className="ml-7 p-3 bg-red-50 border border-red-200 rounded text-sm">
