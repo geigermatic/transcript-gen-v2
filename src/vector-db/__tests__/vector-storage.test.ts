@@ -15,7 +15,7 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
   beforeEach(async () => {
     db = new VectorDatabase();
     await db.initialize();
-    
+
     // Generate test embeddings
     testEmbeddings = generateTestEmbeddings(100);
   });
@@ -29,15 +29,26 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
       // RED PHASE: insertEmbeddings method doesn't exist yet
       await db.insertEmbeddings(testEmbeddings);
       const retrieved = await db.getAllEmbeddings();
-      
+
       expect(retrieved.length).toBe(testEmbeddings.length);
-      expect(retrieved).toEqual(testEmbeddings);
+
+      // Check core properties (ignore timestamps)
+      retrieved.forEach((retrieved, index) => {
+        const original = testEmbeddings[index];
+        expect(retrieved.id).toBe(original.id);
+        expect(retrieved.documentId).toBe(original.documentId);
+        expect(retrieved.chunkId).toBe(original.chunkId);
+        expect(retrieved.vector).toEqual(original.vector);
+        expect(retrieved.metadata).toEqual(original.metadata);
+        expect(retrieved.createdAt).toBeInstanceOf(Date);
+        expect(retrieved.updatedAt).toBeInstanceOf(Date);
+      });
     });
 
     it('should handle single embedding insertion', async () => {
       const singleEmbedding = testEmbeddings[0];
       await db.insertEmbedding(singleEmbedding);
-      
+
       const retrieved = await db.getAllEmbeddings();
       expect(retrieved.length).toBe(1);
       expect(retrieved[0]).toEqual(singleEmbedding);
@@ -47,10 +58,10 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
       const batchSize = 50;
       const batch1 = testEmbeddings.slice(0, batchSize);
       const batch2 = testEmbeddings.slice(batchSize);
-      
+
       await db.insertEmbeddings(batch1);
       await db.insertEmbeddings(batch2);
-      
+
       const retrieved = await db.getAllEmbeddings();
       expect(retrieved.length).toBe(testEmbeddings.length);
     });
@@ -67,10 +78,10 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
           documentTitle: 'Precision Test'
         }
       };
-      
+
       await db.insertEmbedding(preciseEmbedding);
       const retrieved = await db.getEmbeddingById('precision-test');
-      
+
       expect(retrieved?.vector).toEqual(preciseEmbedding.vector);
     });
   });
@@ -83,7 +94,7 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
     it('should retrieve embedding by ID', async () => {
       const targetId = testEmbeddings[0].id;
       const retrieved = await db.getEmbeddingById(targetId);
-      
+
       expect(retrieved).toBeDefined();
       expect(retrieved?.id).toBe(targetId);
     });
@@ -96,7 +107,7 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
     it('should retrieve embeddings by document ID', async () => {
       const documentId = testEmbeddings[0].documentId;
       const retrieved = await db.getEmbeddingsByDocumentId(documentId);
-      
+
       expect(retrieved.length).toBeGreaterThan(0);
       retrieved.forEach(embedding => {
         expect(embedding.documentId).toBe(documentId);
@@ -107,7 +118,7 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
       const startTime = Date.now();
       const retrieved = await db.getAllEmbeddings();
       const endTime = Date.now();
-      
+
       expect(retrieved.length).toBe(testEmbeddings.length);
       expect(endTime - startTime).toBeLessThan(1000); // < 1 second
     });
@@ -117,24 +128,24 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
     it('should persist embeddings across database restarts', async () => {
       await db.insertEmbeddings(testEmbeddings);
       await db.close();
-      
+
       // Reinitialize database
       await db.initialize();
       const retrieved = await db.getAllEmbeddings();
-      
+
       expect(retrieved.length).toBe(testEmbeddings.length);
     });
 
     it('should maintain data integrity after unexpected shutdown', async () => {
       await db.insertEmbeddings(testEmbeddings.slice(0, 50));
-      
+
       // Simulate unexpected shutdown (close without proper cleanup)
       await db.forceClose();
-      
+
       // Reinitialize and check data
       await db.initialize();
       const retrieved = await db.getAllEmbeddings();
-      
+
       expect(retrieved.length).toBe(50);
     });
   });
@@ -154,10 +165,10 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
           chunkText: 'Updated text'
         }
       };
-      
+
       await db.updateEmbedding(updatedEmbedding);
       const retrieved = await db.getEmbeddingById(originalEmbedding.id);
-      
+
       expect(retrieved?.vector).toEqual(updatedEmbedding.vector);
       expect(retrieved?.metadata.chunkText).toBe('Updated text');
     });
@@ -165,10 +176,10 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
     it('should delete embedding by ID', async () => {
       const targetId = testEmbeddings[0].id;
       await db.deleteEmbedding(targetId);
-      
+
       const retrieved = await db.getEmbeddingById(targetId);
       expect(retrieved).toBeNull();
-      
+
       const allEmbeddings = await db.getAllEmbeddings();
       expect(allEmbeddings.length).toBe(testEmbeddings.length - 1);
     });
@@ -176,7 +187,7 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
     it('should delete all embeddings for a document', async () => {
       const documentId = testEmbeddings[0].documentId;
       await db.deleteEmbeddingsByDocumentId(documentId);
-      
+
       const retrieved = await db.getEmbeddingsByDocumentId(documentId);
       expect(retrieved.length).toBe(0);
     });
@@ -185,27 +196,27 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
   describe('Performance Requirements', () => {
     it('should insert 1000 embeddings in under 5 seconds', async () => {
       const largeEmbeddingSet = generateTestEmbeddings(1000);
-      
+
       const startTime = Date.now();
       await db.insertEmbeddings(largeEmbeddingSet);
       const endTime = Date.now();
-      
+
       expect(endTime - startTime).toBeLessThan(5000);
     });
 
     it('should retrieve embeddings efficiently regardless of count', async () => {
       // Test with different sizes
       const sizes = [100, 500, 1000];
-      
+
       for (const size of sizes) {
         const embeddings = generateTestEmbeddings(size);
         await db.clearAllEmbeddings();
         await db.insertEmbeddings(embeddings);
-        
+
         const startTime = Date.now();
         await db.getAllEmbeddings();
         const endTime = Date.now();
-        
+
         expect(endTime - startTime).toBeLessThan(1000); // Always < 1 second
       }
     });
@@ -218,7 +229,7 @@ describe('VectorDatabase - US-002: Basic Vector Storage', () => {
  */
 function generateTestEmbeddings(count: number): DocumentEmbedding[] {
   const embeddings: DocumentEmbedding[] = [];
-  
+
   for (let i = 0; i < count; i++) {
     embeddings.push({
       id: `embedding-${i}`,
@@ -233,7 +244,7 @@ function generateTestEmbeddings(count: number): DocumentEmbedding[] {
       }
     });
   }
-  
+
   return embeddings;
 }
 

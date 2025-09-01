@@ -33,7 +33,7 @@ describe('VectorDatabase - US-001: SQLite Vector Database Setup', () => {
       // Simulate offline environment (no network access)
       const originalFetch = global.fetch;
       global.fetch = () => Promise.reject(new Error('Network unavailable'));
-      
+
       try {
         await expect(db.initialize()).resolves.not.toThrow();
         expect(db.isInitialized()).toBe(true);
@@ -46,7 +46,7 @@ describe('VectorDatabase - US-001: SQLite Vector Database Setup', () => {
       const startTime = Date.now();
       await db.initialize();
       const endTime = Date.now();
-      
+
       expect(endTime - startTime).toBeLessThan(1000);
     });
 
@@ -105,13 +105,13 @@ describe('VectorDatabase - US-001: SQLite Vector Database Setup', () => {
     it('should handle corrupted database files gracefully', async () => {
       // Simulate corrupted database
       const corruptedDb = new VectorDatabase({ path: '/invalid/path/corrupted.db' });
-      
+
       await expect(corruptedDb.initialize()).rejects.toThrow();
     });
 
     it('should provide meaningful error messages', async () => {
       const invalidDb = new VectorDatabase({ path: '/readonly/path.db' });
-      
+
       try {
         await invalidDb.initialize();
       } catch (error) {
@@ -125,7 +125,7 @@ describe('VectorDatabase - US-001: SQLite Vector Database Setup', () => {
     it('should clean up resources on close', async () => {
       await db.initialize();
       await db.close();
-      
+
       expect(db.isInitialized()).toBe(false);
     });
 
@@ -136,8 +136,8 @@ describe('VectorDatabase - US-001: SQLite Vector Database Setup', () => {
     it('should prevent operations after close', async () => {
       await db.initialize();
       await db.close();
-      
-      await expect(db.hasVectorSupport()).rejects.toThrow('Database is closed');
+
+      expect(() => db.hasVectorSupport()).toThrow('Database is closed');
     });
   });
 });
@@ -178,7 +178,7 @@ describe('VectorDatabase Performance Benchmarks', () => {
     const beforeMemory = process.memoryUsage().heapUsed;
     await db.initialize();
     const afterMemory = process.memoryUsage().heapUsed;
-    
+
     const memoryIncrease = afterMemory - beforeMemory;
     expect(memoryIncrease).toBeLessThan(5 * 1024 * 1024); // < 5MB increase
   });
