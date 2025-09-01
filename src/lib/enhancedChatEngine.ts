@@ -803,19 +803,16 @@ Provide just the alternatives, numbered 1. and 2.`;
         }
       });
 
-      // Build revision prompt using LLM-driven analysis
-      const revisionPrompt = await this.buildRevisionPrompt(
+      // First, analyze the intent using LLM
+      const intentAnalysis = await this.analyzeEditIntent(query, originalContent);
+
+      // Execute edit using hybrid LLM + programmatic approach
+      const revisedContent = await this.executeEdit(
         query,
         originalContent,
-        revisionType,
+        intentAnalysis,
         styleGuide
       );
-
-      // Process the revision with Ollama
-      const revisedContent = await ollama.chat([{
-        role: 'user',
-        content: revisionPrompt
-      }]);
 
       const cleanedContent = revisedContent.trim();
 
@@ -933,21 +930,7 @@ Provide just the alternatives, numbered 1. and 2.`;
     }
   }
 
-  /**
-   * Build revision prompt using LLM-driven two-stage approach
-   */
-  private static async buildRevisionPrompt(
-    userRequest: string,
-    originalContent: string,
-    revisionType: string,
-    styleGuide?: any
-  ): Promise<string> {
-    // Stage 1: Let LLM analyze the intent
-    const intentAnalysis = await this.analyzeEditIntent(userRequest, originalContent);
 
-    // Stage 2: Build execution prompt based on LLM's understanding
-    return this.buildExecutionPrompt(userRequest, originalContent, intentAnalysis, styleGuide);
-  }
 
   /**
    * LLM-driven intent analysis - understand what the user wants to do
@@ -1003,60 +986,70 @@ Respond with ONLY the JSON object:`;
   }
 
   /**
-   * Build execution prompt based on LLM's intent analysis
+   * Execute edit using hybrid LLM + programmatic approach
    */
-  private static buildExecutionPrompt(
+  private static async executeEdit(
     userRequest: string,
     originalContent: string,
     intentAnalysis: any,
     styleGuide?: any
-  ): string {
+  ): Promise<string> {
     const isSpecificEdit = intentAnalysis.editType === 'specific';
 
     if (isSpecificEdit) {
-      return this.buildSpecificEditPrompt(userRequest, originalContent, intentAnalysis, styleGuide);
+      // Use surgical approach for specific edits
+      return await this.executeSurgicalEdit(userRequest, originalContent, intentAnalysis);
     } else {
-      return this.buildGeneralEditPrompt(userRequest, originalContent, intentAnalysis, styleGuide);
+      // Use full LLM approach for general edits
+      const prompt = this.buildGeneralEditPrompt(userRequest, originalContent, intentAnalysis, styleGuide);
+      const response = await ollama.chat([{ role: 'user', content: prompt }]);
+      return response.trim();
     }
   }
 
   /**
-   * Build prompt for specific, targeted edits using LLM understanding
+   * Execute surgical edit using hybrid LLM + programmatic approach
    */
-  private static buildSpecificEditPrompt(
+  private static async executeSurgicalEdit(
     userRequest: string,
     originalContent: string,
-    intentAnalysis: any,
-    styleGuide?: any
-  ): string {
-    const { action, target, instruction } = intentAnalysis;
+    intentAnalysis: any
+  ): Promise<string> {
+    const { action, target } = intentAnalysis;
 
-    return `You are making a PRECISE, SURGICAL edit to a document summary based on detailed analysis of the user's request.
+    // Stage 2: Extract target content using LLM
+    const extraction = await this.extractTargetContent(userRequest, originalContent, intentAnalysis);
 
-ORIGINAL SUMMARY:
-${originalContent}
+    if (!extraction.found) {
+      // Fallback to general edit if we can't find the target
+      console.warn('Target content not found, falling back to general edit');
+      const prompt = this.buildGeneralEditPrompt(userRequest, originalContent, intentAnalysis);
+      const response = await ollama.chat([{ role: 'user', content: prompt }]);
+      return response.trim();
+    }
 
-USER REQUEST: ${userRequest}
+    // Stage 3: Modify only the extracted content
+    let modifiedContent = '';
 
-INTENT ANALYSIS:
-- Action: ${action}
-- Target: ${target?.type || 'unspecified'} (${target?.identifier || 'general'})
-- Location: ${target?.location || 'anywhere in document'}
-- Specific Text: ${target?.specificText || 'none specified'}
-- Instruction: ${instruction}
+    if (action === 'remove' || action === 'delete') {
+      // For removal, replace with empty string
+      modifiedContent = '';
+    } else {
+      // For modification, let LLM modify just the extracted part
+      modifiedContent = await this.modifyExtractedContent(
+        extraction.targetContent,
+        userRequest,
+        intentAnalysis
+      );
+    }
 
-EXECUTION INSTRUCTIONS:
-1. Understand the document structure (sections, bullet points, paragraphs)
-2. Locate the exact target: ${target?.identifier || 'the content to modify'}
-3. Perform ONLY the requested action: ${action}
-4. Leave everything else COMPLETELY unchanged
-5. Maintain exact formatting, spacing, and structure
-6. Do NOT rephrase, improve, or modify other content
-7. Return the complete summary with ONLY the requested change
+    // Stage 4: Surgical replacement - preserve everything else character-for-character
+    const result = originalContent.slice(0, extraction.startIndex) +
+      modifiedContent +
+      originalContent.slice(extraction.endIndex);
 
-CRITICAL: This is a surgical edit. Change only what was specifically requested.
-
-EDITED SUMMARY:`;
+    // Clean up any double newlines or spacing issues from the replacement
+    return this.cleanupReplacementArtifacts(result);
   }
 
   /**
@@ -1097,6 +1090,232 @@ ${styleGuide ? `STYLE GUIDE TO MAINTAIN:
 - Structure: ${styleGuide.structure || 'Clear sections with headers'}` : ''}
 
 REVISED SUMMARY:`;
+  }
+
+  /**
+   * Extract target content using LLM to identify exact location
+   */
+  private static async extractTargetContent(
+    userRequest: string,
+    originalContent: string,
+    intentAnalysis: any
+  ): Promise<{ found: boolean; targetContent: string; startIndex: number; endIndex: number }> {
+    const extractionPrompt = `You are identifying the exact content to be edited in a document.
+
+DOCUMENT CONTENT:
+${originalContent}
+
+USER REQUEST: ${userRequest}
+
+INTENT ANALYSIS: ${JSON.stringify(intentAnalysis)}
+
+Your task is to find the EXACT text that should be modified. Respond with a JSON object:
+{
+  "found": true/false,
+  "targetContent": "the exact text to be modified (including any bullet points, formatting, etc.)",
+  "explanation": "brief explanation of what you found"
+}
+
+CRITICAL REQUIREMENTS:
+- Find the EXACT text as it appears in the document
+- Include any formatting characters (-, •, *, #, etc.)
+- Include any leading/trailing whitespace that's part of the element
+- For bullet points, include the bullet character and any indentation
+- For sections, include the header and content
+- If you can't find a clear target, set "found": false
+
+Examples:
+- For "remove the second bullet point": find "• Second bullet text here\n"
+- For "delete the techniques section": find "## Techniques\n\nSection content here\n"
+- For "remove that sentence about breathing": find the exact sentence
+
+Respond with ONLY the JSON object:`;
+
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: extractionPrompt
+      }]);
+
+      const cleanResponse = response.trim().replace(/```json\n?|\n?```/g, '');
+      const extraction = JSON.parse(cleanResponse);
+
+      if (!extraction.found || !extraction.targetContent) {
+        return { found: false, targetContent: '', startIndex: -1, endIndex: -1 };
+      }
+
+      // Find the exact location in the original content
+      const targetText = extraction.targetContent;
+      const startIndex = originalContent.indexOf(targetText);
+
+      if (startIndex === -1) {
+        // Try fuzzy matching for slight variations
+        const fuzzyMatch = this.findFuzzyMatch(originalContent, targetText);
+        if (fuzzyMatch.found) {
+          return {
+            found: true,
+            targetContent: fuzzyMatch.matchedText,
+            startIndex: fuzzyMatch.startIndex,
+            endIndex: fuzzyMatch.endIndex
+          };
+        }
+
+        console.warn('Extracted content not found in original:', targetText);
+        return { found: false, targetContent: '', startIndex: -1, endIndex: -1 };
+      }
+
+      return {
+        found: true,
+        targetContent: targetText,
+        startIndex: startIndex,
+        endIndex: startIndex + targetText.length
+      };
+
+    } catch (error) {
+      console.warn('Content extraction failed:', error);
+      return { found: false, targetContent: '', startIndex: -1, endIndex: -1 };
+    }
+  }
+
+  /**
+   * Find fuzzy match for content that might have slight variations
+   */
+  private static findFuzzyMatch(
+    originalContent: string,
+    targetText: string
+  ): { found: boolean; matchedText: string; startIndex: number; endIndex: number } {
+    // Remove extra whitespace and normalize for comparison
+    const normalizeText = (text: string) => text.replace(/\s+/g, ' ').trim();
+    const normalizedTarget = normalizeText(targetText);
+
+    // Split content into lines and check each for similarity
+    const lines = originalContent.split('\n');
+    let currentIndex = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const normalizedLine = normalizeText(line);
+
+      // Check if this line contains the target content (allowing for minor differences)
+      if (normalizedLine.includes(normalizedTarget) ||
+        normalizedTarget.includes(normalizedLine) ||
+        this.calculateSimilarity(normalizedLine, normalizedTarget) > 0.8) {
+
+        const startIndex = currentIndex;
+        const endIndex = currentIndex + line.length + 1; // +1 for newline
+
+        return {
+          found: true,
+          matchedText: line + '\n',
+          startIndex,
+          endIndex
+        };
+      }
+
+      currentIndex += line.length + 1; // +1 for newline
+    }
+
+    return { found: false, matchedText: '', startIndex: -1, endIndex: -1 };
+  }
+
+  /**
+   * Calculate similarity between two strings (simple implementation)
+   */
+  private static calculateSimilarity(str1: string, str2: string): number {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+
+    if (longer.length === 0) return 1.0;
+
+    const editDistance = this.levenshteinDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+  }
+
+  /**
+   * Calculate Levenshtein distance between two strings
+   */
+  private static levenshteinDistance(str1: string, str2: string): number {
+    const matrix = [];
+
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+
+    return matrix[str2.length][str1.length];
+  }
+
+  /**
+   * Modify extracted content using LLM
+   */
+  private static async modifyExtractedContent(
+    targetContent: string,
+    userRequest: string,
+    intentAnalysis: any
+  ): Promise<string> {
+    const modificationPrompt = `You are modifying a specific piece of content based on a user's request.
+
+CONTENT TO MODIFY:
+${targetContent}
+
+USER REQUEST: ${userRequest}
+
+INTENT: ${intentAnalysis.instruction}
+
+INSTRUCTIONS:
+- Modify ONLY this specific content according to the user's request
+- Maintain the same formatting style (bullets, headers, etc.)
+- Return ONLY the modified content, nothing else
+- If the request is to remove this content, return an empty string
+- Do NOT add explanations or commentary
+
+MODIFIED CONTENT:`;
+
+    try {
+      const response = await ollama.chat([{
+        role: 'user',
+        content: modificationPrompt
+      }]);
+
+      return response.trim();
+    } catch (error) {
+      console.warn('Content modification failed:', error);
+      return targetContent; // Return original if modification fails
+    }
+  }
+
+  /**
+   * Clean up artifacts from surgical replacement
+   */
+  private static cleanupReplacementArtifacts(content: string): string {
+    // Remove excessive newlines (more than 2 consecutive)
+    let cleaned = content.replace(/\n{3,}/g, '\n\n');
+
+    // Remove trailing whitespace from lines
+    cleaned = cleaned.replace(/[ \t]+$/gm, '');
+
+    // Ensure proper spacing around headers
+    cleaned = cleaned.replace(/\n(#+\s)/g, '\n\n$1');
+    cleaned = cleaned.replace(/(#+\s[^\n]+)\n([^\n#])/g, '$1\n\n$2');
+
+    return cleaned.trim();
   }
 
   /**
