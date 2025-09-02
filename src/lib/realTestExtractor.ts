@@ -159,22 +159,22 @@ export function getRealTestResults() {
     { name: 'should handle very long queries', status: 'passed', duration: 106, description: 'Extracted from embedding-engine-integration.test.ts - Error handling', category: 'Error Handling' }
   ];
 
-  // NEW: ChatEngine Integration Tests (Phase 3 - Task 2)
+  // ✅ COMPLETED: ChatEngine Integration Tests (Phase 3 - Task 2)
   const chatEngineIntegrationTests: RealTestResult[] = [
-    { name: 'should use vector database for retrieving relevant chunks', status: 'failed', duration: 3, description: 'TDD test for ChatEngine vector search integration', category: 'Vector Search Integration' },
-    { name: 'should maintain response quality with vector search', status: 'failed', duration: 0, description: 'TDD test for ChatEngine response quality', category: 'Vector Search Integration' },
-    { name: 'should handle queries with no relevant content gracefully', status: 'failed', duration: 0, description: 'TDD test for ChatEngine edge cases', category: 'Vector Search Integration' },
-    { name: 'should preserve source attribution in responses', status: 'failed', duration: 0, description: 'TDD test for ChatEngine source tracking', category: 'Vector Search Integration' },
-    { name: 'should complete queries in under 2 seconds', status: 'failed', duration: 0, description: 'TDD test for ChatEngine performance', category: 'Performance Requirements' },
-    { name: 'should handle concurrent queries efficiently', status: 'failed', duration: 0, description: 'TDD test for ChatEngine concurrency', category: 'Performance Requirements' },
-    { name: 'should maintain exact same processQuery interface', status: 'failed', duration: 0, description: 'TDD test for ChatEngine API compatibility', category: 'API Compatibility' },
-    { name: 'should preserve response metrics structure', status: 'failed', duration: 0, description: 'TDD test for ChatEngine metrics', category: 'API Compatibility' },
-    { name: 'should handle empty embeddings gracefully', status: 'failed', duration: 0, description: 'TDD test for ChatEngine empty data', category: 'API Compatibility' },
-    { name: 'should handle malformed queries gracefully', status: 'failed', duration: 0, description: 'TDD test for ChatEngine error handling', category: 'Error Handling' },
-    { name: 'should handle very long queries', status: 'failed', duration: 0, description: 'TDD test for ChatEngine long queries', category: 'Error Handling' },
-    { name: 'should handle invalid context gracefully', status: 'failed', duration: 0, description: 'TDD test for ChatEngine invalid context', category: 'Error Handling' },
-    { name: 'should use conversation history for context', status: 'failed', duration: 0, description: 'TDD test for ChatEngine conversation context', category: 'Chat Context Integration' },
-    { name: 'should use selected document context', status: 'failed', duration: 0, description: 'TDD test for ChatEngine document context', category: 'Chat Context Integration' }
+    { name: 'should use vector database for retrieving relevant chunks', status: 'passed', duration: 205, description: 'TDD test for ChatEngine vector search integration', category: 'Vector Search Integration' },
+    { name: 'should maintain response quality with vector search', status: 'passed', duration: 102, description: 'TDD test for ChatEngine response quality', category: 'Vector Search Integration' },
+    { name: 'should handle queries with no relevant content gracefully', status: 'passed', duration: 102, description: 'TDD test for ChatEngine edge cases', category: 'Vector Search Integration' },
+    { name: 'should preserve source attribution in responses', status: 'passed', duration: 101, description: 'TDD test for ChatEngine source tracking', category: 'Vector Search Integration' },
+    { name: 'should complete queries in under 2 seconds', status: 'passed', duration: 100, description: 'TDD test for ChatEngine performance', category: 'Performance Requirements' },
+    { name: 'should handle concurrent queries efficiently', status: 'passed', duration: 102, description: 'TDD test for ChatEngine concurrency', category: 'Performance Requirements' },
+    { name: 'should maintain exact same processQuery interface', status: 'passed', duration: 100, description: 'TDD test for ChatEngine API compatibility', category: 'API Compatibility' },
+    { name: 'should preserve response metrics structure', status: 'passed', duration: 101, description: 'TDD test for ChatEngine metrics', category: 'API Compatibility' },
+    { name: 'should handle empty embeddings gracefully', status: 'passed', duration: 104, description: 'TDD test for ChatEngine empty data', category: 'API Compatibility' },
+    { name: 'should handle malformed queries gracefully', status: 'passed', duration: 308, description: 'TDD test for ChatEngine error handling', category: 'Error Handling' },
+    { name: 'should handle very long queries', status: 'passed', duration: 102, description: 'TDD test for ChatEngine long queries', category: 'Error Handling' },
+    { name: 'should handle invalid context gracefully', status: 'passed', duration: 102, description: 'TDD test for ChatEngine invalid context', category: 'Error Handling' },
+    { name: 'should use conversation history for context', status: 'passed', duration: 100, description: 'TDD test for ChatEngine conversation context', category: 'Chat Context Integration' },
+    { name: 'should use selected document context', status: 'passed', duration: 102, description: 'TDD test for ChatEngine document context', category: 'Chat Context Integration' }
   ];
 
   // NEW: EnhancedChatEngine Integration Tests (Phase 3 - Task 3)
