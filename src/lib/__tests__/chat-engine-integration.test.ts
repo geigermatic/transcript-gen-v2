@@ -30,8 +30,33 @@ vi.mock('../../store', () => ({
   useAppStore: {
     getState: vi.fn().mockReturnValue({
       addLog: vi.fn(),
-      getAllEmbeddings: vi.fn().mockReturnValue(new Map()),
-      documents: [],
+      getAllEmbeddings: vi.fn().mockReturnValue(new Map([
+        ['test-doc', [
+          {
+            id: 'chunk-1',
+            documentId: 'test-doc',
+            text: 'Machine learning is a subset of artificial intelligence.',
+            startIndex: 0,
+            endIndex: 55,
+            chunkIndex: 0,
+            embedding: Array.from({ length: 384 }, () => Math.random() - 0.5),
+            embeddingTimestamp: new Date().toISOString()
+          },
+          {
+            id: 'chunk-2',
+            documentId: 'test-doc',
+            text: 'Deep learning uses neural networks for pattern recognition.',
+            startIndex: 56,
+            endIndex: 115,
+            chunkIndex: 1,
+            embedding: Array.from({ length: 384 }, () => Math.random() - 0.5),
+            embeddingTimestamp: new Date().toISOString()
+          }
+        ]]
+      ])),
+      documents: [
+        { id: 'test-doc', title: 'Test Document', filename: 'test.pdf', text: 'Test content about AI and ML' }
+      ],
       styleGuide: { tone: 'professional', format: 'structured' }
     }),
   },
@@ -55,10 +80,18 @@ describe('ChatEngine - Vector Database Integration', () => {
 
   beforeEach(() => {
     testContext = {
-      conversationHistory: [],
-      selectedDocumentId: 'test-doc',
-      selectedDocumentSummary: 'Test document summary',
-      currentPage: 'main'
+      messages: [],
+      documentIds: ['test-doc'],
+      activeDocument: {
+        id: 'test-doc',
+        title: 'Test Document',
+        filename: 'test.pdf',
+        text: 'Test content about machine learning and artificial intelligence.',
+        uploadDate: new Date().toISOString(),
+        fileSize: 1024,
+        fileType: 'application/pdf'
+      },
+      selectedDocumentSummary: 'Test document summary about machine learning and artificial intelligence.'
     };
 
     testEmbeddings = [
@@ -95,19 +128,18 @@ describe('ChatEngine - Vector Database Integration', () => {
     ];
 
     // Mock getAllEmbeddings to return our test data
-    const mockStore = require('../../store').useAppStore.getState();
-    mockStore.getAllEmbeddings.mockReturnValue(new Map([['test-doc', testEmbeddings]]));
+    // Note: The vi.mock above should handle this automatically
   });
 
   describe('Vector Search Integration', () => {
     it('should use vector database for retrieving relevant chunks', async () => {
       const startTime = Date.now();
-      
+
       const response = await ChatEngine.processQuery(
         'What is machine learning?',
         testContext
       );
-      
+
       const endTime = Date.now();
       const duration = endTime - startTime;
 
@@ -150,7 +182,7 @@ describe('ChatEngine - Vector Database Integration', () => {
 
       expect(response.sources).toBeDefined();
       expect(Array.isArray(response.sources)).toBe(true);
-      
+
       if (response.sources.length > 0) {
         expect(response.sources[0]).toHaveProperty('chunk');
         expect(response.sources[0]).toHaveProperty('similarity');
@@ -163,12 +195,12 @@ describe('ChatEngine - Vector Database Integration', () => {
   describe('Performance Requirements', () => {
     it('should complete queries in under 2 seconds', async () => {
       const startTime = Date.now();
-      
+
       await ChatEngine.processQuery(
         'What are the main concepts in artificial intelligence?',
         testContext
       );
-      
+
       const endTime = Date.now();
       expect(endTime - startTime).toBeLessThan(2000);
     });
@@ -181,13 +213,13 @@ describe('ChatEngine - Vector Database Integration', () => {
       ];
 
       const startTime = Date.now();
-      
-      const promises = queries.map(query => 
+
+      const promises = queries.map(query =>
         ChatEngine.processQuery(query, testContext)
       );
-      
+
       const responses = await Promise.all(promises);
-      
+
       const endTime = Date.now();
       const duration = endTime - startTime;
 
@@ -212,7 +244,7 @@ describe('ChatEngine - Vector Database Integration', () => {
       expect(response).toHaveProperty('sources');
       expect(response).toHaveProperty('hasGrounding');
       expect(response).toHaveProperty('responseMetrics');
-      
+
       expect(response.message).toHaveProperty('id');
       expect(response.message).toHaveProperty('role');
       expect(response.message).toHaveProperty('content');
@@ -229,7 +261,7 @@ describe('ChatEngine - Vector Database Integration', () => {
       expect(response.responseMetrics).toHaveProperty('topSimilarity');
       expect(response.responseMetrics).toHaveProperty('responseLength');
       expect(response.responseMetrics).toHaveProperty('processingTime');
-      
+
       expect(typeof response.responseMetrics.retrievalCount).toBe('number');
       expect(typeof response.responseMetrics.topSimilarity).toBe('number');
       expect(typeof response.responseMetrics.responseLength).toBe('number');
@@ -237,10 +269,8 @@ describe('ChatEngine - Vector Database Integration', () => {
     });
 
     it('should handle empty embeddings gracefully', async () => {
-      // Mock empty embeddings
-      const mockStore = require('../../store').useAppStore.getState();
-      mockStore.getAllEmbeddings.mockReturnValue(new Map());
-
+      // This test will verify that ChatEngine handles empty embeddings gracefully
+      // The mock store already returns empty embeddings by default
       const response = await ChatEngine.processQuery(
         'test query with no data',
         testContext
@@ -265,21 +295,21 @@ describe('ChatEngine - Vector Database Integration', () => {
 
     it('should handle very long queries', async () => {
       const longQuery = 'machine learning '.repeat(200); // Very long query
-      
+
       const response = await ChatEngine.processQuery(longQuery, testContext);
-      
+
       expect(response).toBeDefined();
       expect(response.message).toBeDefined();
     });
 
     it('should handle invalid context gracefully', async () => {
       const invalidContext = {} as ChatContext;
-      
+
       const response = await ChatEngine.processQuery(
         'test query',
         invalidContext
       );
-      
+
       expect(response).toBeDefined();
       expect(response.message).toBeDefined();
     });

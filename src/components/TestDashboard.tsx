@@ -55,6 +55,10 @@ interface TestRunSummary {
   phases?: {
     phase1: PhaseResult;
     phase2: PhaseResult;
+    phase3: PhaseResult;
+    phase4: PhaseResult;
+    phase5: PhaseResult;
+    phase6: PhaseResult;
   };
 }
 
@@ -65,7 +69,14 @@ export const TestDashboard: React.FC = () => {
   const [autoRun, setAutoRun] = useState(false);
   const [selectedSuite, setSelectedSuite] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [phases, setPhases] = useState<{ phase1: PhaseResult; phase2: PhaseResult } | null>(null);
+  const [phases, setPhases] = useState<{
+    phase1: PhaseResult;
+    phase2: PhaseResult;
+    phase3: PhaseResult;
+    phase4: PhaseResult;
+    phase5: PhaseResult;
+    phase6: PhaseResult;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Get REAL test results from actual test files - NO MOCKS!
@@ -266,8 +277,8 @@ export const TestDashboard: React.FC = () => {
             <p className="text-gray-600">Current test status for Vector Database Implementation</p>
             <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-blue-800 text-sm">
-                📊 <strong>Showing current test state:</strong> All 68 tests passing (100%).
-                To run fresh tests, use: <code className="bg-blue-100 px-1 rounded">npm test src/vector-db/__tests__/</code>
+                📊 <strong>Showing current test state:</strong> {summary ? `${summary.passedTests}/${summary.totalTests} tests passing (${Math.round((summary.passedTests / summary.totalTests) * 100)}%)` : 'Loading...'}.
+                To run fresh tests, use: <code className="bg-blue-100 px-1 rounded">npm test</code>
               </p>
             </div>
           </div>
