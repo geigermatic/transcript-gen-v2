@@ -95,6 +95,8 @@ Transform the current linear search system into a scalable vector database archi
 3. **🔄 Live Integration**: Every test run updates dashboard immediately with actual results
 4. **📊 Authentic Metrics**: All performance numbers, timing data, and test counts from real execution
 5. **🧪 Source Truth**: Test names, descriptions, and categories extracted from actual test files
+6. **🎯 ENHANCED TEST DESCRIPTIONS**: Every test must show what it validates/proves with meaningful descriptions
+7. **📝 REAL TEST NAMES**: Use actual test names from test files, not generic "Test 1, Test 2" numbering
 
 #### **Implementation Requirements:**
 - **Test Dashboard**: Must parse real test files and show actual test names/results
@@ -311,25 +313,31 @@ const TestDashboard = () => {
 #### **MANDATORY FOR EVERY DEVELOPMENT PHASE:**
 **When starting ANY new phase (Phase 3, 4, 5, 6, 7), you MUST update the test dashboard following this exact pattern:**
 
-##### **Step 1: Add New Phase Tests to `realTestExtractor.ts`**
+##### **Step 1: Add Enhanced Test Descriptions to `trulyDynamicTestExtractor.ts`**
 ```typescript
-// Extract test names from actual test files
-const usXXXTests: RealTestResult[] = [
-  { name: 'actual test name', status: 'passed', duration: 123,
-    description: 'Extracted from actual-file.test.ts line 45',
-    category: 'Real Category' },
-  // ... more real tests extracted from actual files
-];
-
-// Add to suites array
-const suites: RealTestSuite[] = [
-  // ... existing suites
+// MANDATORY: Add comprehensive test descriptions to getTestNamesForSuite()
+'New Phase Test Suite Name': [
   {
-    name: 'US-XXX: New Feature Name',
-    description: 'Real description of what this phase implements',
-    tests: usXXXTests
-  }
-];
+    name: 'actual test name from test file',
+    description: 'Proves: Specific validation that this test performs and what it ensures works correctly'
+  },
+  {
+    name: 'should handle edge cases gracefully',
+    description: 'Proves: System handles unexpected inputs and error conditions without failing'
+  },
+  {
+    name: 'should meet performance requirements',
+    description: 'Proves: New functionality meets speed and efficiency requirements for production use'
+  },
+  // ... COMPLETE coverage for ALL tests in the suite (not just 3-5 examples)
+  // REQUIREMENT: Must provide descriptions for every test, not just the first few
+],
+```
+
+##### **Step 1b: Add Test Pattern to File Detection**
+```typescript
+// Add new test file pattern to the testPatterns array
+{ pattern: 'src/lib/__tests__/new-feature.test.ts', phase: X, name: 'New Feature Test Suite Name' },
 ```
 
 ##### **Step 2: Update Phase Calculations**
@@ -363,7 +371,16 @@ The `TestDashboard.tsx` component is now **fully dynamic** and will automaticall
 
 **NO MANUAL DASHBOARD UPDATES NEEDED** - The component dynamically renders all phases!
 
-##### **Step 4: Test Dashboard Validation**
+##### **Step 4: Enhanced Test Descriptions Validation**
+**MANDATORY REQUIREMENT**: Every new phase must include comprehensive enhanced test descriptions:
+- [ ] All tests have meaningful names (not "Test 1, Test 2")
+- [ ] Every test includes "Proves:" description explaining what it validates
+- [ ] Descriptions are specific to the test functionality, not generic
+- [ ] Complete coverage for ALL tests in the suite (not just first few)
+- [ ] Blue-highlighted "🎯 Test Validation" sections appear in dashboard
+- [ ] No generic fallback descriptions for main test functionality
+
+#### **Step 5: Test Dashboard Validation**
 After adding a new phase, verify:
 - [ ] New phase appears in "Development Phases" overview
 - [ ] Phase shows correct test count and status
@@ -371,6 +388,7 @@ After adding a new phase, verify:
 - [ ] All test names are from real test files
 - [ ] Test descriptions reference actual file and line numbers
 - [ ] No hardcoded or mock data anywhere
+- [ ] Enhanced test descriptions display correctly in dashboard
 
 #### **PHASE UPDATE CHECKLIST (Use for Every Phase):**
 - [ ] **Extract Real Tests**: Get actual test names from `.test.ts` files using `grep -n "it('.*'"`
@@ -536,6 +554,10 @@ VectorSearchService → Enhanced Performance → Same API Interface
 - ❌ Fake timing or performance metrics
 - ❌ Generic test descriptions not from actual files
 - ❌ Static test counts or outdated results
+- ❌ Generic test names like "Test 1, Test 2, Test 3"
+- ❌ Non-descriptive test validation descriptions
+- ❌ Incomplete test description coverage (only describing first few tests)
+- ❌ Missing "Proves:" explanations for what tests validate
 
 #### **Implementation Standards:**
 ```typescript

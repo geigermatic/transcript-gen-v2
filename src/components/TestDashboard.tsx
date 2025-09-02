@@ -8,6 +8,7 @@ interface TestResult {
   error?: string;
   description?: string;
   category?: string;
+  testProves?: string; // What this test validates/proves
   assertionResults?: Array<{
     title: string;
     status: 'passed' | 'failed' | 'pending';
@@ -144,7 +145,8 @@ export const TestDashboard: React.FC = () => {
             duration: test.duration || 0,
             error: test.error,
             description: test.description,
-            category: test.category
+            category: test.category,
+            testProves: test.testProves
           }))
         };
         suites.push(testSuite);
@@ -600,9 +602,14 @@ export const TestDashboard: React.FC = () => {
                                 {test.category}
                               </span>
                             </div>
-                            {test.description && (
-                              <div className="text-sm text-gray-600 mt-1">
-                                {test.description}
+                            {(test.testProves || test.description) && (
+                              <div className="text-sm mt-2 p-2 bg-blue-50 border-l-4 border-blue-200 rounded">
+                                <div className="font-medium text-blue-900 text-xs mb-1">
+                                  🎯 Test Validation:
+                                </div>
+                                <div className="text-blue-800">
+                                  {test.testProves || test.description}
+                                </div>
                               </div>
                             )}
                             <div className="text-xs text-gray-500 mt-2">
@@ -702,9 +709,14 @@ export const TestDashboard: React.FC = () => {
                                           </span>
                                         )}
                                       </div>
-                                      {test.description && (
-                                        <div className="text-sm text-gray-600 mt-1">
-                                          {test.description}
+                                      {(test.testProves || test.description) && (
+                                        <div className="text-sm mt-2 p-2 bg-blue-50 border-l-4 border-blue-200 rounded">
+                                          <div className="font-medium text-blue-900 text-xs mb-1">
+                                            🎯 Test Validation:
+                                          </div>
+                                          <div className="text-blue-800">
+                                            {test.testProves || test.description}
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -765,9 +777,14 @@ export const TestDashboard: React.FC = () => {
                                   </span>
                                 )}
                               </div>
-                              {test.description && (
-                                <div className="text-sm text-gray-600 mt-1">
-                                  {test.description}
+                              {(test.testProves || test.description) && (
+                                <div className="text-sm mt-2 p-2 bg-blue-50 border-l-4 border-blue-200 rounded">
+                                  <div className="font-medium text-blue-900 text-xs mb-1">
+                                    🎯 Test Validation:
+                                  </div>
+                                  <div className="text-blue-800">
+                                    {test.testProves || test.description}
+                                  </div>
                                 </div>
                               )}
                             </div>
