@@ -159,6 +159,64 @@ export function getRealTestResults() {
     { name: 'should handle very long queries', status: 'passed', duration: 106, description: 'Extracted from embedding-engine-integration.test.ts - Error handling', category: 'Error Handling' }
   ];
 
+  // NEW: ChatEngine Integration Tests (Phase 3 - Task 2)
+  const chatEngineIntegrationTests: RealTestResult[] = [
+    { name: 'should use vector database for retrieving relevant chunks', status: 'failed', duration: 3, description: 'TDD test for ChatEngine vector search integration', category: 'Vector Search Integration' },
+    { name: 'should maintain response quality with vector search', status: 'failed', duration: 0, description: 'TDD test for ChatEngine response quality', category: 'Vector Search Integration' },
+    { name: 'should handle queries with no relevant content gracefully', status: 'failed', duration: 0, description: 'TDD test for ChatEngine edge cases', category: 'Vector Search Integration' },
+    { name: 'should preserve source attribution in responses', status: 'failed', duration: 0, description: 'TDD test for ChatEngine source tracking', category: 'Vector Search Integration' },
+    { name: 'should complete queries in under 2 seconds', status: 'failed', duration: 0, description: 'TDD test for ChatEngine performance', category: 'Performance Requirements' },
+    { name: 'should handle concurrent queries efficiently', status: 'failed', duration: 0, description: 'TDD test for ChatEngine concurrency', category: 'Performance Requirements' },
+    { name: 'should maintain exact same processQuery interface', status: 'failed', duration: 0, description: 'TDD test for ChatEngine API compatibility', category: 'API Compatibility' },
+    { name: 'should preserve response metrics structure', status: 'failed', duration: 0, description: 'TDD test for ChatEngine metrics', category: 'API Compatibility' },
+    { name: 'should handle empty embeddings gracefully', status: 'failed', duration: 0, description: 'TDD test for ChatEngine empty data', category: 'API Compatibility' },
+    { name: 'should handle malformed queries gracefully', status: 'failed', duration: 0, description: 'TDD test for ChatEngine error handling', category: 'Error Handling' },
+    { name: 'should handle very long queries', status: 'failed', duration: 0, description: 'TDD test for ChatEngine long queries', category: 'Error Handling' },
+    { name: 'should handle invalid context gracefully', status: 'failed', duration: 0, description: 'TDD test for ChatEngine invalid context', category: 'Error Handling' },
+    { name: 'should use conversation history for context', status: 'failed', duration: 0, description: 'TDD test for ChatEngine conversation context', category: 'Chat Context Integration' },
+    { name: 'should use selected document context', status: 'failed', duration: 0, description: 'TDD test for ChatEngine document context', category: 'Chat Context Integration' }
+  ];
+
+  // NEW: EnhancedChatEngine Integration Tests (Phase 3 - Task 3)
+  const enhancedChatEngineIntegrationTests: RealTestResult[] = [
+    { name: 'should use vector search for document Q&A in summary view', status: 'failed', duration: 3, description: 'TDD test for EnhancedChatEngine summary view', category: 'Context-Aware Vector Search' },
+    { name: 'should use vector search for main page document search', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine main page search', category: 'Context-Aware Vector Search' },
+    { name: 'should maintain context awareness with vector search', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine context awareness', category: 'Context-Aware Vector Search' },
+    { name: 'should process reformat commands using vector search for context', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine reformat commands', category: 'Enhanced Chat Commands' },
+    { name: 'should process rephrase commands with vector-enhanced context', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine rephrase commands', category: 'Enhanced Chat Commands' },
+    { name: 'should handle document search commands with vector search', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine document search', category: 'Enhanced Chat Commands' },
+    { name: 'should process add content commands with vector context', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine add commands', category: 'Enhanced Chat Commands' },
+    { name: 'should use vector search for summary revision context', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine summary revision', category: 'Summary Editing' },
+    { name: 'should handle remove commands with vector-enhanced understanding', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine remove commands', category: 'Summary Editing' },
+    { name: 'should maintain summary version history with vector search', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine version history', category: 'Summary Editing' },
+    { name: 'should complete enhanced queries in under 3 seconds', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine performance', category: 'Performance Requirements' },
+    { name: 'should handle concurrent enhanced queries efficiently', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine concurrency', category: 'Performance Requirements' },
+    { name: 'should maintain processContextAwareQuery interface', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine context API', category: 'API Compatibility' },
+    { name: 'should maintain processEnhancedQuery interface', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine enhanced API', category: 'API Compatibility' },
+    { name: 'should preserve enhanced response structure', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine response structure', category: 'API Compatibility' },
+    { name: 'should handle invalid context gracefully', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine error handling', category: 'Error Handling' },
+    { name: 'should handle malformed enhanced queries', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine malformed queries', category: 'Error Handling' },
+    { name: 'should fallback to regular chat when enhanced features fail', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine fallback', category: 'Error Handling' },
+    { name: 'should use vector search for document discovery', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine document discovery', category: 'Document Search Integration' },
+    { name: 'should handle document search with no results', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine no results', category: 'Document Search Integration' }
+  ];
+
+  // NEW: Phase 3 Completion Tests (Phase 3 - Task 4)
+  const phase3CompletionTests: RealTestResult[] = [
+    { name: 'should complete full search pipeline in under 500ms', status: 'failed', duration: 3, description: 'TDD test for end-to-end Phase 3 integration', category: 'End-to-End Integration' },
+    { name: 'should maintain consistent performance across all engines', status: 'failed', duration: 0, description: 'TDD test for consistent performance', category: 'End-to-End Integration' },
+    { name: 'should handle high-volume concurrent requests', status: 'failed', duration: 0, description: 'TDD test for high-volume concurrency', category: 'End-to-End Integration' },
+    { name: 'should preserve all ChatEngine capabilities', status: 'failed', duration: 0, description: 'TDD test for ChatEngine feature completeness', category: 'Feature Completeness' },
+    { name: 'should preserve all EnhancedChatEngine capabilities', status: 'failed', duration: 0, description: 'TDD test for EnhancedChatEngine feature completeness', category: 'Feature Completeness' },
+    { name: 'should maintain summary editing capabilities', status: 'failed', duration: 0, description: 'TDD test for summary editing preservation', category: 'Feature Completeness' },
+    { name: 'should achieve 20x performance improvement over linear search', status: 'failed', duration: 0, description: 'TDD test for performance benchmarks', category: 'Performance Benchmarks' },
+    { name: 'should maintain sub-second response times for complex queries', status: 'failed', duration: 0, description: 'TDD test for complex query performance', category: 'Performance Benchmarks' },
+    { name: 'should handle edge cases without degradation', status: 'failed', duration: 0, description: 'TDD test for integration stability', category: 'Integration Stability' },
+    { name: 'should maintain data integrity across operations', status: 'failed', duration: 0, description: 'TDD test for data integrity', category: 'Integration Stability' },
+    { name: 'should meet all Phase 3 requirements', status: 'failed', duration: 1, description: 'TDD test for Phase 3 success criteria', category: 'Phase 3 Success Criteria' },
+    { name: 'should be ready for production deployment', status: 'failed', duration: 0, description: 'TDD test for production readiness', category: 'Phase 3 Success Criteria' }
+  ];
+
   const suites: RealTestSuite[] = [
     {
       name: 'US-001: SQLite Vector Database Setup',
@@ -194,6 +252,21 @@ export function getRealTestResults() {
       name: 'EmbeddingEngine Integration',
       description: 'Integration tests for EmbeddingEngine with Vector Database - 20-50x performance improvement',
       tests: embeddingEngineIntegrationTests
+    },
+    {
+      name: 'ChatEngine Integration (TDD)',
+      description: 'TDD tests for ChatEngine vector database integration - Task 2 of Phase 3',
+      tests: chatEngineIntegrationTests
+    },
+    {
+      name: 'EnhancedChatEngine Integration (TDD)',
+      description: 'TDD tests for EnhancedChatEngine vector database integration - Task 3 of Phase 3',
+      tests: enhancedChatEngineIntegrationTests
+    },
+    {
+      name: 'Phase 3 Completion (TDD)',
+      description: 'TDD tests for Phase 3 completion verification - Task 4 of Phase 3',
+      tests: phase3CompletionTests
     }
   ];
 
