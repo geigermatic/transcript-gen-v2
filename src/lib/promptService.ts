@@ -334,8 +334,11 @@ TRANSCRIPT:
 REQUIRED FORMAT (follow exactly):
 # {{documentTitle}}
 
-## Synopsis
-[4 factual sentences describing what this content covers and its main purpose]
+## Mini Synopsis
+[EXACTLY 1 SENTENCE - NO MORE, NO LESS. This must be a single, complete sentence that captures the essence and benefits.]
+
+## 4-Sentence Synopsis
+[Exactly 4 factual sentences describing what this content covers and its main purpose]
 
 ## Learning Objectives
 [What students will learn - bulleted list]
@@ -371,7 +374,10 @@ Generate ONLY the structured summary content:`,
 
 # {{documentTitle}}
 
-## Synopsis
+## Mini Synopsis
+[EXACTLY 1 SENTENCE - NO MORE, NO LESS. This must be a single, complete sentence that captures the essence and benefits. Do not use periods or breaks within this section. The sentence should end with a single period and nothing else.]
+
+## 4-Sentence Synopsis
 [Exactly 4 sentences emphasizing WHY and WHAT benefits - compelling and benefit-focused, using Caren's encouraging tone]
 
 ## Learning Objectives
@@ -412,6 +418,10 @@ CRITICAL SYNOPSIS REQUIREMENTS: The synopsis is the MOST IMPORTANT section and m
 
 WARMTH WITH SUBTLE HUMOR REQUIREMENT: Include a very subtle sense of warmth with gentle humor throughout, as if talking to a close friend—a gentle, knowing presence in the voice that makes serious topics feel approachable and human. This is not jokes or punchlines, but rather a warm, compassionate tone with a very subtle, gentle sense of humor that comes from someone who's been through the same struggles and can offer understanding with both warmth and a light, knowing touch.
 
+MINI SYNOPSIS ENFORCEMENT: The Mini Synopsis must be EXACTLY 1 SENTENCE. Count your sentences carefully. If you write more than one sentence, you have failed this task. After writing, verify: Does this contain exactly one period? One complete thought? If not, rewrite to be exactly one sentence.
+
+4-SENTENCE SYNOPSIS ENFORCEMENT: LIMIT TO EXACTLY 4 SENTENCES. Count your sentences carefully. If you write more or fewer than 4 sentences, you have failed this task.
+
 CRITICAL VOICE INSTRUCTIONS:
 - Follow the format above EXACTLY
 - Use Caren's warm, encouraging, conversational voice throughout
@@ -450,8 +460,8 @@ REQUIRED OUTPUT FORMAT:
 You must respond with ONLY valid JSON in this exact structure:
 
 {
-  "rawSummary": "# {{documentTitle}}\\n\\n## Synopsis\\n[Exactly 4 sentences emphasizing WHY and WHAT benefits - compelling and benefit-focused]\\n\\n## Learning Objectives\\n[What students will learn - bulleted list]\\n\\n## Key Takeaways\\n[Main insights and lessons - bulleted list]\\n\\n## Topics\\n[Subject areas covered - bulleted list]\\n\\n## Techniques\\n[Specific methods, practices, exercises taught - bulleted list]\\n\\n## Notable Quotes\\n[Memorable quotes from the lesson - bulleted list]\\n\\n## Open Questions\\n[Questions for reflection or further exploration - bulleted list]",
-  "styledSummary": "# {{documentTitle}}\\n\\n## Synopsis\\n[Exactly 4 sentences in the author's voice using the style guide - focus on benefits, transformation, and practical outcomes]\\n\\n## Learning Objectives\\n[What students will learn - bulleted list in author's voice]\\n\\n## Key Takeaways\\n[Main insights and lessons - bulleted list in author's voice]\\n\\n## Topics\\n[Subject areas covered - bulleted list in author's voice]\\n\\n## Techniques\\n[Specific methods, practices, exercises taught - bulleted list in author's voice]\\n\\n## Notable Quotes\\n[Memorable quotes from the lesson - bulleted list in author's voice]\\n\\n## Open Questions\\n[Questions for reflection or further exploration - bulleted list in author's voice]"
+  "rawSummary": "# {{documentTitle}}\\n\\n## Mini Synopsis\\n[EXACTLY 1 SENTENCE - NO MORE, NO LESS. This must be a single, complete sentence that captures the essence and benefits.]\\n\\n## 4-Sentence Synopsis\\n[Exactly 4 sentences emphasizing WHY and WHAT benefits - compelling and benefit-focused]\\n\\n## Learning Objectives\\n[What students will learn - bulleted list]\\n\\n## Key Takeaways\\n[Main insights and lessons - bulleted list]\\n\\n## Topics\\n[Subject areas covered - bulleted list]\\n\\n## Techniques\\n[Specific methods, practices, exercises taught - bulleted list]\\n\\n## Notable Quotes\\n[Memorable quotes from the lesson - bulleted list]\\n\\n## Open Questions\\n[Questions for reflection or further exploration - bulleted list]",
+  "styledSummary": "# {{documentTitle}}\\n\\n## Mini Synopsis\\n[EXACTLY 1 SENTENCE - NO MORE, NO LESS. This must be a single, complete sentence that captures the essence and benefits in the author's voice.]\\n\\n## 4-Sentence Synopsis\\n[Exactly 4 sentences in the author's voice using the style guide - focus on benefits, transformation, and practical outcomes]\\n\\n## Learning Objectives\\n[What students will learn - bulleted list in author's voice]\\n\\n## Key Takeaways\\n[Main insights and lessons - bulleted list in author's voice]\\n\\n## Topics\\n[Subject areas covered - bulleted list in author's voice]\\n\\n## Techniques\\n[Specific methods, practices, exercises taught - bulleted list in author's voice]\\n\\n## Notable Quotes\\n[Memorable quotes from the lesson - bulleted list in author's voice]\\n\\n## Open Questions\\n[Questions for reflection or further exploration - bulleted list in author's voice]"
 }
 
 CRITICAL EXTRACTION REQUIREMENTS:
