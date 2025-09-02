@@ -376,76 +376,73 @@ export const TestDashboard: React.FC = () => {
           )}
 
           {/* Development Phases Overview */}
-          {phases && phases.phase1 && phases.phase2 && (
+          {phases && Object.keys(phases).length > 0 && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Development Phases</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
 
-                {/* Phase 1: Foundation */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">{phases.phase1.name}</h3>
-                    <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                      ✅ Complete
-                    </span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Total Tests:</span>
-                      <span className="font-medium">{phases.phase1.totalTests}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Passed:</span>
-                      <span className="font-medium text-green-600">{phases.phase1.passedTests}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Failed:</span>
-                      <span className="font-medium text-red-600">{phases.phase1.failedTests}</span>
-                    </div>
-                    <div className="mt-3 bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-green-500 h-2 rounded-full"
-                        style={{ width: `${(phases.phase1.passedTests / phases.phase1.totalTests) * 100}%` }}
-                      />
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2">
-                      {phases.phase1.suites.length} test suites • Foundation complete
-                    </div>
-                  </div>
-                </div>
+                {/* Dynamic Phase Rendering */}
+                {Object.entries(phases).map(([phaseKey, phase]) => {
+                  const getPhaseStatusBadge = (status: string) => {
+                    switch (status) {
+                      case 'complete':
+                        return <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">✅ Complete</span>;
+                      case 'in-progress':
+                        return <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">🔄 In Progress</span>;
+                      case 'not-started':
+                        return <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full">⏳ Not Started</span>;
+                      default:
+                        return <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full">❓ Unknown</span>;
+                    }
+                  };
 
-                {/* Phase 2: Advanced Features */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">{phases.phase2.name}</h3>
-                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                      🔄 In Progress
-                    </span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Total Tests:</span>
-                      <span className="font-medium">{phases.phase2.totalTests}</span>
+                  const getPhaseProgressColor = (status: string) => {
+                    switch (status) {
+                      case 'complete':
+                        return 'bg-green-500';
+                      case 'in-progress':
+                        return 'bg-blue-500';
+                      case 'not-started':
+                        return 'bg-gray-300';
+                      default:
+                        return 'bg-gray-300';
+                    }
+                  };
+
+                  const progressPercentage = phase.totalTests > 0 ? (phase.passedTests / phase.totalTests) * 100 : 0;
+
+                  return (
+                    <div key={phaseKey} className="bg-white border border-gray-200 rounded-lg p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">{phase.name}</h3>
+                        {getPhaseStatusBadge(phase.status)}
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Total Tests:</span>
+                          <span className="font-medium">{phase.totalTests}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Passed:</span>
+                          <span className="font-medium text-green-600">{phase.passedTests}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Failed:</span>
+                          <span className="font-medium text-red-600">{phase.failedTests}</span>
+                        </div>
+                        <div className="mt-3 bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${getPhaseProgressColor(phase.status)}`}
+                            style={{ width: `${progressPercentage}%` }}
+                          />
+                        </div>
+                        <div className="text-xs text-gray-500 mt-2">
+                          {phase.suites.length} test suite{phase.suites.length !== 1 ? 's' : ''} • {Math.round(progressPercentage)}% complete
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Passed:</span>
-                      <span className="font-medium text-green-600">{phases.phase2.passedTests}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Failed:</span>
-                      <span className="font-medium text-red-600">{phases.phase2.failedTests}</span>
-                    </div>
-                    <div className="mt-3 bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full"
-                        style={{ width: `${(phases.phase2.passedTests / phases.phase2.totalTests) * 100}%` }}
-                      />
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2">
-                      {phases.phase2.suites.length} test suite • {Math.round((phases.phase2.passedTests / phases.phase2.totalTests) * 100)}% complete
-                    </div>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -566,147 +563,107 @@ export const TestDashboard: React.FC = () => {
           )}
 
           {/* Phase-Organized Test Suites */}
-          {phases && phases.phase1 && phases.phase2 ? (
+          {phases && Object.keys(phases).length > 0 ? (
             <div className="space-y-8">
-              {/* Phase 1 Tests */}
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-3">
-                  <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                    ✅ Complete
-                  </span>
-                  Phase 1: Foundation ({phases.phase1.totalTests} tests)
-                </h2>
-                <div className="space-y-4">
-                  {phases.phase1.suites.map((suite, index) => (
-                    <div key={`phase1-${index}`} className={`border rounded-lg ${getStatusColor(suite.status)}`}>
-                      <div
-                        className="p-4 cursor-pointer"
-                        onClick={() => setSelectedSuite(selectedSuite === suite.name ? null : suite.name)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {getStatusIcon(suite.status)}
-                            <span className="font-medium text-gray-900">{suite.name}</span>
-                            <span className="text-sm text-gray-500">
-                              {suite.tests.filter(t => t.status === 'passed').length}/{suite.tests.length} passed
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">{suite.duration}ms</span>
-                            <ChevronDown
-                              className={`w-5 h-5 text-gray-400 transition-transform ${selectedSuite === suite.name ? 'rotate-180' : ''
-                                }`}
-                            />
-                          </div>
-                        </div>
-                      </div>
+              {/* Dynamic Phase Tests */}
+              {Object.entries(phases).map(([phaseKey, phase]) => {
+                const getPhaseStatusBadge = (status: string) => {
+                  switch (status) {
+                    case 'complete':
+                      return <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">✅ Complete</span>;
+                    case 'in-progress':
+                      return <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">🔄 In Progress</span>;
+                    case 'not-started':
+                      return <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full">⏳ Not Started</span>;
+                    default:
+                      return <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full">❓ Unknown</span>;
+                  }
+                };
 
-                      {selectedSuite === suite.name && (
-                        <div className="border-t border-gray-200">
-                          {suite.tests.map((test, testIndex) => (
-                            <div key={testIndex} className="p-4 border-b border-gray-100 last:border-b-0">
-                              <div className="flex items-start gap-3">
-                                <div className="mt-1">{getStatusIcon(test.status)}</div>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-3 mb-1">
-                                    <span className="text-gray-900 font-medium">{test.name}</span>
-                                    <span className="text-sm text-gray-500">{test.duration}ms</span>
-                                    {test.category && (
-                                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                        {test.category.replace('Phase 1: ', '')}
-                                      </span>
-                                    )}
+                const getPhaseColor = (status: string) => {
+                  switch (status) {
+                    case 'complete':
+                      return 'green';
+                    case 'in-progress':
+                      return 'blue';
+                    case 'not-started':
+                      return 'gray';
+                    default:
+                      return 'gray';
+                  }
+                };
+
+                const phaseColor = getPhaseColor(phase.status);
+
+                return (
+                  <div key={phaseKey}>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-3">
+                      {getPhaseStatusBadge(phase.status)}
+                      {phase.name} ({phase.totalTests} tests)
+                    </h2>
+                    <div className="space-y-4">
+                      {phase.suites.map((suite, index) => (
+                        <div key={`${phaseKey}-${index}`} className={`border rounded-lg ${getStatusColor(suite.status)}`}>
+                          <div
+                            className="p-4 cursor-pointer"
+                            onClick={() => setSelectedSuite(selectedSuite === suite.name ? null : suite.name)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                {getStatusIcon(suite.status)}
+                                <span className="font-medium text-gray-900">{suite.name}</span>
+                                <span className="text-sm text-gray-500">
+                                  {suite.tests.filter(t => t.status === 'passed').length}/{suite.tests.length} passed
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-500">{suite.duration}ms</span>
+                                <ChevronDown
+                                  className={`w-5 h-5 text-gray-400 transition-transform ${selectedSuite === suite.name ? 'rotate-180' : ''
+                                    }`}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {selectedSuite === suite.name && (
+                            <div className="border-t border-gray-200">
+                              {suite.tests.map((test, testIndex) => (
+                                <div key={testIndex} className="p-4 border-b border-gray-100 last:border-b-0">
+                                  <div className="flex items-start gap-3">
+                                    <div className="mt-1">{getStatusIcon(test.status)}</div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-3 mb-1">
+                                        <span className="text-gray-900 font-medium">{test.name}</span>
+                                        <span className="text-sm text-gray-500">{test.duration}ms</span>
+                                        {test.category && (
+                                          <span className={`text-xs bg-${phaseColor}-100 text-${phaseColor}-800 px-2 py-1 rounded-full`}>
+                                            {test.category}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {test.description && (
+                                        <div className="text-sm text-gray-600 mt-1">
+                                          {test.description}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  {test.description && (
-                                    <div className="text-sm text-gray-600 mt-1">
-                                      {test.description}
+                                  {test.error && (
+                                    <div className="ml-7 p-3 bg-red-50 border border-red-200 rounded text-sm">
+                                      <code className="text-red-800">{test.error}</code>
                                     </div>
                                   )}
                                 </div>
-                              </div>
-                              {test.error && (
-                                <div className="ml-7 p-3 bg-red-50 border border-red-200 rounded text-sm">
-                                  <code className="text-red-800">{test.error}</code>
-                                </div>
-                              )}
+                              ))}
                             </div>
-                          ))}
+                          )}
                         </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Phase 2 Tests */}
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-3">
-                  <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                    🔄 In Progress
-                  </span>
-                  Phase 2: Advanced Features ({phases.phase2.totalTests} tests)
-                </h2>
-                <div className="space-y-4">
-                  {phases.phase2.suites.map((suite, index) => (
-                    <div key={`phase2-${index}`} className={`border rounded-lg ${getStatusColor(suite.status)}`}>
-                      <div
-                        className="p-4 cursor-pointer"
-                        onClick={() => setSelectedSuite(selectedSuite === suite.name ? null : suite.name)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {getStatusIcon(suite.status)}
-                            <span className="font-medium text-gray-900">{suite.name}</span>
-                            <span className="text-sm text-gray-500">
-                              {suite.tests.filter(t => t.status === 'passed').length}/{suite.tests.length} passed
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">{suite.duration}ms</span>
-                            <ChevronDown
-                              className={`w-5 h-5 text-gray-400 transition-transform ${selectedSuite === suite.name ? 'rotate-180' : ''
-                                }`}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {selectedSuite === suite.name && (
-                        <div className="border-t border-gray-200">
-                          {suite.tests.map((test, testIndex) => (
-                            <div key={testIndex} className="p-4 border-b border-gray-100 last:border-b-0">
-                              <div className="flex items-start gap-3">
-                                <div className="mt-1">{getStatusIcon(test.status)}</div>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-3 mb-1">
-                                    <span className="text-gray-900 font-medium">{test.name}</span>
-                                    <span className="text-sm text-gray-500">{test.duration}ms</span>
-                                    {test.category && (
-                                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                        {test.category.replace('Phase 2: ', '')}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {test.description && (
-                                    <div className="text-sm text-gray-600 mt-1">
-                                      {test.description}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              {test.error && (
-                                <div className="ml-7 p-3 bg-red-50 border border-red-200 rounded text-sm">
-                                  <code className="text-red-800">{test.error}</code>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             /* Fallback: Original Test Suites Display */

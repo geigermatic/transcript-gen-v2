@@ -12,6 +12,7 @@ import type {
   VectorDatabaseConfig,
   DocumentEmbedding,
   VectorSearchResult,
+  SearchResult,
   VectorSearchOptions,
   VectorDatabaseStats,
   BatchOperationResult,
@@ -298,32 +299,48 @@ export class VectorDatabase implements IVectorDatabase {
   }
 
   // Search operations
-  async searchSimilar(queryVector: number[], options?: VectorSearchOptions): Promise<VectorSearchResult[]> {
+  async searchSimilar(queryVector: number[], options?: VectorSearchOptions): Promise<SearchResult[]> {
     if (!this.initialized) {
       throw new Error('Database is closed');
     }
 
-    const limit = options?.limit || 10;
+    // Validate inputs
+    if (!Array.isArray(queryVector)) {
+      throw new Error('Query vector must be an array');
+    }
+
+    if (queryVector.length !== this.config.vectorDimension) {
+      throw new Error(`Vector dimension mismatch: expected ${this.config.vectorDimension}, got ${queryVector.length}`);
+    }
+
+    const limit = options?.limit ?? 10;
+    if (limit <= 0) {
+      throw new Error('Limit must be greater than 0');
+    }
+
     const distanceMetric = options?.distanceMetric || 'cosine';
     const threshold = options?.threshold || 0;
 
     // Get all embeddings and calculate similarities
     const allEmbeddings = Array.from(this.embeddings.values());
-    const results: VectorSearchResult[] = [];
+    const results: SearchResult[] = [];
 
-    // Optimize: Use early termination for large datasets
-    const maxCandidates = Math.min(allEmbeddings.length, limit * 10); // Only process top candidates
-
-    for (let i = 0; i < Math.min(allEmbeddings.length, maxCandidates); i++) {
+    // Process all embeddings to ensure we don't miss any
+    for (let i = 0; i < allEmbeddings.length; i++) {
       const embedding = allEmbeddings[i];
       const similarity = this.calculateSimilarity(queryVector, embedding.vector, distanceMetric);
       const distance = this.calculateDistance(queryVector, embedding.vector, distanceMetric);
 
       if (similarity >= threshold) {
+        // Fix floating point precision issues
+        const normalizedSimilarity = Math.min(1.0, Math.max(0.0, similarity));
+
         results.push({
-          embedding,
-          similarity,
-          distance
+          id: embedding.id,
+          similarity: normalizedSimilarity,
+          distance,
+          documentId: embedding.documentId,
+          metadata: embedding.metadata
         });
       }
     }

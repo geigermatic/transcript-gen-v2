@@ -286,6 +286,81 @@ const TestDashboard = () => {
 - ✅ **Maintainable**: Clear update process for new features
 - ✅ **Auditable**: All data sources documented and verifiable
 
+### **🚨 CRITICAL: PHASE DASHBOARD UPDATE REQUIREMENTS**
+
+#### **MANDATORY FOR EVERY DEVELOPMENT PHASE:**
+**When starting ANY new phase (Phase 3, 4, 5, 6, 7), you MUST update the test dashboard following this exact pattern:**
+
+##### **Step 1: Add New Phase Tests to `realTestExtractor.ts`**
+```typescript
+// Extract test names from actual test files
+const usXXXTests: RealTestResult[] = [
+  { name: 'actual test name', status: 'passed', duration: 123,
+    description: 'Extracted from actual-file.test.ts line 45',
+    category: 'Real Category' },
+  // ... more real tests extracted from actual files
+];
+
+// Add to suites array
+const suites: RealTestSuite[] = [
+  // ... existing suites
+  {
+    name: 'US-XXX: New Feature Name',
+    description: 'Real description of what this phase implements',
+    tests: usXXXTests
+  }
+];
+```
+
+##### **Step 2: Update Phase Calculations**
+```typescript
+// Update phase breakdown to include new phase
+const phaseXSuites = suites.slice(X, Y); // Adjust indices for new phase
+const phaseXTests = phaseXSuites.reduce((sum, suite) => sum + suite.tests.length, 0);
+const phaseXPassed = phaseXSuites.reduce((sum, suite) =>
+  sum + suite.tests.filter(test => test.status === 'passed').length, 0);
+
+phases: {
+  // ... existing phases
+  phaseX: {
+    name: 'Phase X: Feature Name',
+    status: 'in-progress' as const,
+    suites: phaseXSuites,
+    totalTests: phaseXTests,
+    passedTests: phaseXPassed,
+    failedTests: phaseXTests - phaseXPassed
+  }
+}
+```
+
+##### **Step 3: Verify Dashboard Auto-Updates**
+The `TestDashboard.tsx` component is now **fully dynamic** and will automatically:
+- ✅ Show all phases in the overview grid (3-column layout)
+- ✅ Display all phase test suites in the detailed view
+- ✅ Apply correct status badges and colors
+- ✅ Calculate progress percentages
+- ✅ Handle any number of phases (3, 4, 5, 6, 7+)
+
+**NO MANUAL DASHBOARD UPDATES NEEDED** - The component dynamically renders all phases!
+
+##### **Step 4: Test Dashboard Validation**
+After adding a new phase, verify:
+- [ ] New phase appears in "Development Phases" overview
+- [ ] Phase shows correct test count and status
+- [ ] Phase appears in detailed test suites section
+- [ ] All test names are from real test files
+- [ ] Test descriptions reference actual file and line numbers
+- [ ] No hardcoded or mock data anywhere
+
+#### **PHASE UPDATE CHECKLIST (Use for Every Phase):**
+- [ ] **Extract Real Tests**: Get actual test names from `.test.ts` files using `grep -n "it('.*'"`
+- [ ] **Add Test Array**: Create `usXXXTests` array with real test data
+- [ ] **Update Suites**: Add new suite to `suites` array
+- [ ] **Update Phases**: Add new phase to `phases` object with correct calculations
+- [ ] **Verify Dashboard**: Check that new phase appears correctly at `/tests`
+- [ ] **No Mock Data**: Confirm all data comes from real test execution
+- [ ] **Source Traceability**: Every test references actual file and line number
+
 ### **ENFORCEMENT: Code Review Checklist**
 **Reject any PR that:**
 - [ ] Adds mock data to test dashboard
@@ -295,6 +370,10 @@ const TestDashboard = () => {
 - [ ] Introduces `child_process` calls in browser code
 - [ ] Creates alternative test data sources
 - [ ] Bypasses `realTestExtractor.ts` pattern
+- [ ] **NEW**: Starts a new phase without updating the test dashboard
+- [ ] **NEW**: Adds tests without updating `realTestExtractor.ts`
+- [ ] **NEW**: Uses different patterns than documented above
+- [ ] **NEW**: Fails to follow the Phase Update Checklist
 
 ## Solution: Enhanced Local Vector Database
 

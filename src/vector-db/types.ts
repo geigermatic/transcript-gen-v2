@@ -104,6 +104,26 @@ export interface VectorSearchResult {
 }
 
 /**
+ * Simplified search result for basic search operations
+ */
+export interface SearchResult {
+  /** ID of the matching embedding */
+  id: string;
+
+  /** Similarity score (0-1, higher is more similar) */
+  similarity: number;
+
+  /** Distance score (lower is more similar) */
+  distance?: number;
+
+  /** Document ID this embedding belongs to */
+  documentId?: string;
+
+  /** Metadata about the match */
+  metadata?: any;
+}
+
+/**
  * Options for vector similarity search
  */
 export interface VectorSearchOptions {
@@ -225,15 +245,12 @@ export interface IVectorDatabase {
   clearAllEmbeddings(): Promise<void>;
 
   // Search operations
-  searchSimilar(queryVector: number[], options?: VectorSearchOptions): Promise<VectorSearchResult[]>;
+  searchSimilar(queryVector: number[], options?: VectorSearchOptions): Promise<SearchResult[]>;
 
   // Index management
   buildIndex(progressCallback?: (progress: number) => void): Promise<void>;
   rebuildIndex(): Promise<void>;
   getIndexStatus(): Promise<string>;
-
-  // Vector search
-  searchSimilar(vector: number[], options?: VectorSearchOptions): Promise<VectorSearchResult[]>;
 
   // Statistics and maintenance
   getStats(): Promise<VectorDatabaseStats>;
