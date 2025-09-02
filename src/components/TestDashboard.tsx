@@ -79,15 +79,15 @@ export const TestDashboard: React.FC = () => {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Get DYNAMIC test results - calculates real counts from actual test files
+  // Get TRULY DYNAMIC test results - automatically detects new tests and updates pass/fail status
   const getCurrentTestResults = async () => {
     try {
-      console.log('🔍 Getting dynamic test results...');
-      // Use dynamic extractor that calculates real counts
-      const { getDynamicTestResults } = await import('../lib/dynamicTestExtractor');
-      const result = await getDynamicTestResults();
+      console.log('🔍 Getting truly dynamic test results...');
+      // Use truly dynamic extractor that scans actual files and detects changes
+      const { getTrulyDynamicTestResults } = await import('../lib/trulyDynamicTestExtractor');
+      const result = await getTrulyDynamicTestResults();
 
-      console.log('✅ Got dynamic test results:', {
+      console.log('✅ Got truly dynamic test results:', {
         totalTests: result.totalTests,
         passedTests: result.passedTests,
         failedTests: result.failedTests,
@@ -96,7 +96,7 @@ export const TestDashboard: React.FC = () => {
 
       return result;
     } catch (error) {
-      console.error('❌ Dynamic extraction failed, falling back to static data:', error);
+      console.error('❌ Truly dynamic extraction failed, falling back to static data:', error);
       // Fallback to the old extractor if dynamic fails
       const { getRealTestResults } = await import('../lib/realTestExtractor');
       return getRealTestResults();
