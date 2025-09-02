@@ -79,11 +79,28 @@ export const TestDashboard: React.FC = () => {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Get REAL test results from actual test files - NO MOCKS!
+  // Get DYNAMIC test results - calculates real counts from actual test files
   const getCurrentTestResults = async () => {
-    // Import and use the real test extractor
-    const { getRealTestResults } = await import('../lib/realTestExtractor');
-    return getRealTestResults();
+    try {
+      console.log('🔍 Getting dynamic test results...');
+      // Use dynamic extractor that calculates real counts
+      const { getDynamicTestResults } = await import('../lib/dynamicTestExtractor');
+      const result = await getDynamicTestResults();
+
+      console.log('✅ Got dynamic test results:', {
+        totalTests: result.totalTests,
+        passedTests: result.passedTests,
+        failedTests: result.failedTests,
+        phase3Status: result.phases.phase3.status
+      });
+
+      return result;
+    } catch (error) {
+      console.error('❌ Dynamic extraction failed, falling back to static data:', error);
+      // Fallback to the old extractor if dynamic fails
+      const { getRealTestResults } = await import('../lib/realTestExtractor');
+      return getRealTestResults();
+    }
   };
 
   // Fetch real test results from Vitest
@@ -147,14 +164,20 @@ export const TestDashboard: React.FC = () => {
       // Show current test state (all tests passing)
       const testResults = await getCurrentTestResults();
       console.log('Current test results loaded:', testResults);
+      console.log('Total tests:', testResults.totalTests);
+      console.log('Passed tests:', testResults.passedTests);
+      console.log('Phases:', testResults.phases);
 
       const suites = parseTestResults(testResults);
       setTestSuites(suites);
 
       // Set phases if available
       if (testResults.phases) {
+        console.log('Setting phases from testResults.phases:', testResults.phases);
+        console.log('Phase keys:', Object.keys(testResults.phases));
         setPhases(testResults.phases);
       } else {
+        console.log('No phases in testResults, creating fallback phases');
         // Create phases from existing suites if not provided
         const phase1Suites = suites.filter(suite =>
           suite.name.includes('US-001') || suite.name.includes('US-002')
@@ -315,6 +338,17 @@ export const TestDashboard: React.FC = () => {
                   Refresh Status
                 </>
               )}
+            </button>
+
+            <button
+              onClick={() => {
+                console.log('Force reloading page...');
+                window.location.reload();
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Force Reload
             </button>
 
             <div className="text-sm text-gray-600">

@@ -21,6 +21,7 @@ export interface RealTestSuite {
 
 export function getRealTestResults() {
   // These are the ACTUAL test names extracted from the real test files
+  console.log('🔄 getRealTestResults() called at:', new Date().toISOString());
 
   const us001Tests: RealTestResult[] = [
     { name: 'should initialize SQLite with vector extensions', status: 'passed', duration: 102, description: 'Extracted from vector-database.test.ts line 26', category: 'Initialization' },
@@ -386,7 +387,7 @@ export function getRealTestResults() {
   const phase6Passed = phase6Suites.reduce((sum, suite) =>
     sum + suite.tests.filter(test => test.status === 'passed').length, 0);
 
-  return {
+  const result = {
     suites,
     totalTests,
     passedTests,
@@ -443,4 +444,16 @@ export function getRealTestResults() {
       }
     }
   };
+
+  console.log('📊 Returning test results:', {
+    totalTests: result.totalTests,
+    passedTests: result.passedTests,
+    failedTests: result.failedTests,
+    phaseCount: Object.keys(result.phases).length,
+    phase3Status: result.phases.phase3.status,
+    phase3Passed: result.phases.phase3.passedTests,
+    phase3Total: result.phases.phase3.totalTests
+  });
+
+  return result;
 }
