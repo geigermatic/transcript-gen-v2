@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "bash scripts/start-dev.sh",
+    "dev:full": "concurrently \"npm run dev:api\" \"npm run dev:vite-only\"",
+    "dev:api": "tsx server/test-api.ts",
     "dev:vite-only": "vite",
     "setup": "bash scripts/setup-client.sh",
     "build": "tsc -b && vite build",
@@ -19,6 +21,9 @@
     "postinstall": "chmod +x scripts/start-dev.sh && chmod +x scripts/setup-client.sh"
   },
   "dependencies": {
+    "chokidar": "^4.0.3",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "localforage": "^1.10.0",
     "lucide-react": "^0.539.0",
     "mammoth": "^1.10.0",
@@ -33,19 +38,24 @@
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@tailwindcss/postcss": "^4.1.11",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/node": "^24.2.1",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
     "eslint": "^9.33.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
+    "tsx": "^4.20.5",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vitest": "^3.2.4"
   }
 }

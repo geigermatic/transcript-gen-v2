@@ -120,19 +120,14 @@ Transform the current linear search system into a scalable vector database archi
 
 #### **Core Components:**
 
-##### **1. Real Test Extractor (`src/lib/realTestExtractor.ts`)**
+##### **1. API Test Server (`server/test-api.ts`)**
 ```typescript
-// ✅ CORRECT PATTERN: Extract from actual test files
-export function getRealTestResults() {
-  // Extract REAL test names from actual .test.ts files
-  const us001Tests: RealTestResult[] = [
-    { name: 'should initialize SQLite with vector extensions',
-      status: 'passed', duration: 102,
-      description: 'Extracted from vector-database.test.ts line 26',
-      category: 'Initialization' },
-    // ... more real tests
-  ];
-  return { suites, totalTests, passedTests, failedTests, phases };
+// ✅ CURRENT PATTERN: Real-time test execution via API
+export async function runJestTests() {
+  // Execute REAL tests via Vitest and parse JSON results
+  const { stdout } = await execAsync(`npx vitest run --reporter=json`);
+  const jestResults = JSON.parse(stdout);
+  return parseJestToPhases(jestResults, new Date());
 }
 ```
 
@@ -155,10 +150,10 @@ grep -n "it('.*'" src/vector-db/__tests__/*.test.ts
 #### **Data Flow Architecture:**
 ```
 Real Test Files (.test.ts)
-    ↓ (Manual extraction of test names/line numbers)
-realTestExtractor.ts
-    ↓ (Import and execute)
-TestDashboard.tsx
+    ↓ (Vitest execution via API server)
+server/test-api.ts
+    ↓ (JSON parsing and phase mapping)
+TestApiDashboard.tsx
     ↓ (Display)
 Live Dashboard UI
 ```
@@ -245,13 +240,17 @@ const testOutput = execSync('npm test'); // FAILS IN BROWSER
 ```
 src/
 ├── lib/
-│   └── realTestExtractor.ts     # REAL test data extraction
-├── components/
-│   └── TestDashboard.tsx        # Dashboard UI component
+│   └── testApiClient.ts         # API client for test data
+├── pages/
+│   └── TestApiDashboard.tsx     # Dashboard UI component
 └── vector-db/__tests__/
     ├── vector-database.test.ts  # US-001 tests
     ├── vector-storage.test.ts   # US-002 tests
     └── hnsw-index.test.ts       # US-003 tests
+
+server/
+├── test-api.ts                  # Express API server
+└── jest-parser.ts               # Vitest JSON parser
 ```
 
 #### **File Responsibilities:**

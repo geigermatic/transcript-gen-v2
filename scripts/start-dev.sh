@@ -216,16 +216,18 @@ if ! check_required_models; then
 fi
 
 echo ""
-echo -e "${BLUE}🌐 Starting Vite development server...${NC}"
+echo -e "${BLUE}🌐 Starting development servers...${NC}"
 echo -e "${GREEN}📱 Frontend will be available at: http://localhost:5173${NC}"
+echo -e "${GREEN}🔧 Test API will be available at: http://localhost:3001${NC}"
 echo -e "${GREEN}🤖 AI features will work if Ollama and models are available${NC}"
 echo ""
 echo -e "${YELLOW}💡 Tips:${NC}"
-echo -e "   • Press Ctrl+C to stop both servers"
+echo -e "   • Press Ctrl+C to stop all servers"
 echo -e "   • Check Ollama status: npm run check-ollama"
 echo -e "   • Manual Ollama start: ollama serve"
 echo -e "   • View available models: ollama list"
+echo -e "   • Test API health: curl http://localhost:3001/api/health"
 echo ""
 
-# Start Vite dev server
-npm run dev:vite-only
+# Start both API server and Vite dev server concurrently
+npm run dev:full

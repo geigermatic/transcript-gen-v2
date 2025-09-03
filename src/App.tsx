@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ChatCentricLayout } from './components/ChatCentricLayout';
 import { SummaryResultsView } from './components/SummaryResultsView';
-import { TestDashboard } from './components/TestDashboard';
+import TestApiDashboard from './pages/TestApiDashboard';
 import { UploadPage } from './pages/UploadPage';
 import { GlossaryPage } from './pages/GlossaryPage';
 import { LibraryPage } from './pages/LibraryPage';
@@ -52,7 +52,7 @@ function App() {
         <Route path="/summary/:documentId" element={<SummaryResultsView />} />
 
         {/* TDD Test Dashboard */}
-        <Route path="/tests" element={<TestDashboard />} />
+        <Route path="/tests" element={<TestApiDashboard />} />
 
         {/* Supporting Pages */}
         <Route path="/upload" element={<UploadPage />} />
