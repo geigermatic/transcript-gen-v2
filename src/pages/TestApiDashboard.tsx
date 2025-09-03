@@ -331,7 +331,7 @@ const TestApiDashboard: React.FC = () => {
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)]">
               {selectedPhase.suites.map((suite, suiteIndex) => (
                 <div key={suiteIndex} className="mb-8 last:mb-0">
                   {/* Suite Header */}

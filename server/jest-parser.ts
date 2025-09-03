@@ -239,6 +239,9 @@ export function parseJestToPhases(jestResults: any, lastTestRun: Date | null = n
       const filePath = testFile.name || '';
       const phase = determinePhaseFromPath(filePath);
       const phaseKey = `phase${phase}`;
+      console.log(`🔍 DEBUG: Generated phaseKey '${phaseKey}' for ${filePath}`);
+      console.log(`🔍 DEBUG: Available phases: ${Object.keys(phases).join(', ')}`);
+      console.log(`🔍 DEBUG: Phase exists? ${!!phases[phaseKey]}`);
 
       if (phases[phaseKey]) {
         // Extract real test counts from Jest results
@@ -252,6 +255,7 @@ export function parseJestToPhases(jestResults: any, lastTestRun: Date | null = n
         phases[phaseKey].failedTests += failedTests;
 
         // Extract test descriptions from source file
+        console.log(`🔍 About to extract test descriptions from: ${filePath}`);
         const { tests: extractedTests, suiteDescription, businessValue } = extractTestDescriptions(filePath);
         console.log(`📋 Found ${extractedTests.length} extracted tests for ${filePath}`);
 
