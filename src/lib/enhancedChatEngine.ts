@@ -31,10 +31,10 @@ export interface EnhancedChatResponse extends ChatResponse {
 
 export class EnhancedChatEngine {
   private static readonly COMMAND_PATTERNS = {
-    reformat: /(?:reformat|format|restructure|organize)\s+(.+?)(?:\s+(?:as|to|into)\s+(.+))?/i,
-    rephrase: /(?:rephrase|rewrite|reword)\s+(.+?)(?:\s+(?:as|to|in)\s+(.+))?/i,
+    reformat: /(?:reformat|format|restructure|organize)\s+(.+)/i,
+    rephrase: /(?:rephrase|rewrite|reword)\s+(.+)/i,
     remove: /(?:remove|delete|take out)\s+(.+)/i,
-    add: /(?:add|include|insert)\s+(.+?)(?:\s+(?:to|in|after)\s+(.+))?/i,
+    add: /(?:add|include|insert)\s+(.+)/i,
     summarize: /(?:summarize|sum up|condense)\s+(.+)/i,
   };
 
@@ -144,12 +144,30 @@ export class EnhancedChatEngine {
     for (const [type, pattern] of Object.entries(this.COMMAND_PATTERNS)) {
       const match = query.match(pattern);
       if (match) {
-        return {
+        const fullText = match[1]?.trim() || '';
+
+        // Parse target and instruction from the captured text
+        let target = fullText;
+        let instruction = undefined;
+
+        // Look for instruction keywords
+        const instructionKeywords = ['as', 'to', 'into', 'in', 'after'];
+        for (const keyword of instructionKeywords) {
+          const keywordIndex = fullText.toLowerCase().indexOf(` ${keyword} `);
+          if (keywordIndex !== -1) {
+            target = fullText.substring(0, keywordIndex).trim();
+            instruction = fullText.substring(keywordIndex + keyword.length + 2).trim();
+            break;
+          }
+        }
+
+        const command = {
           type: type as ChatCommand['type'],
-          target: match[1]?.trim(),
-          instruction: match[2]?.trim(),
+          target,
+          instruction,
           context: query
         };
+        return command;
       }
     }
     return null;
@@ -338,11 +356,11 @@ Please provide the rephrased content:`;
    */
   private static formatStyleGuideForPrompt(styleGuide: StyleGuide): string {
     return `
-VOICE: ${styleGuide.voice_description}
-TONE: Formality: ${styleGuide.tone_settings.formality}/10, Enthusiasm: ${styleGuide.tone_settings.enthusiasm}/10
-PREFERRED PHRASES: ${styleGuide.vocabulary.preferred_phrases.join(', ')}
-AVOID: ${styleGuide.vocabulary.avoid_phrases.join(', ')}
-CUSTOM INSTRUCTIONS: ${styleGuide.custom_instructions}
+VOICE: ${styleGuide.voice_description || 'Professional and clear'}
+TONE: Formality: ${styleGuide.tone_settings?.formality || 5}/10, Enthusiasm: ${styleGuide.tone_settings?.enthusiasm || 5}/10
+PREFERRED PHRASES: ${styleGuide.example_phrases?.preferred_openings?.join(', ') || styleGuide.keywords?.join(', ') || 'N/A'}
+AVOID: ${styleGuide.example_phrases?.avoid_phrases?.join(', ') || 'N/A'}
+CUSTOM INSTRUCTIONS: ${styleGuide.custom_instructions || styleGuide.instructions_md || 'N/A'}
     `.trim();
   }
 
@@ -1018,7 +1036,7 @@ Respond with ONLY the JSON object:`;
     const { action, target } = intentAnalysis;
 
     // Stage 2: Extract target content using LLM
-    const extraction = await this.extractTargetContent(userRequest, originalContent, intentAnalysis);
+    const extraction = await this.extractTargetContentWithLLM(userRequest, originalContent, intentAnalysis);
 
     if (!extraction.found) {
       // Fallback to general edit if we can't find the target
@@ -1095,7 +1113,7 @@ REVISED SUMMARY:`;
   /**
    * Extract target content using LLM to identify exact location
    */
-  private static async extractTargetContent(
+  private static async extractTargetContentWithLLM(
     userRequest: string,
     originalContent: string,
     intentAnalysis: any
