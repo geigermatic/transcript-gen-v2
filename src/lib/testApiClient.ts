@@ -3,6 +3,15 @@
  * Replaces all the complex browserTestRunner.ts and trulyDynamicTestExtractor.ts
  */
 
+export interface TestCase {
+  name: string;
+  status: 'passed' | 'failed' | 'pending' | 'skipped';
+  duration?: number;
+  description?: string;
+  businessValue?: string;
+  category?: string;
+}
+
 export interface TestSuite {
   name: string;
   file: string;
@@ -10,6 +19,9 @@ export interface TestSuite {
   passedTests: number;
   failedTests: number;
   status: 'passed' | 'failed' | 'pending';
+  tests: TestCase[];
+  description?: string;
+  businessValue?: string;
 }
 
 export interface PhaseData {

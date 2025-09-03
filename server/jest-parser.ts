@@ -1,4 +1,14 @@
 import path from 'path';
+import fs from 'fs';
+
+export interface TestCase {
+  name: string;
+  status: 'passed' | 'failed' | 'pending' | 'skipped';
+  duration?: number;
+  description?: string;
+  businessValue?: string;
+  category?: string;
+}
 
 export interface TestSuite {
   name: string;
@@ -7,6 +17,9 @@ export interface TestSuite {
   passedTests: number;
   failedTests: number;
   status: 'passed' | 'failed' | 'pending';
+  tests: TestCase[];
+  description?: string;
+  businessValue?: string;
 }
 
 export interface PhaseData {
@@ -25,6 +38,140 @@ export interface ParsedTestResults {
   phases: Record<string, PhaseData>;
   timestamp: string;
   lastTestRun: string | null;
+}
+
+/**
+ * Extract test descriptions and business value from test file source code
+ */
+function extractTestDescriptions(filePath: string): { tests: TestCase[], suiteDescription?: string, businessValue?: string } {
+  try {
+    console.log(`🔍 Extracting test descriptions from: ${filePath}`);
+    if (!fs.existsSync(filePath)) {
+      console.warn(`⚠️ Test file not found: ${filePath}`);
+      return { tests: [] };
+    }
+
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const tests: TestCase[] = [];
+    let suiteDescription: string | undefined;
+    let businessValue: string | undefined;
+
+    // Extract main suite description from top-level comment block
+    const suiteCommentMatch = content.match(/\/\*\*\s*\n\s*\*\s*TDD Test Suite for ([^*]+?)\s*\*\s*\n[\s\S]*?\*\s*([^*]+?)\s*\*\//);
+    if (suiteCommentMatch) {
+      suiteDescription = suiteCommentMatch[1].trim();
+      businessValue = suiteCommentMatch[2].trim();
+    }
+
+    // Extract individual test cases with their descriptions
+    // Look for it('test name', async () => { followed by comments
+    const lines = content.split('\n');
+    let currentCategory = '';
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      // Track describe blocks for categorization
+      const describeMatch = line.match(/describe\(['"`]([^'"`]+)['"`],/);
+      if (describeMatch) {
+        currentCategory = describeMatch[1].trim();
+        continue;
+      }
+
+      // Look for test cases
+      const testMatch = line.match(/it\(['"`]([^'"`]+)['"`],\s*async\s*\(\)\s*=>\s*\{/);
+      if (testMatch) {
+        const testName = testMatch[1].trim();
+        let description = '';
+        let businessValue = '';
+
+        // Look for comments in the next few lines
+        for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+          const commentLine = lines[j].trim();
+          if (commentLine.startsWith('//')) {
+            const comment = commentLine.replace(/^\/\/\s*/, '').trim();
+            if (!description) {
+              description = comment;
+              businessValue = extractBusinessValueFromComment(comment);
+            }
+            break;
+          }
+          // Stop looking if we hit another test or describe
+          if (commentLine.includes('it(') || commentLine.includes('describe(') || commentLine.includes('expect(')) {
+            break;
+          }
+        }
+
+        // Generate business value from test name if no comment found
+        if (!description) {
+          description = `Validates: ${testName}`;
+          businessValue = generateBusinessValueFromTestName(testName);
+        }
+
+        tests.push({
+          name: testName,
+          status: 'pending', // Will be updated with actual results
+          description,
+          businessValue,
+          category: currentCategory
+        });
+      }
+    }
+
+    console.log(`✅ Extracted ${tests.length} tests from ${filePath}`);
+    return { tests, suiteDescription, businessValue };
+  } catch (error) {
+    console.error(`❌ Error extracting test descriptions from ${filePath}:`, error);
+    return { tests: [] };
+  }
+}
+
+/**
+ * Extract business value from test comments
+ */
+function extractBusinessValueFromComment(comment: string): string {
+  // Remove common prefixes and clean up the comment
+  const cleaned = comment
+    .replace(/^(RED PHASE:|GREEN PHASE:|REFACTOR PHASE:)/i, '')
+    .replace(/^(This will fail|This test)/i, '')
+    .replace(/^[-\s]+/, '')
+    .trim();
+
+  return cleaned || 'Validates core functionality';
+}
+
+/**
+ * Generate business value from test name when no comment is available
+ */
+function generateBusinessValueFromTestName(testName: string): string {
+  // Convert test name to business value
+  if (testName.includes('initialize')) {
+    return 'Ensures system can start up correctly and be ready for use';
+  }
+  if (testName.includes('performance') || testName.includes('speed') || testName.includes('fast')) {
+    return 'Validates system meets performance requirements for user experience';
+  }
+  if (testName.includes('error') || testName.includes('handle') || testName.includes('gracefully')) {
+    return 'Ensures system handles edge cases and errors without crashing';
+  }
+  if (testName.includes('offline') || testName.includes('network')) {
+    return 'Validates system works without internet connectivity';
+  }
+  if (testName.includes('vector') || testName.includes('embedding')) {
+    return 'Proves vector operations work correctly for AI functionality';
+  }
+  if (testName.includes('search') || testName.includes('query')) {
+    return 'Ensures users can find relevant information quickly';
+  }
+  if (testName.includes('storage') || testName.includes('save') || testName.includes('persist')) {
+    return 'Validates data is stored reliably and can be retrieved';
+  }
+  if (testName.includes('close') || testName.includes('cleanup') || testName.includes('resource')) {
+    return 'Ensures system properly manages memory and resources';
+  }
+
+  // Default business value
+  return 'Validates core system functionality works as expected';
 }
 
 /**
@@ -104,7 +251,31 @@ export function parseJestToPhases(jestResults: any, lastTestRun: Date | null = n
         phases[phaseKey].passedTests += passedTests;
         phases[phaseKey].failedTests += failedTests;
 
-        // Add real suite info
+        // Extract test descriptions from source file
+        const { tests: extractedTests, suiteDescription, businessValue } = extractTestDescriptions(filePath);
+        console.log(`📋 Found ${extractedTests.length} extracted tests for ${filePath}`);
+
+        // Merge Jest results with extracted descriptions
+        const testsWithDescriptions: TestCase[] = [];
+
+        if (testFile.assertionResults && Array.isArray(testFile.assertionResults)) {
+          console.log(`🧪 Processing ${testFile.assertionResults.length} Jest test results for ${filePath}`);
+          testFile.assertionResults.forEach((jestTest: any) => {
+            const extractedTest = extractedTests.find(t => t.name === jestTest.title);
+            testsWithDescriptions.push({
+              name: jestTest.title,
+              status: jestTest.status,
+              duration: jestTest.duration,
+              description: extractedTest?.description || 'Test case validation',
+              businessValue: extractedTest?.businessValue || 'Ensures system reliability',
+              category: extractedTest?.category
+            });
+          });
+        } else {
+          console.warn(`⚠️ No assertionResults found for ${filePath}`);
+        }
+
+        // Add real suite info with enhanced details
         if (totalTests > 0) {
           phases[phaseKey].suites.push({
             name: path.basename(filePath, '.test.ts').replace(/\./g, ' '),
@@ -112,7 +283,10 @@ export function parseJestToPhases(jestResults: any, lastTestRun: Date | null = n
             totalTests,
             passedTests,
             failedTests,
-            status: failedTests === 0 ? 'passed' : 'failed'
+            status: failedTests === 0 ? 'passed' : 'failed',
+            tests: testsWithDescriptions,
+            description: suiteDescription,
+            businessValue: businessValue
           });
         }
 

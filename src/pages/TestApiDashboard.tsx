@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
+interface TestCase {
+  name: string;
+  status: 'passed' | 'failed' | 'pending' | 'skipped';
+  duration?: number;
+  description?: string;
+  businessValue?: string;
+  category?: string;
+}
+
 interface TestSuite {
   name: string;
+  file: string;
   totalTests: number;
   passedTests: number;
   failedTests: number;
+  status: 'passed' | 'failed' | 'pending';
+  tests: TestCase[];
+  description?: string;
+  businessValue?: string;
 }
 
 interface PhaseData {
@@ -31,6 +45,8 @@ const TestApiDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [selectedPhase, setSelectedPhase] = useState<PhaseData | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const fetchTestResults = async () => {
     try {
@@ -76,6 +92,16 @@ const TestApiDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePhaseClick = (phase: PhaseData) => {
+    setSelectedPhase(phase);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedPhase(null);
   };
 
   useEffect(() => {
@@ -228,7 +254,11 @@ const TestApiDashboard: React.FC = () => {
                 : 0;
 
               return (
-                <div key={phaseKey} className="bg-white border border-gray-200 rounded-lg p-6">
+                <div
+                  key={phaseKey}
+                  className="bg-white border border-gray-200 rounded-lg p-6 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all duration-200"
+                  onClick={() => handlePhaseClick(phase)}
+                >
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-gray-900">{phase.name}</h3>
                     {getStatusBadge(phase.status)}
@@ -258,6 +288,10 @@ const TestApiDashboard: React.FC = () => {
                     <div className="text-xs text-gray-500 mt-2">
                       {phase.suites.length} test suite{phase.suites.length !== 1 ? 's' : ''} • {Math.round(phaseProgress)}% complete
                     </div>
+
+                    <div className="text-xs text-blue-600 mt-3 font-medium">
+                      👆 Click to view test details
+                    </div>
                   </div>
                 </div>
               );
@@ -273,6 +307,122 @@ const TestApiDashboard: React.FC = () => {
           </pre>
         </div>
       </div>
+
+      {/* Test Details Modal */}
+      {showModal && selectedPhase && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">{selectedPhase.name}</h2>
+                  <p className="text-gray-600 mt-1">
+                    {selectedPhase.totalTests} tests • {selectedPhase.passedTests} passed • {selectedPhase.failedTests} failed
+                  </p>
+                </div>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {selectedPhase.suites.map((suite, suiteIndex) => (
+                <div key={suiteIndex} className="mb-8 last:mb-0">
+                  {/* Suite Header */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{suite.name}</h3>
+                    {suite.description && (
+                      <p className="text-gray-600 mb-2">{suite.description}</p>
+                    )}
+                    {suite.businessValue && (
+                      <p className="text-blue-600 text-sm font-medium mb-3">
+                        💼 Business Value: {suite.businessValue}
+                      </p>
+                    )}
+                    <div className="flex items-center space-x-4 text-sm">
+                      <span className="text-gray-600">
+                        📁 {suite.file.split('/').pop()}
+                      </span>
+                      <span className="text-green-600">
+                        ✅ {suite.passedTests} passed
+                      </span>
+                      {suite.failedTests > 0 && (
+                        <span className="text-red-600">
+                          ❌ {suite.failedTests} failed
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Test Cases */}
+                  <div className="space-y-3">
+                    {(suite.tests || []).length > 0 ? (
+                      (suite.tests || []).map((test, testIndex) => (
+                        <div
+                          key={testIndex}
+                          className={`p-4 rounded-lg border-l-4 ${test.status === 'passed'
+                            ? 'bg-green-50 border-green-400'
+                            : test.status === 'failed'
+                              ? 'bg-red-50 border-red-400'
+                              : 'bg-gray-50 border-gray-400'
+                            }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900 mb-1">
+                                {test.status === 'passed' ? '✅' : test.status === 'failed' ? '❌' : '⏳'} {test.name}
+                              </h4>
+                              {test.description && (
+                                <p className="text-gray-600 text-sm mb-2">{test.description}</p>
+                              )}
+                              {test.businessValue && (
+                                <p className="text-blue-600 text-sm">
+                                  🎯 <strong>Proves:</strong> {test.businessValue}
+                                </p>
+                              )}
+                            </div>
+                            {test.duration && (
+                              <span className="text-xs text-gray-500 ml-4">
+                                {test.duration}ms
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 bg-gray-50 rounded-lg text-center text-gray-600">
+                        <p>📋 No detailed test information available for this suite.</p>
+                        <p className="text-sm mt-1">Test results are available but descriptions are being extracted.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  Total: {selectedPhase.totalTests} tests across {selectedPhase.suites.length} test suites
+                </div>
+                <button
+                  onClick={closeModal}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
