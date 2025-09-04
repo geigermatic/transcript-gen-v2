@@ -55,6 +55,7 @@ function determinePhaseFromPath(filePath: string): string | null {
   if (normalizedPath.includes('embedding-engine-integration.test.ts')) return 'phase3';
   if (normalizedPath.includes('enhanced-chat-engine-integration.test.ts')) return 'phase3';
   if (normalizedPath.includes('phase3-completion.test.ts')) return 'phase3';
+  if (normalizedPath.includes('phase4-tdd-foundation.test.ts')) return 'phase4';
   if (normalizedPath.includes('phase5-performance-optimization.test.ts')) return 'phase5';
   if (normalizedPath.includes('phase5-production-integration.test.ts')) return 'phase5';
   if (normalizedPath.includes('phase6-advanced-features.test.ts')) return 'phase6';

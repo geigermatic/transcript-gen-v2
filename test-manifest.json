@@ -8,6 +8,7 @@
     "src/lib/__tests__/embedding-engine-integration.test.ts",
     "src/lib/__tests__/enhanced-chat-engine-integration.test.ts",
     "src/lib/__tests__/phase3-completion.test.ts",
+    "src/lib/__tests__/phase4-tdd-foundation.test.ts",
     "src/lib/__tests__/phase5-performance-optimization.test.ts",
     "src/lib/__tests__/phase5-production-integration.test.ts",
     "src/lib/__tests__/phase6-advanced-features.test.ts",
@@ -25,7 +26,7 @@
     },
     "phase2": {
       "name": "Vector Storage & Indexing",
-      "category": "architecture", 
+      "category": "architecture",
       "description": "HNSW indexing and vector storage operations"
     },
     "phase3": {
