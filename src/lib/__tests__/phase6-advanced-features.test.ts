@@ -1,5 +1,5 @@
 // @phase: 6
-// @phase-name: Advanced Features
+// @phase-name: Advanced AI & UX Features
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock localStorage for Node.js test environment
@@ -14,20 +14,21 @@ Object.defineProperty(global, 'localStorage', {
 });
 
 /**
- * TDD Test Suite for Phase 6: Advanced Features
- * 
- * These tests verify advanced AI-powered features including multi-modal
- * search, advanced analytics, collaborative features, AI-powered insights,
- * and next-generation capabilities.
- * 
+ * TDD Test Suite for Phase 6: Advanced AI & UX Features
+ *
+ * These tests verify advanced AI-powered user experience features including
+ * multi-modal search, intelligent automation, collaborative features,
+ * personalization, and next-generation UI/UX capabilities.
+ *
  * Requirements:
- * - Multi-modal search (text, images, audio)
- * - Advanced analytics and insights
- * - Collaborative document management
- * - AI-powered content generation
- * - Predictive features and recommendations
+ * - Multi-modal search (text, images, audio, video)
+ * - AI-powered content generation and insights
+ * - Collaborative and social features
+ * - Intelligent automation and personalization
+ * - Advanced UI/UX (voice, AR/VR, gestures)
+ * - Knowledge management and extensibility
  */
-describe('Phase 6: Advanced Features', () => {
+describe('Phase 6: Advanced AI & UX Features', () => {
 
   describe('Multi-Modal Search Capabilities', () => {
     it('should implement text-to-image search', async () => {

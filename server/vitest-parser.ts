@@ -224,7 +224,7 @@ export function parseVitestToPhases(vitestResults: any, lastTestRun: Date | null
       suites: []
     },
     phase6: {
-      name: 'Phase 6: Advanced Features',
+      name: 'Phase 6: Advanced AI & UX Features',
       status: 'not-started',
       totalTests: 0,
       passedTests: 0,
@@ -389,9 +389,9 @@ export function determinePhaseFromPath(filePath: string): number {
     return 5;
   }
 
-  // Phase 6: Advanced Features
+  // Phase 6: Advanced AI & UX Features
   if (normalizedPath.includes('phase6-advanced-features')) {
-    console.log(`🎯 ${filePath} → Phase 6 (Advanced Features)`);
+    console.log(`🎯 ${filePath} → Phase 6 (Advanced AI & UX Features)`);
     return 6;
   }
 
