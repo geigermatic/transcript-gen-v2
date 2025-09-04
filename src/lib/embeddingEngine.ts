@@ -4,6 +4,7 @@
 
 import { ollama } from './ollama';
 import { TextSplitter, type TextChunk } from './textSplitter';
+import { SemanticChunker, type SemanticChunk, type SemanticChunkingOptions } from './semanticChunker';
 import { useAppStore } from '../store';
 import { VectorDatabase } from '../vector-db/VectorDatabase';
 import type { DocumentEmbedding, VectorSearchOptions } from '../vector-db/types';
@@ -24,6 +25,14 @@ export interface EmbeddingProgress {
   total: number;
   chunkId: string;
   percentage: number;
+}
+
+export interface ChunkingOptions {
+  strategy?: 'basic' | 'semantic' | 'adaptive';
+  contentType?: 'text' | 'markdown' | 'pdf' | 'code';
+  maxChunkSize?: number;
+  overlap?: number;
+  preserveStructure?: boolean;
 }
 
 export class EmbeddingEngine {
@@ -90,7 +99,8 @@ export class EmbeddingEngine {
   static async generateDocumentEmbeddings(
     documentId: string,
     text: string,
-    onProgress?: (progress: EmbeddingProgress) => void
+    onProgress?: (progress: EmbeddingProgress) => void,
+    chunkingOptions?: ChunkingOptions
   ): Promise<EmbeddedChunk[]> {
     const { addLog } = useAppStore.getState();
     const startTime = Date.now();
@@ -103,15 +113,15 @@ export class EmbeddingEngine {
     });
 
     try {
-      // Split text into chunks
-      const chunks = TextSplitter.splitText(text, documentId);
-      const stats = TextSplitter.getChunkingStats(chunks);
+      // Split text into chunks using the specified strategy
+      const chunks = await this.chunkText(text, documentId, chunkingOptions);
+      const stats = this.getChunkingStats(chunks, chunkingOptions?.strategy || 'basic');
 
       addLog({
         level: 'info',
         category: 'embeddings',
-        message: `Text split into ${chunks.length} chunks`,
-        details: { documentId, ...stats }
+        message: `Text split into ${chunks.length} chunks using ${chunkingOptions?.strategy || 'basic'} strategy`,
+        details: { documentId, strategy: chunkingOptions?.strategy || 'basic', ...stats }
       });
 
       // OPTIMIZED: Use larger batches for parallel processing
@@ -178,6 +188,69 @@ export class EmbeddingEngine {
       });
       throw error;
     }
+  }
+
+  /**
+   * Chunk text using the specified strategy
+   */
+  private static async chunkText(
+    text: string,
+    documentId: string,
+    options?: ChunkingOptions
+  ): Promise<TextChunk[]> {
+    const strategy = options?.strategy || 'basic';
+
+    switch (strategy) {
+      case 'semantic':
+      case 'adaptive':
+        const semanticOptions: SemanticChunkingOptions = {
+          strategy: strategy === 'semantic' ? 'semantic' : 'adaptive',
+          maxChunkSize: options?.maxChunkSize || 500,
+          overlap: options?.overlap,
+          preserveStructure: options?.preserveStructure,
+          contentType: options?.contentType || 'text'
+        };
+
+        const semanticChunks = await SemanticChunker.chunkText(text, documentId, semanticOptions);
+
+        // Convert SemanticChunk to TextChunk for compatibility
+        return semanticChunks.map(chunk => ({
+          id: chunk.id,
+          documentId: chunk.documentId,
+          text: chunk.text,
+          startIndex: chunk.startIndex,
+          endIndex: chunk.endIndex,
+          chunkIndex: chunk.chunkIndex
+        }));
+
+      case 'basic':
+      default:
+        return TextSplitter.splitText(text, documentId);
+    }
+  }
+
+  /**
+   * Get chunking statistics for different strategies
+   */
+  private static getChunkingStats(chunks: TextChunk[], strategy: string) {
+    if (strategy === 'basic') {
+      return TextSplitter.getChunkingStats(chunks);
+    }
+
+    // Enhanced stats for semantic chunking
+    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.text.length, 0);
+    const avgLength = totalLength / chunks.length;
+    const minLength = Math.min(...chunks.map(c => c.text.length));
+    const maxLength = Math.max(...chunks.map(c => c.text.length));
+
+    return {
+      totalChunks: chunks.length,
+      averageChunkLength: Math.round(avgLength),
+      minChunkLength: minLength,
+      maxChunkLength: maxLength,
+      totalTextLength: totalLength,
+      strategy
+    };
   }
 
   /**

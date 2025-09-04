@@ -8,6 +8,7 @@ import { GlossaryPage } from './pages/GlossaryPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { DevConsolePage } from './pages/DevConsolePage';
+import { SemanticChunkingDemo } from './components/SemanticChunkingDemo';
 import { OllamaStatusMonitor } from './components/OllamaStatusMonitor';
 
 // Component to handle scroll restoration
@@ -53,6 +54,9 @@ function App() {
 
         {/* TDD Test Dashboard */}
         <Route path="/tests" element={<TestApiDashboard />} />
+
+        {/* Development Tools */}
+        <Route path="/chunking-demo" element={<SemanticChunkingDemo />} />
 
         {/* Supporting Pages */}
         <Route path="/upload" element={<UploadPage />} />
