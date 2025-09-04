@@ -2,8 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ChatCentricLayout } from './components/ChatCentricLayout';
 import { SummaryResultsView } from './components/SummaryResultsView';
-import TestApiDashboard from './pages/TestApiDashboard';
-import SimpleDashboard from './pages/SimpleDashboard';
+import TestDashboard from './pages/TestDashboard';
 import { UploadPage } from './pages/UploadPage';
 import { GlossaryPage } from './pages/GlossaryPage';
 import { LibraryPage } from './pages/LibraryPage';
@@ -54,8 +53,7 @@ function App() {
         <Route path="/summary/:documentId" element={<SummaryResultsView />} />
 
         {/* TDD Test Dashboard */}
-        <Route path="/tests" element={<TestApiDashboard />} />
-        <Route path="/tests/simple" element={<SimpleDashboard />} />
+        <Route path="/tests" element={<TestDashboard />} />
 
         {/* Development Tools */}
         <Route path="/chunking-demo" element={<SemanticChunkingDemo />} />

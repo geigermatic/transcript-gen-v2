@@ -2,183 +2,126 @@ import express from 'express';
 import cors from 'cors';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import chokidar from 'chokidar';
-import { parseVitestToPhases, createEmptyResults } from './vitest-parser';
+import { parseTestResults, getAllTestFiles } from './test-parser.js';
 
 const execAsync = promisify(exec);
 const app = express();
 const PORT = 3001;
 
-// Enable CORS for Vite dev server
+// Enable CORS
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }));
 
 app.use(express.json());
 
-// Simple process management without complex caching
-let isRunningTests = false;
-let lastResults: any = null;
-let lastRunTime = 0;
-
-
-
 /**
- * Run Jest tests and get JSON output
+ * Run all tests and return results
+ * NO CACHING - Always fresh results
  */
-async function runJestTests(): Promise<any> {
-  // DISABLED CACHING - Always run fresh tests
-  console.log('🧪 Running fresh tests (caching disabled)...');
-
-  if (isRunningTests) {
-    console.log('⏳ Tests already running, returning last known results if available...');
-    if (lastResults) {
-      console.log('📋 Returning cached results while tests are running');
-      return lastResults;
-    }
-    throw new Error('Tests are currently running. Please try again in a moment.');
-  }
+app.get('/api/test-status', async (req, res) => {
+  console.log('\n🧪 === RUNNING TESTS (NO CACHE) ===');
 
   try {
-    isRunningTests = true;
-    console.log('🧪 Running Vitest tests with JSON output...');
+    // Get all test files from manifest
+    const testFiles = getAllTestFiles();
+    console.log(`📋 Running ${testFiles.length} test files:`);
+    testFiles.forEach(file => console.log(`   - ${file}`));
 
-    // Run specific test files to avoid hanging on all tests
-    const testFiles = [
-      // Phase 1: Vector Database Foundation
-      'src/vector-db/__tests__/vector-database.test.ts',
-      'src/vector-db/__tests__/vector-storage.test.ts',
-      'src/vector-db/__tests__/hnsw-index.test.ts',
-      'src/vector-db/__tests__/vector-search.test.ts',
-      // Phase 3: Vector Database Integration
-      'src/lib/__tests__/chat-engine-integration.test.ts',
-      'src/lib/__tests__/embedding-engine-integration.test.ts',
-      'src/lib/__tests__/enhanced-chat-engine-integration.test.ts',
-      'src/lib/__tests__/phase3-completion.test.ts',
-      // Phase 4-8: TDD Tests (should fail until implemented)
-      'src/lib/__tests__/phase5-performance-optimization.test.ts',
-      'src/lib/__tests__/phase5-production-integration.test.ts',
-      'src/lib/__tests__/phase6-advanced-features.test.ts',
-      'src/lib/__tests__/phase7-advanced-performance.test.ts',
-      'src/lib/__tests__/phase8-enterprise-production.test.ts',
-      // UX Development Phases
-      'src/lib/__tests__/ux-phase-1a-layout-foundation.test.ts'
-    ];
+    // Build vitest command
+    const command = `npx vitest run ${testFiles.join(' ')} --reporter=json`;
+    console.log(`🔧 Command: ${command}`);
 
-    // Run tests in batches to avoid hanging
-    // Note: Vitest returns non-zero exit code when tests fail, but we still want the JSON output
+    // Execute tests
+    console.log('⏳ Executing tests...');
+    const startTime = Date.now();
+
+    let vitestResults;
     try {
-      const { stdout, stderr } = await execAsync(`npx vitest run ${testFiles.join(' ')} --reporter=json`, {
+      const { stdout, stderr } = await execAsync(command, {
         cwd: process.cwd(),
-        timeout: 60000 // 60 second timeout
+        timeout: 120000 // 2 minute timeout
       });
 
-      const vitestResults = JSON.parse(stdout);
-      const currentTestRun = new Date();
-
-      console.log(`✅ Vitest completed: ${vitestResults.numTotalTests} total tests, ${vitestResults.numPassedTests} passed`);
-
-      const parsedResults = parseVitestToPhases(vitestResults, currentTestRun);
-
-      // Store results and timestamp
-      lastResults = parsedResults;
-      lastRunTime = Date.now();
-
-      // Log phase completion status - SINGLE SOURCE OF TRUTH
-      Object.entries(parsedResults.phases).forEach(([key, phase]) => {
-        if (phase.totalTests > 0) {
-          console.log(`📊 ${key}: ${phase.status} (${phase.passedTests}/${phase.totalTests})`);
-        } else {
-          console.log(`📊 ${key}: ${phase.status} (0/0) - placeholder for future development`);
-        }
-      });
-
-      return parsedResults;
-
-    } catch (execError: any) {
-      // Vitest returns non-zero exit code when tests fail, but stdout still contains JSON results
-      if (execError.stdout) {
-        try {
-          const vitestResults = JSON.parse(execError.stdout);
-          const currentTestRun = new Date();
-
-          console.log(`✅ Vitest completed with failures: ${vitestResults.numTotalTests} total tests, ${vitestResults.numPassedTests} passed, ${vitestResults.numFailedTests} failed`);
-
-          const parsedResults = parseVitestToPhases(vitestResults, currentTestRun);
-
-          // Store results and timestamp
-          lastResults = parsedResults;
-          lastRunTime = Date.now();
-
-          // Log phase completion status - SINGLE SOURCE OF TRUTH
-          Object.entries(parsedResults.phases).forEach(([key, phase]) => {
-            if (phase.totalTests > 0) {
-              console.log(`📊 ${key}: ${phase.status} (${phase.passedTests}/${phase.totalTests})`);
-            } else {
-              console.log(`📊 ${key}: ${phase.status} (0/0) - placeholder for future development`);
-            }
-          });
-
-          return parsedResults;
-        } catch (parseError) {
-          console.error('❌ Failed to parse Jest results from stdout:', parseError);
-        }
+      if (stderr) {
+        console.log('⚠️  Stderr output:', stderr);
       }
 
-      console.error('❌ Jest execution failed:', execError.message);
-      throw execError;
+      vitestResults = JSON.parse(stdout);
+
+    } catch (execError: any) {
+      // Vitest returns non-zero exit code when tests fail, but we still want the JSON
+      if (execError.stdout) {
+        console.log('📊 Tests completed with failures, parsing results...');
+        vitestResults = JSON.parse(execError.stdout);
+      } else {
+        throw new Error(`Test execution failed: ${execError.message}`);
+      }
     }
 
-  } catch (error: any) {
-    console.error('❌ Test execution failed:', error.message);
+    const duration = Date.now() - startTime;
+    console.log(`✅ Tests completed in ${duration}ms`);
+    console.log(`📊 Raw results: ${vitestResults.numTotalTests} total, ${vitestResults.numPassedTests} passed, ${vitestResults.numFailedTests} failed`);
 
-    // Return empty results if Jest fails completely
-    return createEmptyResults(error.message);
-  } finally {
-    isRunningTests = false;
-  }
-}
+    // Parse results
+    const parsedResults = parseTestResults(vitestResults);
 
-// API Endpoints - NO CACHING, ALWAYS FRESH
-app.get('/api/test-status', async (req, res) => {
-  try {
-    console.log('📡 API: Received request for test status');
-    console.log('📡 API: Running fresh tests (no caching)...');
+    console.log('📤 Sending results to client');
+    console.log(`📊 Final: ${parsedResults.totalTests} total, ${parsedResults.passedTests} passed, ${parsedResults.failedTests} failed`);
+    console.log(`📊 Phases: ${Object.keys(parsedResults.phases).length} phases found`);
 
-    const testResults = await runJestTests();
-    console.log('📡 API: Test results obtained, sending response');
-    res.json(testResults);
+    res.json(parsedResults);
 
   } catch (error: any) {
-    console.error('❌ API Error:', error);
+    console.error('❌ ERROR:', error.message);
+    console.error('❌ Stack:', error.stack);
+
     res.status(500).json({
-      error: 'Failed to get test status',
+      error: 'Test execution failed',
       message: error.message,
       timestamp: new Date().toISOString()
     });
   }
 });
 
-// Remove /fresh endpoint since all requests are now fresh
-// app.get('/api/test-status/fresh') - REMOVED, all requests are fresh now
-
+/**
+ * Health check endpoint
+ */
 app.get('/api/health', (req, res) => {
+  console.log('💚 Health check requested');
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    caching: 'disabled - always fresh data'
+    message: 'Simple API server is running'
   });
+});
+
+/**
+ * Get test manifest
+ */
+app.get('/api/manifest', (req, res) => {
+  try {
+    const testFiles = getAllTestFiles();
+    res.json({
+      testFiles,
+      totalFiles: testFiles.length
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      error: 'Failed to load manifest',
+      message: error.message
+    });
+  }
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Test API Server running on http://localhost:${PORT}`);
-  console.log(`📊 Test status endpoint: http://localhost:${PORT}/api/test-status`);
-
-  // No initial test scan - tests run on demand only
-  console.log('🚀 API ready - tests will run on demand (no caching)');
+  console.log('\n🚀 === TDD TEST API SERVER STARTED ===');
+  console.log(`📡 Server running on http://localhost:${PORT}`);
+  console.log(`🔗 Test endpoint: http://localhost:${PORT}/api/test-status`);
+  console.log(`💚 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`📋 Manifest: http://localhost:${PORT}/api/manifest`);
+  console.log('🎯 NO CACHING - Every request runs fresh tests');
+  console.log('=======================================\n');
 });
-
-// File watching removed - no caching means no need to invalidate cache
-console.log('📡 API server ready - no file watching needed (no caching)');

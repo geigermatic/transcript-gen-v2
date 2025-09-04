@@ -7,7 +7,6 @@
     "dev": "bash scripts/start-dev.sh",
     "dev:full": "concurrently \"npm run dev:api\" \"npm run dev:vite-only\"",
     "dev:api": "tsx server/test-api.ts",
-    "dev:simple-api": "tsx server/simple-api.ts",
     "dev:vite-only": "vite",
     "setup": "bash scripts/setup-client.sh",
     "build": "tsc -b && vite build",

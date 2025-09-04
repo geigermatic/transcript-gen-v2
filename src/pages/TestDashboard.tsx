@@ -26,7 +26,7 @@ interface DashboardData {
   phases: Record<string, PhaseResult>;
 }
 
-export default function SimpleDashboard() {
+export default function TestDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export default function SimpleDashboard() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Simple Test Dashboard
+            TDD Test Dashboard
           </h1>
 
           <div className="flex items-center gap-4">
@@ -262,8 +262,8 @@ export default function SimpleDashboard() {
                     </div>
                     <div>
                       <div className={`text-2xl font-bold ${selectedPhase.phase.status === 'complete' ? 'text-green-600' :
-                          selectedPhase.phase.status === 'in-progress' ? 'text-yellow-600' :
-                            selectedPhase.phase.status === 'failed' ? 'text-red-600' : 'text-gray-600'
+                        selectedPhase.phase.status === 'in-progress' ? 'text-yellow-600' :
+                          selectedPhase.phase.status === 'failed' ? 'text-red-600' : 'text-gray-600'
                         }`}>
                         {selectedPhase.phase.status}
                       </div>
@@ -281,8 +281,8 @@ export default function SimpleDashboard() {
                         <div
                           key={index}
                           className={`p-4 rounded-lg border-l-4 ${test.status === 'passed'
-                              ? 'bg-green-50 border-green-500'
-                              : 'bg-red-50 border-red-500'
+                            ? 'bg-green-50 border-green-500'
+                            : 'bg-red-50 border-red-500'
                             }`}
                         >
                           <div className="flex justify-between items-start">
