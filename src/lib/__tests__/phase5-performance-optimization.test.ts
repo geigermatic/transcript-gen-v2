@@ -1546,27 +1546,376 @@ line breaks in unexpected places.
   describe('US-017: Resource Optimization', () => {
     it('should optimize memory usage for large document collections', async () => {
       // TDD: Test memory optimization
-      expect(true).toBe(false); // Will fail until implemented
+      const { ResourceOptimizer } = await import('../resourceOptimizer');
+
+      const optimizer = new ResourceOptimizer({
+        memoryThreshold: 0.8, // 80% memory usage threshold
+        maxDocuments: 1000,
+        enableGarbageCollection: true,
+        enableMemoryPressureDetection: true
+      });
+
+      // Simulate large document collection
+      const largeDocuments = Array.from({ length: 100 }, (_, i) => ({
+        id: `doc-${i}`,
+        content: 'A'.repeat(10000), // 10KB per document
+        embeddings: Array.from({ length: 384 }, () => Math.random()),
+        metadata: {
+          title: `Document ${i}`,
+          size: 10000,
+          created: Date.now()
+        }
+      }));
+
+      // Track memory usage before optimization
+      const initialMemoryStats = await optimizer.getMemoryStats();
+      expect(initialMemoryStats).toHaveProperty('used');
+      expect(initialMemoryStats).toHaveProperty('total');
+      expect(initialMemoryStats).toHaveProperty('percentage');
+
+      // Add documents to the optimizer
+      for (const doc of largeDocuments) {
+        await optimizer.addDocument(doc);
+      }
+
+      // Check memory usage after adding documents
+      const afterAddingStats = await optimizer.getMemoryStats();
+      expect(afterAddingStats.used).toBeGreaterThan(initialMemoryStats.used);
+
+      // Test memory optimization
+      const optimizationResult = await optimizer.optimizeMemory();
+      expect(optimizationResult).toHaveProperty('documentsProcessed');
+      expect(optimizationResult).toHaveProperty('memoryFreed');
+      expect(optimizationResult).toHaveProperty('optimizationTime');
+
+      // Verify memory was optimized
+      const afterOptimizationStats = await optimizer.getMemoryStats();
+      expect(afterOptimizationStats.used).toBeLessThanOrEqual(afterAddingStats.used);
+
+      // Test memory pressure detection
+      const memoryPressure = await optimizer.detectMemoryPressure();
+      expect(memoryPressure).toHaveProperty('isUnderPressure');
+      expect(memoryPressure).toHaveProperty('currentUsage');
+      expect(memoryPressure).toHaveProperty('threshold');
+      expect(memoryPressure).toHaveProperty('recommendation');
+
+      // Test document retrieval after optimization
+      const retrievedDoc = await optimizer.getDocument('doc-0');
+      expect(retrievedDoc).toBeTruthy();
+      expect(retrievedDoc?.id).toBe('doc-0');
+      expect(retrievedDoc?.content).toBeTruthy();
+
+      // Test bulk operations
+      const bulkDocs = await optimizer.getDocuments(['doc-1', 'doc-2', 'doc-3']);
+      expect(bulkDocs).toHaveLength(3);
+      bulkDocs.forEach((doc, index) => {
+        expect(doc.id).toBe(`doc-${index + 1}`);
+      });
+
+      // Test memory cleanup
+      const cleanupResult = await optimizer.cleanup();
+      expect(cleanupResult).toHaveProperty('documentsRemoved');
+      expect(cleanupResult).toHaveProperty('memoryFreed');
+
+      // Verify cleanup worked
+      const finalStats = await optimizer.getMemoryStats();
+      expect(finalStats.used).toBeLessThan(afterAddingStats.used);
+
+      // Cleanup
+      await optimizer.destroy();
     });
 
     it('should implement lazy loading for embeddings', async () => {
       // TDD: Test lazy loading
-      expect(true).toBe(false); // Will fail until implemented
+      const { ResourceOptimizer } = await import('../resourceOptimizer');
+
+      const optimizer = new ResourceOptimizer({
+        memoryThreshold: 0.7,
+        maxDocuments: 50,
+        enableGarbageCollection: true,
+        enableMemoryPressureDetection: true,
+        lazyLoadingEnabled: true
+      });
+
+      // Create documents with large embeddings
+      const documentsWithEmbeddings = Array.from({ length: 20 }, (_, i) => ({
+        id: `embed-doc-${i}`,
+        content: `Document ${i} content`,
+        embeddings: Array.from({ length: 1536 }, () => Math.random()), // Large embeddings
+        metadata: {
+          title: `Embedding Document ${i}`,
+          size: 1536 * 8, // 8 bytes per float
+          created: Date.now()
+        }
+      }));
+
+      // Add documents and track memory usage
+      const memoryBefore = await optimizer.getMemoryStats();
+
+      for (const doc of documentsWithEmbeddings) {
+        await optimizer.addDocument(doc);
+      }
+
+      const memoryAfterAdding = await optimizer.getMemoryStats();
+      expect(memoryAfterAdding.used).toBeGreaterThan(memoryBefore.used);
+      expect(memoryAfterAdding.documents).toBe(20);
+
+      // Test lazy loading by retrieving a document
+      const retrievedDoc = await optimizer.getDocument('embed-doc-0');
+      expect(retrievedDoc).toBeTruthy();
+      expect(retrievedDoc?.id).toBe('embed-doc-0');
+
+      // Test that embeddings can be lazy loaded
+      const lazyLoadResult = await optimizer.lazyLoadEmbeddings('embed-doc-0');
+      expect(lazyLoadResult).toHaveProperty('loaded');
+      expect(lazyLoadResult).toHaveProperty('size');
+      expect(lazyLoadResult.loaded).toBe(true);
+
+      // Test batch lazy loading
+      const batchIds = ['embed-doc-1', 'embed-doc-2', 'embed-doc-3'];
+      const batchLoadResult = await optimizer.batchLazyLoadEmbeddings(batchIds);
+      expect(batchLoadResult).toHaveProperty('totalLoaded');
+      expect(batchLoadResult).toHaveProperty('totalSize');
+      expect(batchLoadResult).toHaveProperty('loadTime');
+      expect(batchLoadResult.totalLoaded).toBe(3);
+
+      // Test embedding unloading to free memory
+      const unloadResult = await optimizer.unloadEmbeddings(['embed-doc-4', 'embed-doc-5']);
+      expect(unloadResult).toHaveProperty('unloaded');
+      expect(unloadResult).toHaveProperty('memoryFreed');
+      expect(unloadResult.unloaded).toBe(2);
+      expect(unloadResult.memoryFreed).toBeGreaterThan(0);
+
+      // Verify memory was freed
+      const memoryAfterUnload = await optimizer.getMemoryStats();
+      expect(memoryAfterUnload.used).toBeLessThan(memoryAfterAdding.used);
+
+      // Test automatic lazy loading based on memory pressure
+      const pressureResult = await optimizer.detectMemoryPressure();
+      if (pressureResult.isUnderPressure) {
+        const autoOptimizeResult = await optimizer.optimizeMemory();
+        expect(autoOptimizeResult.memoryFreed).toBeGreaterThan(0);
+      }
+
+      // Test embedding cache management
+      const cacheStats = await optimizer.getEmbeddingCacheStats();
+      expect(cacheStats).toHaveProperty('totalEmbeddings');
+      expect(cacheStats).toHaveProperty('loadedEmbeddings');
+      expect(cacheStats).toHaveProperty('cacheHitRate');
+      expect(cacheStats).toHaveProperty('memoryUsage');
+
+      // Test that documents without embeddings are handled correctly
+      const docWithoutEmbeddings = {
+        id: 'no-embed-doc',
+        content: 'Document without embeddings',
+        metadata: {
+          title: 'No Embeddings Document',
+          size: 100,
+          created: Date.now()
+        }
+      };
+
+      await optimizer.addDocument(docWithoutEmbeddings);
+      const noEmbedDoc = await optimizer.getDocument('no-embed-doc');
+      expect(noEmbedDoc).toBeTruthy();
+      expect(noEmbedDoc?.embeddings).toBeUndefined();
+
+      // Test lazy loading for non-existent document
+      const nonExistentLoad = await optimizer.lazyLoadEmbeddings('non-existent');
+      expect(nonExistentLoad.loaded).toBe(false);
+
+      // Cleanup
+      await optimizer.destroy();
     });
 
     it('should provide memory pressure detection and response', async () => {
-      // TDD: Test memory pressure
-      expect(true).toBe(false); // Will fail until implemented
+      // TDD: Test memory pressure detection
+      const { ResourceOptimizer } = await import('../resourceOptimizer');
+
+      const optimizer = new ResourceOptimizer({
+        memoryThreshold: 0.6, // Lower threshold to trigger pressure detection
+        maxDocuments: 10,     // Lower limit to trigger pressure
+        enableGarbageCollection: true,
+        enableMemoryPressureDetection: true,
+        lazyLoadingEnabled: true
+      });
+
+      // Test initial state (no pressure)
+      let pressureResult = await optimizer.detectMemoryPressure();
+      expect(pressureResult.isUnderPressure).toBe(false);
+      expect(pressureResult.currentUsage).toBeLessThan(pressureResult.threshold);
+      expect(pressureResult.recommendation).toContain('normal');
+
+      // Add documents to create memory pressure
+      const heavyDocuments = Array.from({ length: 15 }, (_, i) => ({
+        id: `heavy-doc-${i}`,
+        content: 'X'.repeat(50000), // Large content
+        embeddings: Array.from({ length: 2048 }, () => Math.random()),
+        metadata: {
+          title: `Heavy Document ${i}`,
+          size: 50000 + (2048 * 8),
+          created: Date.now()
+        }
+      }));
+
+      // Add documents gradually and monitor pressure
+      for (let i = 0; i < heavyDocuments.length; i++) {
+        await optimizer.addDocument(heavyDocuments[i]);
+
+        // Check pressure after adding each document
+        pressureResult = await optimizer.detectMemoryPressure();
+
+        if (i >= 12) { // Should trigger pressure after significantly exceeding limits
+          expect(pressureResult.isUnderPressure).toBe(true);
+          expect(pressureResult.currentUsage).toBeGreaterThan(pressureResult.threshold);
+          expect(pressureResult.recommendation).not.toContain('normal');
+        }
+      }
+
+      // Test pressure response mechanisms
+      const responseResult = await optimizer.respondToMemoryPressure();
+      expect(responseResult).toHaveProperty('actionsPerformed');
+      expect(responseResult).toHaveProperty('memoryFreed');
+      expect(responseResult).toHaveProperty('responseTime');
+      expect(responseResult.actionsPerformed).toBeGreaterThan(0);
+      expect(responseResult.memoryFreed).toBeGreaterThan(0);
+
+      // Verify pressure was reduced
+      const afterResponsePressure = await optimizer.detectMemoryPressure();
+      expect(afterResponsePressure.currentUsage).toBeLessThan(pressureResult.currentUsage);
+
+      // Test automatic pressure monitoring
+      const monitoringResult = await optimizer.startMemoryPressureMonitoring(100); // Check every 100ms
+      expect(monitoringResult).toHaveProperty('monitoringActive');
+      expect(monitoringResult.monitoringActive).toBe(true);
+
+      // Add more documents to trigger automatic response
+      const triggerDocs = Array.from({ length: 5 }, (_, i) => ({
+        id: `trigger-doc-${i}`,
+        content: 'Y'.repeat(30000),
+        embeddings: Array.from({ length: 1024 }, () => Math.random()),
+        metadata: {
+          title: `Trigger Document ${i}`,
+          size: 30000 + (1024 * 8),
+          created: Date.now()
+        }
+      }));
+
+      for (const doc of triggerDocs) {
+        await optimizer.addDocument(doc);
+      }
+
+      // Wait for automatic monitoring to respond
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Check that automatic response occurred
+      const finalPressure = await optimizer.detectMemoryPressure();
+      const finalStats = await optimizer.getMemoryStats();
+
+      // Should have managed memory automatically
+      expect(finalStats.documents).toBeLessThanOrEqual(optimizer['config'].maxDocuments + 2); // Allow some tolerance
+
+      // Test pressure level categorization
+      const pressureLevels = await optimizer.getMemoryPressureLevels();
+      expect(pressureLevels).toHaveProperty('low');
+      expect(pressureLevels).toHaveProperty('moderate');
+      expect(pressureLevels).toHaveProperty('high');
+      expect(pressureLevels).toHaveProperty('critical');
+      expect(pressureLevels.low).toBeLessThan(pressureLevels.moderate);
+      expect(pressureLevels.moderate).toBeLessThan(pressureLevels.high);
+      expect(pressureLevels.high).toBeLessThan(pressureLevels.critical);
+
+      // Stop monitoring
+      await optimizer.stopMemoryPressureMonitoring();
+
+      // Cleanup
+      await optimizer.destroy();
     });
 
     it('should optimize CPU usage during intensive operations', async () => {
       // TDD: Test CPU optimization
-      expect(true).toBe(false); // Will fail until implemented
+      const { ResourceOptimizer } = await import('../resourceOptimizer');
+
+      const optimizer = new ResourceOptimizer({
+        memoryThreshold: 0.8,
+        maxDocuments: 100,
+        enableGarbageCollection: true,
+        enableMemoryPressureDetection: true
+      });
+
+      // Test CPU-intensive operation optimization
+      const cpuIntensiveData = Array.from({ length: 50 }, (_, i) => ({
+        id: `cpu-doc-${i}`,
+        content: 'A'.repeat(1000),
+        embeddings: Array.from({ length: 512 }, () => Math.random()),
+        metadata: { title: `CPU Doc ${i}`, size: 1000, created: Date.now() }
+      }));
+
+      // Test batched processing for CPU optimization
+      const batchResult = await optimizer.processBatch(cpuIntensiveData, {
+        batchSize: 10,
+        yieldInterval: 5,
+        enableCpuOptimization: true
+      });
+
+      expect(batchResult).toHaveProperty('processed');
+      expect(batchResult).toHaveProperty('processingTime');
+      expect(batchResult).toHaveProperty('cpuUsage');
+      expect(batchResult.processed).toBe(50);
+      expect(batchResult.cpuUsage).toBeLessThan(0.8); // Should keep CPU usage reasonable
+
+      // Test CPU monitoring
+      const cpuStats = await optimizer.getCpuStats();
+      expect(cpuStats).toHaveProperty('currentUsage');
+      expect(cpuStats).toHaveProperty('averageUsage');
+      expect(cpuStats).toHaveProperty('peakUsage');
+
+      await optimizer.destroy();
     });
 
     it('should implement resource pooling for expensive operations', async () => {
       // TDD: Test resource pooling
-      expect(true).toBe(false); // Will fail until implemented
+      const { ResourceOptimizer } = await import('../resourceOptimizer');
+
+      const optimizer = new ResourceOptimizer({
+        memoryThreshold: 0.8,
+        maxDocuments: 100,
+        enableGarbageCollection: true,
+        enableMemoryPressureDetection: true,
+        resourcePoolSize: 5
+      });
+
+      // Test resource pool creation and management
+      const poolStats = await optimizer.getResourcePoolStats();
+      expect(poolStats).toHaveProperty('totalPools');
+      expect(poolStats).toHaveProperty('activeResources');
+      expect(poolStats).toHaveProperty('availableResources');
+      expect(poolStats.totalPools).toBeGreaterThan(0);
+
+      // Test resource acquisition and release
+      const resource = await optimizer.acquireResource('embedding-processor');
+      expect(resource).toHaveProperty('id');
+      expect(resource).toHaveProperty('type');
+      expect(resource.type).toBe('embedding-processor');
+
+      // Test resource usage
+      const usageResult = await optimizer.useResource(resource.id, async (res) => {
+        // Simulate expensive operation
+        await new Promise(resolve => setTimeout(resolve, 10));
+        return { processed: true, resourceId: res.id };
+      });
+
+      expect(usageResult.processed).toBe(true);
+      expect(usageResult.resourceId).toBe(resource.id);
+
+      // Release resource
+      await optimizer.releaseResource(resource.id);
+
+      // Verify resource was returned to pool
+      const finalStats = await optimizer.getResourcePoolStats();
+      expect(finalStats.availableResources).toBeGreaterThan(0);
+
+      await optimizer.destroy();
     });
   });
 
