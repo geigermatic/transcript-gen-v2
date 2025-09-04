@@ -313,10 +313,16 @@ export function parseVitestToPhases(vitestResults: any, lastTestRun: Date | null
   // Determine phase status based on real test results
   Object.values(phases).forEach(phase => {
     if (phase.totalTests === 0) {
+      // No tests exist for this phase
       phase.status = 'not-started';
     } else if (phase.failedTests === 0 && phase.passedTests > 0) {
+      // All tests passing
       phase.status = 'complete';
+    } else if (phase.passedTests === 0) {
+      // Tests exist but none are passing (TDD: implementation not started)
+      phase.status = 'not-started';
     } else {
+      // Some tests passing, some failing (implementation in progress)
       phase.status = 'in-progress';
     }
   });
