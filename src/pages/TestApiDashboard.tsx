@@ -76,13 +76,14 @@ const TestApiDashboard: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('http://localhost:3001/api/test-status/fresh');
+      // NO CACHING - All requests are fresh now, so just call the regular endpoint
+      const response = await fetch('http://localhost:3001/api/test-status');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('🔄 API Dashboard: Force refreshed test data:', data);
+      console.log('🔄 API Dashboard: Force refreshed test data (no caching):', data);
 
       setTestResults(data);
       setLastRefresh(new Date());

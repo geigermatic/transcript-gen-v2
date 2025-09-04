@@ -1,3 +1,5 @@
+// @phase: 3
+// @phase-name: Vector Database Integration
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { EmbeddingEngine } from '../embeddingEngine';
 import { ChatEngine } from '../chatEngine';

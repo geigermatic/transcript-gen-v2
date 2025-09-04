@@ -1,3 +1,5 @@
+// @phase: 5
+// @phase-name: Production Integration
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock localStorage for Node.js test environment

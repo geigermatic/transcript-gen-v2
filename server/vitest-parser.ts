@@ -175,11 +175,11 @@ function generateBusinessValueFromTestName(testName: string): string {
 }
 
 /**
- * Parse Jest JSON output into our phase-based format
- * This function contains ZERO hardcoded values - all data comes from real Jest execution
+ * Parse Vitest JSON output into our phase-based format
+ * This function contains ZERO hardcoded values - all data comes from real Vitest execution
  */
-export function parseJestToPhases(jestResults: any, lastTestRun: Date | null = null): ParsedTestResults {
-  console.log('📊 Parsing Jest results into phases...');
+export function parseVitestToPhases(vitestResults: any, lastTestRun: Date | null = null): ParsedTestResults {
+  console.log('📊 Parsing Vitest results into phases...');
 
   // Initialize phases with zero values - will be populated from real test data
   const phases: Record<string, PhaseData> = {
@@ -233,15 +233,26 @@ export function parseJestToPhases(jestResults: any, lastTestRun: Date | null = n
     }
   };
 
-  // Process each test suite from Jest results - REAL DATA ONLY
-  if (jestResults.testResults && Array.isArray(jestResults.testResults)) {
-    jestResults.testResults.forEach((testFile: any) => {
+  // Process each test suite from Vitest results - REAL DATA ONLY
+  if (vitestResults.testResults && Array.isArray(vitestResults.testResults)) {
+    console.log(`🔥 TRACE: Processing ${vitestResults.testResults.length} test files`);
+    vitestResults.testResults.forEach((testFile: any, index: number) => {
       const filePath = testFile.name || '';
+      console.log(`🔥 TRACE: [${index}] Processing file: "${filePath}"`);
       const phase = determinePhaseFromPath(filePath);
       const phaseKey = `phase${phase}`;
-      console.log(`🔍 DEBUG: Generated phaseKey '${phaseKey}' for ${filePath}`);
-      console.log(`🔍 DEBUG: Available phases: ${Object.keys(phases).join(', ')}`);
-      console.log(`🔍 DEBUG: Phase exists? ${!!phases[phaseKey]}`);
+      console.log(`🔥 TRACE: [${index}] determinePhaseFromPath("${filePath}") returned ${phase}`);
+      console.log(`🔥 TRACE: [${index}] Generated phaseKey '${phaseKey}' for ${filePath}`);
+      console.log(`🔥 TRACE: [${index}] Available phases: ${Object.keys(phases).join(', ')}`);
+      console.log(`🔥 TRACE: [${index}] Phase exists? ${!!phases[phaseKey]}`);
+      console.log(`🔥 TRACE: [${index}] About to add ${testFile.assertionResults?.length || 0} tests to ${phaseKey}`);
+
+      // SPECIAL TRACE FOR PHASE5-PRODUCTION-INTEGRATION
+      if (filePath.includes('phase5-production-integration')) {
+        console.log(`🚨🚨🚨 FOUND PHASE5-PRODUCTION-INTEGRATION FILE: ${filePath}`);
+        console.log(`🚨🚨🚨 Phase assigned: ${phase} (should be 5)`);
+        console.log(`🚨🚨🚨 PhaseKey: ${phaseKey} (should be phase5)`);
+      }
 
       if (phases[phaseKey]) {
         // Extract real test counts from Jest results
@@ -317,15 +328,6 @@ export function parseJestToPhases(jestResults: any, lastTestRun: Date | null = n
 
   console.log(`✅ Parsed results: ${totalTests} total, ${passedTests} passed, ${failedTests} failed`);
 
-  // Log phase completion status (including empty phases for TDD)
-  Object.entries(phases).forEach(([key, phase]) => {
-    if (phase.totalTests > 0) {
-      console.log(`📊 ${key}: ${phase.status} (${phase.passedTests}/${phase.totalTests})`);
-    } else {
-      console.log(`📊 ${key}: ${phase.status} (0/0) - placeholder for future development`);
-    }
-  });
-
   return {
     totalTests,
     passedTests,
@@ -342,61 +344,68 @@ export function parseJestToPhases(jestResults: any, lastTestRun: Date | null = n
  */
 export function determinePhaseFromPath(filePath: string): number {
   const normalizedPath = filePath.toLowerCase();
-  console.log(`🔍 DEBUG: Determining phase for ${filePath}`);
-  console.log(`🔍 DEBUG: Normalized path: ${normalizedPath}`);
 
-  // Phase 2: Advanced Vector Features (vector search and HNSW index) - CHECK FIRST!
-  console.log(`🔍 DEBUG: Checking Phase 2 conditions...`);
-  console.log(`🔍 DEBUG: includes('vector-search'): ${normalizedPath.includes('vector-search')}`);
-  console.log(`🔍 DEBUG: includes('hnsw-index'): ${normalizedPath.includes('hnsw-index')}`);
-  if (normalizedPath.includes('vector-search') ||
-    normalizedPath.includes('hnsw-index') ||
-    normalizedPath.includes('advanced-vector') ||
-    normalizedPath.includes('phase2')) {
-    console.log(`🎯 DEBUG: ${filePath} matched Phase 2!`);
+  // DIRECT TEST: Let's test the specific file that's causing issues
+  if (filePath.includes('phase5-production-integration')) {
+    console.log(`🎯 DIRECT MATCH: ${filePath} → Phase 5 (Production Integration)`);
+    return 5;
+  }
+
+  console.log(`🔍 DEBUG: determinePhaseFromPath called with: "${filePath}"`);
+  console.log(`🔍 DEBUG: normalizedPath: "${normalizedPath}"`);
+
+  // TEST ALL CONDITIONS
+  console.log(`🔍 DEBUG: phase5-production-integration check: ${normalizedPath.includes('phase5-production-integration')}`);
+  console.log(`🔍 DEBUG: embedding-engine check: ${normalizedPath.includes('embedding-engine')}`);
+  console.log(`🔍 DEBUG: chat-engine check: ${normalizedPath.includes('chat-engine')}`);
+  console.log(`🔍 DEBUG: enhanced-chat check: ${normalizedPath.includes('enhanced-chat')}`);
+  console.log(`🔍 DEBUG: phase3-completion check: ${normalizedPath.includes('phase3-completion')}`);
+
+  // Phase 5: Production Integration
+  if (normalizedPath.includes('phase5-production-integration')) {
+    console.log(`🎯 ${filePath} → Phase 5 (Production Integration)`);
+    return 5;
+  }
+
+  // Phase 6: Advanced Features
+  if (normalizedPath.includes('phase6-advanced-features')) {
+    console.log(`🎯 ${filePath} → Phase 6 (Advanced Features)`);
+    return 6;
+  }
+
+  // Phase 4: Performance Optimization
+  if (normalizedPath.includes('phase5-performance-optimization')) {
+    console.log(`🎯 ${filePath} → Phase 4 (Performance Optimization)`);
+    return 4;
+  }
+
+  // Phase 2: Advanced Vector Features
+  if (normalizedPath.includes('vector-search') || normalizedPath.includes('hnsw-index')) {
+    console.log(`🎯 ${filePath} → Phase 2 (Advanced Vector Features)`);
     return 2;
   }
-
-  // Phase 1: Vector Database Foundation (basic vector database functionality)
-  if (normalizedPath.includes('vector-database') ||
-    normalizedPath.includes('vector-storage') ||
-    normalizedPath.includes('sqlite-vector')) {
-    console.log(`🎯 DEBUG: ${filePath} matched Phase 1!`);
-    return 1;
-  }
-
-
 
   // Phase 3: Vector Database Integration
   if (normalizedPath.includes('embedding-engine') ||
     normalizedPath.includes('chat-engine') ||
     normalizedPath.includes('enhanced-chat') ||
-    normalizedPath.includes('phase3') ||
-    normalizedPath.includes('integration')) {
+    normalizedPath.includes('phase3-completion')) {
+    console.log(`🎯 ${filePath} → Phase 3 (Vector Database Integration)`);
     return 3;
   }
 
-  // Phase 4: Performance Optimization
-  if (normalizedPath.includes('phase5-performance-optimization') ||
-    normalizedPath.includes('performance-optimization')) {
-    return 4;
+  // Phase 1: Vector Database Foundation
+  if (normalizedPath.includes('vector-database') || normalizedPath.includes('vector-storage')) {
+    console.log(`🎯 ${filePath} → Phase 1 (Vector Database Foundation)`);
+    return 1;
   }
 
-  // Phase 5: Production Integration
-  if (normalizedPath.includes('phase6-production-integration') ||
-    normalizedPath.includes('production-integration')) {
-    return 5;
-  }
-
-  // Phase 6: Advanced Features
-  if (normalizedPath.includes('phase7-advanced-features') ||
-    normalizedPath.includes('advanced-features')) {
-    return 6;
-  }
-
-  // Default to phase 1 for unrecognized paths
+  // Default to Phase 1
+  console.log(`⚠️ ${filePath} → Phase 1 (default)`);
   return 1;
 }
+
+
 
 /**
  * Create empty results structure for error cases

@@ -1,3 +1,5 @@
+// @phase: 2
+// @phase-name: Advanced Vector Features
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { VectorDatabase } from '../VectorDatabase';
 import type { DocumentEmbedding, VectorDatabaseConfig } from '../types';

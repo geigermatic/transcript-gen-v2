@@ -1,3 +1,5 @@
+// @phase: 4
+// @phase-name: Performance Optimization
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock localStorage for Node.js test environment

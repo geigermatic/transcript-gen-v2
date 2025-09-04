@@ -1,3 +1,5 @@
+// @phase: 6
+// @phase-name: Advanced Features
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock localStorage for Node.js test environment

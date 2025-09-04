@@ -1,3 +1,5 @@
+// @phase: 1
+// @phase-name: Vector Database Foundation
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { VectorDatabase } from '../VectorDatabase';
 import type { DocumentEmbedding, EmbeddingMetadata } from '../types';

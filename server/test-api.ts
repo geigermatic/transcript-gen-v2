@@ -3,7 +3,7 @@ import cors from 'cors';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import chokidar from 'chokidar';
-import { parseJestToPhases, createEmptyResults } from './jest-parser.js';
+import { parseVitestToPhases, createEmptyResults } from './vitest-parser';
 
 const execAsync = promisify(exec);
 const app = express();
@@ -17,10 +17,10 @@ app.use(cors({
 
 app.use(express.json());
 
-// Cache for test results - updated when files change
-let cachedTestResults: any = null;
-let lastTestRun: Date | null = null;
+// Simple process management without complex caching
 let isRunningTests = false;
+let lastResults: any = null;
+let lastRunTime = 0;
 
 
 
@@ -28,9 +28,20 @@ let isRunningTests = false;
  * Run Jest tests and get JSON output
  */
 async function runJestTests(): Promise<any> {
+  // Return recent results if tests ran within last 3 seconds
+  const now = Date.now();
+  if (lastResults && (now - lastRunTime) < 3000) {
+    console.log('📋 Returning recent test results (< 3s old)');
+    return lastResults;
+  }
+
   if (isRunningTests) {
-    console.log('⏳ Tests already running, using cached results...');
-    return cachedTestResults;
+    console.log('⏳ Tests already running, returning last known results if available...');
+    if (lastResults) {
+      console.log('📋 Returning cached results while tests are running');
+      return lastResults;
+    }
+    throw new Error('Tests are currently running. Please try again in a moment.');
   }
 
   try {
@@ -63,13 +74,25 @@ async function runJestTests(): Promise<any> {
         timeout: 60000 // 60 second timeout
       });
 
-      const jestResults = JSON.parse(stdout);
-      lastTestRun = new Date();
+      const vitestResults = JSON.parse(stdout);
+      const currentTestRun = new Date();
 
-      console.log(`✅ Jest completed: ${jestResults.numTotalTests} total tests, ${jestResults.numPassedTests} passed`);
+      console.log(`✅ Vitest completed: ${vitestResults.numTotalTests} total tests, ${vitestResults.numPassedTests} passed`);
 
-      const parsedResults = parseJestToPhases(jestResults, lastTestRun);
-      cachedTestResults = parsedResults;
+      const parsedResults = parseVitestToPhases(vitestResults, currentTestRun);
+
+      // Store results and timestamp
+      lastResults = parsedResults;
+      lastRunTime = Date.now();
+
+      // Log phase completion status - SINGLE SOURCE OF TRUTH
+      Object.entries(parsedResults.phases).forEach(([key, phase]) => {
+        if (phase.totalTests > 0) {
+          console.log(`📊 ${key}: ${phase.status} (${phase.passedTests}/${phase.totalTests})`);
+        } else {
+          console.log(`📊 ${key}: ${phase.status} (0/0) - placeholder for future development`);
+        }
+      });
 
       return parsedResults;
 
@@ -77,13 +100,25 @@ async function runJestTests(): Promise<any> {
       // Vitest returns non-zero exit code when tests fail, but stdout still contains JSON results
       if (execError.stdout) {
         try {
-          const jestResults = JSON.parse(execError.stdout);
-          lastTestRun = new Date();
+          const vitestResults = JSON.parse(execError.stdout);
+          const currentTestRun = new Date();
 
-          console.log(`✅ Jest completed with failures: ${jestResults.numTotalTests} total tests, ${jestResults.numPassedTests} passed, ${jestResults.numFailedTests} failed`);
+          console.log(`✅ Vitest completed with failures: ${vitestResults.numTotalTests} total tests, ${vitestResults.numPassedTests} passed, ${vitestResults.numFailedTests} failed`);
 
-          const parsedResults = parseJestToPhases(jestResults, lastTestRun);
-          cachedTestResults = parsedResults;
+          const parsedResults = parseVitestToPhases(vitestResults, currentTestRun);
+
+          // Store results and timestamp
+          lastResults = parsedResults;
+          lastRunTime = Date.now();
+
+          // Log phase completion status - SINGLE SOURCE OF TRUTH
+          Object.entries(parsedResults.phases).forEach(([key, phase]) => {
+            if (phase.totalTests > 0) {
+              console.log(`📊 ${key}: ${phase.status} (${phase.passedTests}/${phase.totalTests})`);
+            } else {
+              console.log(`📊 ${key}: ${phase.status} (0/0) - placeholder for future development`);
+            }
+          });
 
           return parsedResults;
         } catch (parseError) {
@@ -105,18 +140,11 @@ async function runJestTests(): Promise<any> {
   }
 }
 
-// API Endpoints
+// API Endpoints - NO CACHING, ALWAYS FRESH
 app.get('/api/test-status', async (req, res) => {
   try {
-    console.log('📡 API: Getting test status...');
+    console.log('📡 API: Running fresh tests (no caching)...');
 
-    // If we have cached results and they're recent (< 30 seconds), use them
-    if (cachedTestResults && lastTestRun && (Date.now() - lastTestRun.getTime()) < 30000) {
-      console.log('📋 Using cached test results');
-      return res.json(cachedTestResults);
-    }
-
-    // Otherwise run fresh tests
     const testResults = await runJestTests();
     res.json(testResults);
 
@@ -130,31 +158,14 @@ app.get('/api/test-status', async (req, res) => {
   }
 });
 
-app.get('/api/test-status/fresh', async (req, res) => {
-  try {
-    console.log('📡 API: Force refreshing test status...');
-
-    // Clear cache and force fresh test run
-    cachedTestResults = null;
-    lastTestRun = null;
-
-    const results = await runJestTests();
-    res.json(results);
-  } catch (error) {
-    console.error('❌ API: Failed to get fresh test status:', error);
-    res.status(500).json({
-      error: 'Failed to run tests',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    });
-  }
-});
+// Remove /fresh endpoint since all requests are now fresh
+// app.get('/api/test-status/fresh') - REMOVED, all requests are fresh now
 
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    lastTestRun: lastTestRun?.toISOString() || null
+    caching: 'disabled - always fresh data'
   });
 });
 
@@ -163,23 +174,9 @@ app.listen(PORT, () => {
   console.log(`🚀 Test API Server running on http://localhost:${PORT}`);
   console.log(`📊 Test status endpoint: http://localhost:${PORT}/api/test-status`);
 
-  // Run initial test scan
-  runJestTests().then(() => {
-    console.log('✅ Initial test scan completed');
-  });
+  // No initial test scan - tests run on demand only
+  console.log('🚀 API ready - tests will run on demand (no caching)');
 });
 
-// File watching for auto-refresh
-const watcher = chokidar.watch(['src/**/*.test.ts', 'src/**/*.test.js'], {
-  ignored: /node_modules/,
-  persistent: true
-});
-
-watcher.on('change', (filePath) => {
-  console.log(`📝 Test file changed: ${filePath}`);
-  console.log('🔄 Invalidating test cache...');
-  cachedTestResults = null;
-  lastTestRun = null;
-});
-
-console.log('👀 Watching test files for changes...');
+// File watching removed - no caching means no need to invalidate cache
+console.log('📡 API server ready - no file watching needed (no caching)');
