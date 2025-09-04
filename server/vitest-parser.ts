@@ -238,6 +238,14 @@ export function parseVitestToPhases(vitestResults: any, lastTestRun: Date | null
       passedTests: 0,
       failedTests: 0,
       suites: []
+    },
+    phase8: {
+      name: 'Phase 8: Enterprise Production Features',
+      status: 'not-started',
+      totalTests: 0,
+      passedTests: 0,
+      failedTests: 0,
+      suites: []
     }
   };
 
@@ -391,6 +399,12 @@ export function determinePhaseFromPath(filePath: string): number {
   if (normalizedPath.includes('phase7-advanced-performance')) {
     console.log(`🎯 ${filePath} → Phase 7 (Advanced Performance Features)`);
     return 7;
+  }
+
+  // Phase 8: Enterprise Production Features
+  if (normalizedPath.includes('phase8-enterprise-production')) {
+    console.log(`🎯 ${filePath} → Phase 8 (Enterprise Production Features)`);
+    return 8;
   }
 
   // Phase 4: Performance Optimization
