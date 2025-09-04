@@ -33,32 +33,352 @@ describe('Phase 5: Production Integration', () => {
   describe('API Integration Points', () => {
     it('should provide RESTful API endpoints for all vector operations', async () => {
       // TDD: Test REST API endpoints
-      expect(true).toBe(false); // Will fail until implemented
+      const { ProductionApiServer } = await import('../productionApiServer');
+
+      const apiServer = new ProductionApiServer({
+        port: 3002,
+        enableCors: true,
+        enableRateLimit: true,
+        apiVersion: 'v1'
+      });
+
+      // Test API server initialization
+      expect(apiServer).toBeDefined();
+      expect(apiServer.getApiVersion()).toBe('v1');
+      expect(apiServer.getPort()).toBe(3002);
+
+      // Test REST endpoint registration
+      const endpoints = await apiServer.getRegisteredEndpoints();
+      expect(endpoints).toHaveProperty('GET');
+      expect(endpoints).toHaveProperty('POST');
+      expect(endpoints).toHaveProperty('PUT');
+      expect(endpoints).toHaveProperty('DELETE');
+
+      // Test vector operation endpoints
+      expect(endpoints.GET).toContain('/api/v1/vectors');
+      expect(endpoints.GET).toContain('/api/v1/vectors/:id');
+      expect(endpoints.POST).toContain('/api/v1/vectors');
+      expect(endpoints.POST).toContain('/api/v1/vectors/search');
+      expect(endpoints.PUT).toContain('/api/v1/vectors/:id');
+      expect(endpoints.DELETE).toContain('/api/v1/vectors/:id');
+
+      // Test document operation endpoints
+      expect(endpoints.GET).toContain('/api/v1/documents');
+      expect(endpoints.GET).toContain('/api/v1/documents/:id');
+      expect(endpoints.POST).toContain('/api/v1/documents');
+      expect(endpoints.POST).toContain('/api/v1/documents/upload');
+      expect(endpoints.PUT).toContain('/api/v1/documents/:id');
+      expect(endpoints.DELETE).toContain('/api/v1/documents/:id');
+
+      // Test search operation endpoints
+      expect(endpoints.POST).toContain('/api/v1/search/semantic');
+      expect(endpoints.POST).toContain('/api/v1/search/similarity');
+      expect(endpoints.GET).toContain('/api/v1/search/suggestions');
+
+      // Test API middleware
+      const middleware = await apiServer.getMiddleware();
+      expect(middleware).toHaveProperty('cors');
+      expect(middleware).toHaveProperty('rateLimit');
+      expect(middleware).toHaveProperty('authentication');
+      expect(middleware).toHaveProperty('validation');
+      expect(middleware).toHaveProperty('errorHandler');
+
+      // Test API documentation endpoint
+      expect(endpoints.GET).toContain('/api/v1/docs');
+      expect(endpoints.GET).toContain('/api/v1/openapi.json');
+
+      // Test health check endpoints
+      expect(endpoints.GET).toContain('/api/v1/health');
+      expect(endpoints.GET).toContain('/api/v1/status');
+
+      // Test API response format
+      const responseFormat = await apiServer.getResponseFormat();
+      expect(responseFormat).toHaveProperty('success');
+      expect(responseFormat).toHaveProperty('data');
+      expect(responseFormat).toHaveProperty('error');
+      expect(responseFormat).toHaveProperty('metadata');
+
+      // Cleanup
+      await apiServer.destroy();
     });
 
     it('should implement GraphQL API for complex queries', async () => {
       // TDD: Test GraphQL API
-      expect(true).toBe(false); // Will fail until implemented
+      const { ProductionApiServer } = await import('../productionApiServer');
+
+      const apiServer = new ProductionApiServer({
+        port: 3003,
+        enableCors: true,
+        enableRateLimit: true,
+        apiVersion: 'v1'
+      });
+
+      // Test GraphQL endpoint registration
+      const graphqlEndpoint = await apiServer.getGraphQLEndpoint();
+      expect(graphqlEndpoint).toBe('/api/v1/graphql');
+
+      // Test GraphQL schema
+      const schema = await apiServer.getGraphQLSchema();
+      expect(schema).toHaveProperty('types');
+      expect(schema).toHaveProperty('queries');
+      expect(schema).toHaveProperty('mutations');
+      expect(schema).toHaveProperty('subscriptions');
+
+      // Test GraphQL types
+      expect(schema.types).toContain('Vector');
+      expect(schema.types).toContain('Document');
+      expect(schema.types).toContain('SearchResult');
+      expect(schema.types).toContain('User');
+
+      // Test GraphQL queries
+      expect(schema.queries).toContain('getVector');
+      expect(schema.queries).toContain('getDocument');
+      expect(schema.queries).toContain('searchDocuments');
+      expect(schema.queries).toContain('getVectors');
+      expect(schema.queries).toContain('getDocuments');
+
+      // Test GraphQL mutations
+      expect(schema.mutations).toContain('createVector');
+      expect(schema.mutations).toContain('updateVector');
+      expect(schema.mutations).toContain('deleteVector');
+      expect(schema.mutations).toContain('createDocument');
+      expect(schema.mutations).toContain('updateDocument');
+      expect(schema.mutations).toContain('deleteDocument');
+
+      // Test GraphQL subscriptions
+      expect(schema.subscriptions).toContain('vectorCreated');
+      expect(schema.subscriptions).toContain('documentUpdated');
+      expect(schema.subscriptions).toContain('searchCompleted');
+
+      // Test complex query execution
+      const complexQuery = `
+        query ComplexSearch($query: String!, $limit: Int) {
+          searchDocuments(query: $query, limit: $limit) {
+            results {
+              id
+              content
+              score
+              metadata {
+                title
+                type
+                created
+              }
+              vectors {
+                id
+                embedding
+              }
+            }
+            pagination {
+              total
+              page
+              hasNext
+            }
+          }
+        }
+      `;
+
+      const queryResult = await apiServer.executeGraphQLQuery(complexQuery, {
+        query: 'machine learning',
+        limit: 10
+      });
+
+      expect(queryResult).toHaveProperty('data');
+      expect(queryResult.data).toHaveProperty('searchDocuments');
+      expect(queryResult.data.searchDocuments).toHaveProperty('results');
+      expect(queryResult.data.searchDocuments).toHaveProperty('pagination');
+
+      // Test GraphQL introspection
+      const introspection = await apiServer.getGraphQLIntrospection();
+      expect(introspection).toHaveProperty('__schema');
+      expect(introspection.__schema).toHaveProperty('types');
+      expect(introspection.__schema).toHaveProperty('queryType');
+      expect(introspection.__schema).toHaveProperty('mutationType');
+
+      // Cleanup
+      await apiServer.destroy();
     });
 
     it('should provide WebSocket support for real-time operations', async () => {
       // TDD: Test WebSocket support
-      expect(true).toBe(false); // Will fail until implemented
+      const { ProductionApiServer } = await import('../productionApiServer');
+
+      const apiServer = new ProductionApiServer({
+        port: 3004,
+        enableCors: true,
+        enableRateLimit: true,
+        apiVersion: 'v1'
+      });
+
+      // Test WebSocket endpoint
+      const wsEndpoint = await apiServer.getWebSocketEndpoint();
+      expect(wsEndpoint).toBe('/api/v1/ws');
+
+      // Test WebSocket connection
+      const wsConnection = await apiServer.createWebSocketConnection();
+      expect(wsConnection).toHaveProperty('id');
+      expect(wsConnection).toHaveProperty('status');
+      expect(wsConnection.status).toBe('connected');
+
+      // Test real-time event subscriptions
+      const subscriptions = await apiServer.getWebSocketSubscriptions();
+      expect(subscriptions).toContain('document.created');
+      expect(subscriptions).toContain('document.updated');
+      expect(subscriptions).toContain('search.progress');
+      expect(subscriptions).toContain('vector.indexed');
+      expect(subscriptions).toContain('system.status');
+
+      // Test WebSocket message handling
+      const messageHandler = await apiServer.getWebSocketMessageHandler();
+      expect(messageHandler).toHaveProperty('onMessage');
+      expect(messageHandler).toHaveProperty('onConnect');
+      expect(messageHandler).toHaveProperty('onDisconnect');
+      expect(messageHandler).toHaveProperty('onError');
+
+      // Test real-time search progress
+      const searchProgress = await apiServer.subscribeToSearchProgress(wsConnection.id);
+      expect(searchProgress).toHaveProperty('subscriptionId');
+      expect(searchProgress).toHaveProperty('eventType');
+      expect(searchProgress.eventType).toBe('search.progress');
+
+      // Test real-time document updates
+      const documentUpdates = await apiServer.subscribeToDocumentUpdates(wsConnection.id);
+      expect(documentUpdates).toHaveProperty('subscriptionId');
+      expect(documentUpdates).toHaveProperty('eventType');
+      expect(documentUpdates.eventType).toBe('document.updated');
+
+      // Test WebSocket broadcasting
+      const broadcastResult = await apiServer.broadcastToWebSockets({
+        type: 'system.notification',
+        data: { message: 'System maintenance in 5 minutes' }
+      });
+      expect(broadcastResult).toHaveProperty('sent');
+      expect(broadcastResult).toHaveProperty('connections');
+      expect(broadcastResult.sent).toBeGreaterThan(0);
+
+      // Test WebSocket connection management
+      const connections = await apiServer.getActiveWebSocketConnections();
+      expect(connections).toBeInstanceOf(Array);
+      expect(connections.length).toBeGreaterThan(0);
+
+      // Test connection cleanup
+      await apiServer.closeWebSocketConnection(wsConnection.id);
+      const updatedConnections = await apiServer.getActiveWebSocketConnections();
+      expect(updatedConnections.length).toBe(connections.length - 1);
+
+      // Cleanup
+      await apiServer.destroy();
     });
 
     it('should implement API versioning and backward compatibility', async () => {
       // TDD: Test API versioning
-      expect(true).toBe(false); // Will fail until implemented
+      const { ProductionApiServer } = await import('../productionApiServer');
+
+      // Test multiple API versions
+      const v1Server = new ProductionApiServer({
+        port: 3005,
+        enableCors: true,
+        enableRateLimit: true,
+        apiVersion: 'v1'
+      });
+
+      const v2Server = new ProductionApiServer({
+        port: 3006,
+        enableCors: true,
+        enableRateLimit: true,
+        apiVersion: 'v2'
+      });
+
+      // Test version-specific endpoints
+      const v1Endpoints = await v1Server.getRegisteredEndpoints();
+      const v2Endpoints = await v2Server.getRegisteredEndpoints();
+
+      expect(v1Endpoints.GET).toContain('/api/v1/vectors');
+      expect(v2Endpoints.GET).toContain('/api/v2/vectors');
+
+      // Test backward compatibility
+      const compatibility = await v2Server.getBackwardCompatibility();
+      expect(compatibility).toHaveProperty('supportedVersions');
+      expect(compatibility.supportedVersions).toContain('v1');
+      expect(compatibility.supportedVersions).toContain('v2');
+
+      // Test version negotiation
+      const negotiation = await v2Server.negotiateApiVersion('v1');
+      expect(negotiation).toHaveProperty('version');
+      expect(negotiation).toHaveProperty('compatible');
+      expect(negotiation.compatible).toBe(true);
+
+      // Test deprecated endpoint handling
+      const deprecation = await v2Server.getDeprecatedEndpoints();
+      expect(deprecation).toHaveProperty('v1');
+      expect(deprecation.v1).toBeInstanceOf(Array);
+
+      // Cleanup
+      await v1Server.destroy();
+      await v2Server.destroy();
     });
 
     it('should provide comprehensive API documentation', async () => {
       // TDD: Test API documentation
-      expect(true).toBe(false); // Will fail until implemented
+      const { ProductionApiServer } = await import('../productionApiServer');
+
+      const apiServer = new ProductionApiServer({
+        port: 3007,
+        enableCors: true,
+        enableRateLimit: true,
+        apiVersion: 'v1'
+      });
+
+      // Test OpenAPI specification
+      const openApiSpec = await apiServer.getOpenApiSpecification();
+      expect(openApiSpec).toHaveProperty('openapi');
+      expect(openApiSpec).toHaveProperty('info');
+      expect(openApiSpec).toHaveProperty('paths');
+      expect(openApiSpec).toHaveProperty('components');
+
+      // Test documentation endpoints
+      const endpoints = await apiServer.getRegisteredEndpoints();
+      expect(endpoints.GET).toContain('/api/v1/docs');
+      expect(endpoints.GET).toContain('/api/v1/openapi.json');
+
+      // Test API examples
+      const examples = await apiServer.getApiExamples();
+      expect(examples).toHaveProperty('vectors');
+      expect(examples).toHaveProperty('documents');
+      expect(examples).toHaveProperty('search');
+
+      await apiServer.destroy();
     });
 
     it('should implement API rate limiting and throttling', async () => {
       // TDD: Test rate limiting
-      expect(true).toBe(false); // Will fail until implemented
+      const { ProductionApiServer } = await import('../productionApiServer');
+
+      const apiServer = new ProductionApiServer({
+        port: 3008,
+        enableCors: true,
+        enableRateLimit: true,
+        apiVersion: 'v1'
+      });
+
+      // Test rate limiting configuration
+      const rateLimitConfig = await apiServer.getRateLimitConfiguration();
+      expect(rateLimitConfig).toHaveProperty('windowMs');
+      expect(rateLimitConfig).toHaveProperty('maxRequests');
+      expect(rateLimitConfig).toHaveProperty('skipSuccessfulRequests');
+
+      // Test rate limit enforcement
+      const rateLimitResult = await apiServer.checkRateLimit('test-client-id');
+      expect(rateLimitResult).toHaveProperty('allowed');
+      expect(rateLimitResult).toHaveProperty('remaining');
+      expect(rateLimitResult).toHaveProperty('resetTime');
+
+      // Test throttling
+      const throttleConfig = await apiServer.getThrottleConfiguration();
+      expect(throttleConfig).toHaveProperty('enabled');
+      expect(throttleConfig).toHaveProperty('delayMs');
+      expect(throttleConfig).toHaveProperty('maxDelay');
+
+      await apiServer.destroy();
     });
   });
 
