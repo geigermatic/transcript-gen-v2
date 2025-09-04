@@ -245,58 +245,111 @@ const TestApiDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Development Phases */}
+        {/* Architecture Phases */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Development Phases</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Architecture Phases</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {Object.entries(testResults.phases).map(([phaseKey, phase]) => {
-              const phaseProgress = phase.totalTests > 0
-                ? (phase.passedTests / phase.totalTests) * 100
-                : 0;
+            {Object.entries(testResults.phases)
+              .filter(([phaseKey]) => !phaseKey.startsWith('ux'))
+              .map(([phaseKey, phase]) => {
+                const phaseProgress = phase.totalTests > 0
+                  ? (phase.passedTests / phase.totalTests) * 100
+                  : 0;
 
-              return (
-                <div
-                  key={phaseKey}
-                  className="bg-white border border-gray-200 rounded-lg p-6 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all duration-200"
-                  onClick={() => handlePhaseClick(phase)}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">{phase.name}</h3>
-                    {getStatusBadge(phase.status)}
+                return (
+                  <div
+                    key={phaseKey}
+                    className="bg-white border border-gray-200 rounded-lg p-6 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all duration-200"
+                    onClick={() => handlePhaseClick(phase)}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">{phase.name}</h3>
+                      {getStatusBadge(phase.status)}
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Total Tests:</span>
+                        <span className="font-medium">{phase.totalTests}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Passed:</span>
+                        <span className="font-medium text-green-600">{phase.passedTests}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Failed:</span>
+                        <span className="font-medium text-red-600">{phase.failedTests}</span>
+                      </div>
+
+                      <div className="mt-3 bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full ${getProgressColor(phase.status)}`}
+                          style={{ width: `${phaseProgress}%` }}
+                        />
+                      </div>
+
+                      <div className="text-xs text-gray-500 mt-2">
+                        {phase.suites.length} test suite{phase.suites.length !== 1 ? 's' : ''} • {Math.round(phaseProgress)}% complete
+                      </div>
+
+                      <div className="text-xs text-blue-600 mt-3 font-medium">
+                        👆 Click to view test details
+                      </div>
+                    </div>
                   </div>
+                );
+              })}
+          </div>
+        </div>
 
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Total Tests:</span>
-                      <span className="font-medium">{phase.totalTests}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Passed:</span>
-                      <span className="font-medium text-green-600">{phase.passedTests}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Failed:</span>
-                      <span className="font-medium text-red-600">{phase.failedTests}</span>
+        {/* UX Development Phases */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">UX Development Phases</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {Object.entries(testResults.phases)
+              .filter(([phaseKey]) => phaseKey.startsWith('ux'))
+              .map(([phaseKey, phase]) => {
+                const phaseProgress = phase.totalTests > 0
+                  ? (phase.passedTests / phase.totalTests) * 100
+                  : 0;
+
+                return (
+                  <div
+                    key={phaseKey}
+                    className="bg-white border border-gray-200 rounded-lg p-6 cursor-pointer hover:shadow-lg hover:border-purple-300 transition-all duration-200"
+                    onClick={() => handlePhaseClick(phase)}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">{phase.name}</h3>
+                      {getStatusBadge(phase.status)}
                     </div>
 
-                    <div className="mt-3 bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${getProgressColor(phase.status)}`}
-                        style={{ width: `${phaseProgress}%` }}
-                      />
-                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Progress</span>
+                        <span className="font-medium text-gray-900">
+                          {phase.passedTests}/{phase.totalTests} tests
+                        </span>
+                      </div>
 
-                    <div className="text-xs text-gray-500 mt-2">
-                      {phase.suites.length} test suite{phase.suites.length !== 1 ? 's' : ''} • {Math.round(phaseProgress)}% complete
-                    </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${phaseProgress}%` }}
+                        />
+                      </div>
 
-                    <div className="text-xs text-blue-600 mt-3 font-medium">
-                      👆 Click to view test details
+                      <div className="text-xs text-gray-500 mt-2">
+                        {phase.suites.length} test suite{phase.suites.length !== 1 ? 's' : ''} • {Math.round(phaseProgress)}% complete
+                      </div>
+
+                      <div className="text-xs text-purple-600 mt-3 font-medium">
+                        👆 Click to view test details
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
 

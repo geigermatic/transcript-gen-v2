@@ -156,39 +156,84 @@ Transform the summary view into a collaborative document editing interface where
 ## 📋 **Implementation Task List**
 
 ### **UX-Phase-1A: Layout Foundation**
-- [ ] **Task 1.1**: Design new 2/3 + 1/3 layout component structure
-- [ ] **Task 1.2**: Implement responsive grid system (desktop only)
-- [ ] **Task 1.3**: Migrate existing summary display to document view
-- [ ] **Task 1.4**: Integrate chat panel in right column
-- [ ] **Task 1.5**: Preserve all existing UI controls and metadata
+**🧪 TDD Acceptance Criteria:**
+- [ ] **AC-1A.1**: Create failing tests for 2/3 + 1/3 layout behavior BEFORE implementation
+- [ ] **AC-1A.2**: All UX-Phase-1A tests must pass (estimated 12 tests)
+- [ ] **AC-1A.3**: Update PRD with any approach changes during implementation
+- [ ] **AC-1A.4**: Test dashboard shows UX-Phase-1A completion status
+
+**📋 Implementation Tasks:**
+- [ ] **Task 1.1**: Write failing tests for 2/3 + 1/3 layout component structure
+- [ ] **Task 1.2**: Write failing tests for responsive grid system (desktop only)
+- [ ] **Task 1.3**: Write failing tests for existing summary display migration
+- [ ] **Task 1.4**: Write failing tests for chat panel integration
+- [ ] **Task 1.5**: Write failing tests for UI controls preservation
+- [ ] **Task 1.6**: Implement layout foundation to make tests pass
+- [ ] **Task 1.7**: Update PRD with implementation learnings
 
 ### **UX-Phase-1B: Document State Management**
-- [ ] **Task 2.1**: Implement document state management system
-- [ ] **Task 2.2**: Build undo/redo stack with granular tracking
-- [ ] **Task 2.3**: Create change detection and highlighting system
-- [ ] **Task 2.4**: Integrate with existing version management
-- [ ] **Task 2.5**: Add real-time content update pipeline
+**🧪 TDD Acceptance Criteria:**
+- [ ] **AC-1B.1**: Create failing tests for document state management BEFORE implementation
+- [ ] **AC-1B.2**: All UX-Phase-1B tests must pass (estimated 15 tests)
+- [ ] **AC-1B.3**: Update PRD with any approach changes during implementation
+- [ ] **AC-1B.4**: Test dashboard shows UX-Phase-1B completion status
+
+**📋 Implementation Tasks:**
+- [ ] **Task 2.1**: Write failing tests for document state management system
+- [ ] **Task 2.2**: Write failing tests for undo/redo stack with granular tracking
+- [ ] **Task 2.3**: Write failing tests for change detection and highlighting system
+- [ ] **Task 2.4**: Write failing tests for existing version management integration
+- [ ] **Task 2.5**: Write failing tests for real-time content update pipeline
+- [ ] **Task 2.6**: Implement document state management to make tests pass
+- [ ] **Task 2.7**: Update PRD with implementation learnings
 
 ### **UX-Phase-1C: Chat-Document Integration**
-- [ ] **Task 3.1**: Enhance chat engine for document editing commands
-- [ ] **Task 3.2**: Implement chat → document update mechanism
-- [ ] **Task 3.3**: Add edit validation and error handling
-- [ ] **Task 3.4**: Create progress indicators for complex edits
-- [ ] **Task 3.5**: Build change confirmation and feedback system
+**🧪 TDD Acceptance Criteria:**
+- [ ] **AC-1C.1**: Create failing tests for chat-document integration BEFORE implementation
+- [ ] **AC-1C.2**: All UX-Phase-1C tests must pass (estimated 18 tests)
+- [ ] **AC-1C.3**: Update PRD with any approach changes during implementation
+- [ ] **AC-1C.4**: Test dashboard shows UX-Phase-1C completion status
+
+**📋 Implementation Tasks:**
+- [ ] **Task 3.1**: Write failing tests for enhanced chat engine document editing commands
+- [ ] **Task 3.2**: Write failing tests for chat → document update mechanism
+- [ ] **Task 3.3**: Write failing tests for edit validation and error handling
+- [ ] **Task 3.4**: Write failing tests for progress indicators for complex edits
+- [ ] **Task 3.5**: Write failing tests for change confirmation and feedback system
+- [ ] **Task 3.6**: Implement chat-document integration to make tests pass
+- [ ] **Task 3.7**: Update PRD with implementation learnings
 
 ### **UX-Phase-1D: Change Visualization**
-- [ ] **Task 4.1**: Design change highlighting system
-- [ ] **Task 4.2**: Implement subtle animations for new changes
-- [ ] **Task 4.3**: Add change details on hover/interaction
-- [ ] **Task 4.4**: Create visual feedback for undo/redo operations
-- [ ] **Task 4.5**: Optimize performance for large documents
+**🧪 TDD Acceptance Criteria:**
+- [ ] **AC-1D.1**: Create failing tests for change visualization BEFORE implementation
+- [ ] **AC-1D.2**: All UX-Phase-1D tests must pass (estimated 10 tests)
+- [ ] **AC-1D.3**: Update PRD with any approach changes during implementation
+- [ ] **AC-1D.4**: Test dashboard shows UX-Phase-1D completion status
+
+**📋 Implementation Tasks:**
+- [ ] **Task 4.1**: Write failing tests for change highlighting system
+- [ ] **Task 4.2**: Write failing tests for subtle animations for new changes
+- [ ] **Task 4.3**: Write failing tests for change details on hover/interaction
+- [ ] **Task 4.4**: Write failing tests for visual feedback for undo/redo operations
+- [ ] **Task 4.5**: Write failing tests for performance optimization for large documents
+- [ ] **Task 4.6**: Implement change visualization to make tests pass
+- [ ] **Task 4.7**: Update PRD with implementation learnings
 
 ### **UX-Phase-1E: Integration & Testing**
-- [ ] **Task 5.1**: Comprehensive testing of all preserved features
-- [ ] **Task 5.2**: Performance optimization and benchmarking
-- [ ] **Task 5.3**: Error handling and edge case coverage
-- [ ] **Task 5.4**: User acceptance testing and refinement
-- [ ] **Task 5.5**: Documentation and deployment preparation
+**🧪 TDD Acceptance Criteria:**
+- [ ] **AC-1E.1**: Create failing tests for integration scenarios BEFORE implementation
+- [ ] **AC-1E.2**: All UX-Phase-1E tests must pass (estimated 8 tests)
+- [ ] **AC-1E.3**: ALL previous UX-Phase tests (1A-1D) must continue to pass
+- [ ] **AC-1E.4**: Update PRD with final implementation summary
+- [ ] **AC-1E.5**: Test dashboard shows 100% UX-Phase-1 completion
+
+**📋 Implementation Tasks:**
+- [ ] **Task 5.1**: Write failing tests for comprehensive preserved feature testing
+- [ ] **Task 5.2**: Write failing tests for performance benchmarks
+- [ ] **Task 5.3**: Write failing tests for error handling and edge cases
+- [ ] **Task 5.4**: Write failing tests for user acceptance scenarios
+- [ ] **Task 5.5**: Implement final integration to make all tests pass
+- [ ] **Task 5.6**: Update PRD with final implementation summary and lessons learned
 
 ---
 

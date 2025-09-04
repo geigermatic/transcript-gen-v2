@@ -28,12 +28,8 @@ let lastRunTime = 0;
  * Run Jest tests and get JSON output
  */
 async function runJestTests(): Promise<any> {
-  // Return recent results if tests ran within last 3 seconds
-  const now = Date.now();
-  if (lastResults && (now - lastRunTime) < 3000) {
-    console.log('📋 Returning recent test results (< 3s old)');
-    return lastResults;
-  }
+  // DISABLED CACHING - Always run fresh tests
+  console.log('🧪 Running fresh tests (caching disabled)...');
 
   if (isRunningTests) {
     console.log('⏳ Tests already running, returning last known results if available...');
@@ -65,7 +61,9 @@ async function runJestTests(): Promise<any> {
       'src/lib/__tests__/phase5-production-integration.test.ts',
       'src/lib/__tests__/phase6-advanced-features.test.ts',
       'src/lib/__tests__/phase7-advanced-performance.test.ts',
-      'src/lib/__tests__/phase8-enterprise-production.test.ts'
+      'src/lib/__tests__/phase8-enterprise-production.test.ts',
+      // UX Development Phases
+      'src/lib/__tests__/ux-phase-1a-layout-foundation.test.ts'
     ];
 
     // Run tests in batches to avoid hanging
@@ -145,9 +143,11 @@ async function runJestTests(): Promise<any> {
 // API Endpoints - NO CACHING, ALWAYS FRESH
 app.get('/api/test-status', async (req, res) => {
   try {
+    console.log('📡 API: Received request for test status');
     console.log('📡 API: Running fresh tests (no caching)...');
 
     const testResults = await runJestTests();
+    console.log('📡 API: Test results obtained, sending response');
     res.json(testResults);
 
   } catch (error: any) {

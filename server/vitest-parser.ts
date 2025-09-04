@@ -246,6 +246,47 @@ export function parseVitestToPhases(vitestResults: any, lastTestRun: Date | null
       passedTests: 0,
       failedTests: 0,
       suites: []
+    },
+    // UX Development Phases
+    uxPhase1A: {
+      name: 'UX-Phase-1A: Layout Foundation',
+      status: 'not-started',
+      totalTests: 0,
+      passedTests: 0,
+      failedTests: 0,
+      suites: []
+    },
+    uxPhase1B: {
+      name: 'UX-Phase-1B: Document State Management',
+      status: 'not-started',
+      totalTests: 0,
+      passedTests: 0,
+      failedTests: 0,
+      suites: []
+    },
+    uxPhase1C: {
+      name: 'UX-Phase-1C: Chat-Document Integration',
+      status: 'not-started',
+      totalTests: 0,
+      passedTests: 0,
+      failedTests: 0,
+      suites: []
+    },
+    uxPhase1D: {
+      name: 'UX-Phase-1D: Change Visualization',
+      status: 'not-started',
+      totalTests: 0,
+      passedTests: 0,
+      failedTests: 0,
+      suites: []
+    },
+    uxPhase1E: {
+      name: 'UX-Phase-1E: Integration & Testing',
+      status: 'not-started',
+      totalTests: 0,
+      passedTests: 0,
+      failedTests: 0,
+      suites: []
     }
   };
 
@@ -256,7 +297,7 @@ export function parseVitestToPhases(vitestResults: any, lastTestRun: Date | null
       const filePath = testFile.name || '';
       console.log(`🔥 TRACE: [${index}] Processing file: "${filePath}"`);
       const phase = determinePhaseFromPath(filePath);
-      const phaseKey = `phase${phase}`;
+      const phaseKey = typeof phase === 'string' ? phase : `phase${phase}`;
       console.log(`🔥 TRACE: [${index}] determinePhaseFromPath("${filePath}") returned ${phase}`);
       console.log(`🔥 TRACE: [${index}] Generated phaseKey '${phaseKey}' for ${filePath}`);
       console.log(`🔥 TRACE: [${index}] Available phases: ${Object.keys(phases).join(', ')}`);
@@ -362,9 +403,10 @@ export function parseVitestToPhases(vitestResults: any, lastTestRun: Date | null
 
 /**
  * Determine phase based on file path - DYNAMIC DETECTION
+ * Supports both Architecture Phases (1-8) and UX-Phases (1A-1E)
  * No hardcoded test counts, only path-based phase mapping
  */
-export function determinePhaseFromPath(filePath: string): number {
+export function determinePhaseFromPath(filePath: string): number | string {
   const normalizedPath = filePath.toLowerCase();
 
   // DIRECT TEST: Let's test the specific file that's causing issues
@@ -376,13 +418,29 @@ export function determinePhaseFromPath(filePath: string): number {
   console.log(`🔍 DEBUG: determinePhaseFromPath called with: "${filePath}"`);
   console.log(`🔍 DEBUG: normalizedPath: "${normalizedPath}"`);
 
-  // TEST ALL CONDITIONS
-  console.log(`🔍 DEBUG: phase5-production-integration check: ${normalizedPath.includes('phase5-production-integration')}`);
-  console.log(`🔍 DEBUG: embedding-engine check: ${normalizedPath.includes('embedding-engine')}`);
-  console.log(`🔍 DEBUG: chat-engine check: ${normalizedPath.includes('chat-engine')}`);
-  console.log(`🔍 DEBUG: enhanced-chat check: ${normalizedPath.includes('enhanced-chat')}`);
-  console.log(`🔍 DEBUG: phase3-completion check: ${normalizedPath.includes('phase3-completion')}`);
+  // UX-Phase Detection (Check first for priority)
+  if (normalizedPath.includes('ux-phase-1a')) {
+    console.log(`🎯 ${filePath} → UX-Phase-1A (Layout Foundation)`);
+    return 'uxPhase1A';
+  }
+  if (normalizedPath.includes('ux-phase-1b')) {
+    console.log(`🎯 ${filePath} → UX-Phase-1B (Document State Management)`);
+    return 'uxPhase1B';
+  }
+  if (normalizedPath.includes('ux-phase-1c')) {
+    console.log(`🎯 ${filePath} → UX-Phase-1C (Chat-Document Integration)`);
+    return 'uxPhase1C';
+  }
+  if (normalizedPath.includes('ux-phase-1d')) {
+    console.log(`🎯 ${filePath} → UX-Phase-1D (Change Visualization)`);
+    return 'uxPhase1D';
+  }
+  if (normalizedPath.includes('ux-phase-1e')) {
+    console.log(`🎯 ${filePath} → UX-Phase-1E (Integration & Testing)`);
+    return 'uxPhase1E';
+  }
 
+  // Architecture Phase Detection (Existing logic)
   // Phase 5: Production Integration
   if (normalizedPath.includes('phase5-production-integration')) {
     console.log(`🎯 ${filePath} → Phase 5 (Production Integration)`);

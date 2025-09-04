@@ -1,0 +1,87 @@
+{
+  "architecture": [
+    "src/vector-db/__tests__/vector-database.test.ts",
+    "src/vector-db/__tests__/vector-storage.test.ts",
+    "src/vector-db/__tests__/hnsw-index.test.ts",
+    "src/vector-db/__tests__/vector-search.test.ts",
+    "src/lib/__tests__/chat-engine-integration.test.ts",
+    "src/lib/__tests__/embedding-engine-integration.test.ts",
+    "src/lib/__tests__/enhanced-chat-engine-integration.test.ts",
+    "src/lib/__tests__/phase3-completion.test.ts",
+    "src/lib/__tests__/phase5-performance-optimization.test.ts",
+    "src/lib/__tests__/phase5-production-integration.test.ts",
+    "src/lib/__tests__/phase6-advanced-features.test.ts",
+    "src/lib/__tests__/phase7-advanced-performance.test.ts",
+    "src/lib/__tests__/phase8-enterprise-production.test.ts"
+  ],
+  "ux": [
+    "src/lib/__tests__/ux-phase-1a-layout-foundation.test.ts"
+  ],
+  "phases": {
+    "phase1": {
+      "name": "Vector Database Foundation",
+      "category": "architecture",
+      "description": "SQLite vector database setup with extensions"
+    },
+    "phase2": {
+      "name": "Vector Storage & Indexing",
+      "category": "architecture", 
+      "description": "HNSW indexing and vector storage operations"
+    },
+    "phase3": {
+      "name": "Vector Database Integration",
+      "category": "architecture",
+      "description": "Chat engine and embedding integration"
+    },
+    "phase4": {
+      "name": "TDD Foundation",
+      "category": "architecture",
+      "description": "Test-driven development infrastructure"
+    },
+    "phase5": {
+      "name": "Performance Optimization",
+      "category": "architecture",
+      "description": "Performance tuning and production integration"
+    },
+    "phase6": {
+      "name": "Advanced Features",
+      "category": "architecture",
+      "description": "Advanced functionality and enterprise features"
+    },
+    "phase7": {
+      "name": "Advanced Performance",
+      "category": "architecture",
+      "description": "Advanced performance optimization"
+    },
+    "phase8": {
+      "name": "Enterprise Production",
+      "category": "architecture",
+      "description": "Enterprise-grade production features"
+    },
+    "uxPhase1A": {
+      "name": "Layout Foundation",
+      "category": "ux",
+      "description": "2/3 + 1/3 layout structure with chat panel integration"
+    },
+    "uxPhase1B": {
+      "name": "Document State Management",
+      "category": "ux",
+      "description": "Document state and version management"
+    },
+    "uxPhase1C": {
+      "name": "Chat Context Awareness",
+      "category": "ux",
+      "description": "Context-aware chat functionality"
+    },
+    "uxPhase1D": {
+      "name": "Live Summary Updates",
+      "category": "ux",
+      "description": "Real-time summary editing and updates"
+    },
+    "uxPhase1E": {
+      "name": "Undo/Redo System",
+      "category": "ux",
+      "description": "Version control and change tracking"
+    }
+  }
+}
