@@ -1,6 +1,8 @@
+// @phase: 7
+// @phase-name: Advanced Performance Features
 /**
- * Phase 6: Advanced Performance Features
- * 
+ * Phase 7: Advanced Performance Features
+ *
  * This phase includes advanced performance optimization features that go beyond
  * the core performance optimization implemented in Phase 4. These features
  * provide sophisticated performance monitoring, adaptive tuning, streaming
@@ -9,8 +11,8 @@
 
 import { describe, it, expect } from 'vitest';
 
-describe('Phase 6: Advanced Performance Features', () => {
-  
+describe('Phase 7: Advanced Performance Features', () => {
+
   describe('Performance Benchmarks', () => {
     it('should achieve sub-100ms search times for any query', async () => {
       // TDD: Test search performance

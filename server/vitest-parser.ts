@@ -388,7 +388,7 @@ export function determinePhaseFromPath(filePath: string): number {
   }
 
   // Phase 7: Advanced Performance Features
-  if (normalizedPath.includes('phase6-advanced-performance')) {
+  if (normalizedPath.includes('phase7-advanced-performance')) {
     console.log(`🎯 ${filePath} → Phase 7 (Advanced Performance Features)`);
     return 7;
   }

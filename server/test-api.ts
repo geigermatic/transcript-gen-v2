@@ -60,10 +60,12 @@ async function runJestTests(): Promise<any> {
       'src/lib/__tests__/embedding-engine-integration.test.ts',
       'src/lib/__tests__/enhanced-chat-engine-integration.test.ts',
       'src/lib/__tests__/phase3-completion.test.ts',
-      // Phase 4-6: TDD Tests (should fail until implemented)
+      // Phase 4-8: TDD Tests (should fail until implemented)
       'src/lib/__tests__/phase5-performance-optimization.test.ts',
       'src/lib/__tests__/phase5-production-integration.test.ts',
-      'src/lib/__tests__/phase6-advanced-features.test.ts'
+      'src/lib/__tests__/phase6-advanced-features.test.ts',
+      'src/lib/__tests__/phase7-advanced-performance.test.ts',
+      'src/lib/__tests__/phase8-enterprise-production.test.ts'
     ];
 
     // Run tests in batches to avoid hanging
