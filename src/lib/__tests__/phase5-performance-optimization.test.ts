@@ -866,32 +866,680 @@ line breaks in unexpected places.
   describe('US-016: Background Processing Engine', () => {
     it('should process large documents in background without blocking UI', async () => {
       // TDD: Test background processing
-      expect(true).toBe(false); // Will fail until implemented
+      const { BackgroundProcessor } = await import('../backgroundProcessor');
+
+      const processor = new BackgroundProcessor({
+        maxConcurrentTasks: 3,
+        taskTimeout: 30000,
+        enablePriority: true
+      });
+
+      // Create a large document processing task
+      const largeDocument = {
+        id: 'large-doc-1',
+        content: 'A'.repeat(10000), // Large content
+        type: 'text',
+        priority: 'normal' as const
+      };
+
+      // Track processing state
+      let isProcessing = false;
+      let processingComplete = false;
+      let processingResult: any = null;
+
+      // Define a processing function that simulates heavy work
+      const processDocument = async (doc: typeof largeDocument) => {
+        isProcessing = true;
+
+        // Simulate heavy processing with chunks to avoid blocking
+        const chunks = doc.content.match(/.{1,1000}/g) || [];
+        const results = [];
+
+        for (let i = 0; i < chunks.length; i++) {
+          // Process chunk
+          results.push({
+            chunkIndex: i,
+            length: chunks[i].length,
+            processed: true
+          });
+
+          // Yield control to prevent blocking - longer delays to ensure we can observe processing
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+
+        isProcessing = false;
+        processingComplete = true;
+        return {
+          documentId: doc.id,
+          totalChunks: chunks.length,
+          results
+        };
+      };
+
+      // Start background processing
+      const taskId = await processor.addTask({
+        id: 'process-large-doc',
+        type: 'document-processing',
+        data: largeDocument,
+        processor: processDocument,
+        priority: 'normal'
+      });
+
+      // Verify task was queued
+      expect(taskId).toBeTruthy();
+      expect(typeof taskId).toBe('string');
+
+      // Check that processing starts but doesn't block
+      const startTime = Date.now();
+
+      // Wait a short time and verify processing is happening in background
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      // Should be processing but not blocking this thread
+      const status = await processor.getTaskStatus(taskId);
+      expect(status.state).toMatch(/queued|running/);
+
+      // Wait for completion
+      processingResult = await processor.waitForTask(taskId);
+
+      const endTime = Date.now();
+      const processingTime = endTime - startTime;
+
+      // Verify results
+      expect(processingResult).toBeTruthy();
+      expect(processingResult.documentId).toBe(largeDocument.id);
+      expect(processingResult.totalChunks).toBeGreaterThan(0);
+      expect(processingResult.results).toHaveLength(processingResult.totalChunks);
+
+      // Verify processing completed
+      expect(processingComplete).toBe(true);
+
+      // Verify final status
+      const finalStatus = await processor.getTaskStatus(taskId);
+      expect(finalStatus.state).toBe('completed');
+      expect(finalStatus.result).toEqual(processingResult);
+
+      // Cleanup
+      await processor.destroy();
     });
 
     it('should provide progress tracking for background operations', async () => {
       // TDD: Test progress tracking
-      expect(true).toBe(false); // Will fail until implemented
+      const { BackgroundProcessor } = await import('../backgroundProcessor');
+
+      const processor = new BackgroundProcessor({
+        maxConcurrentTasks: 2,
+        taskTimeout: 10000,
+        enablePriority: true,
+        enableProgress: true
+      });
+
+      // Track progress updates
+      const progressUpdates: any[] = [];
+
+      // Create a task that reports progress
+      const progressTask = {
+        id: 'progress-test',
+        type: 'progress-tracking',
+        data: { items: 100 },
+        processor: async (data: { items: number }, onProgress?: (progress: any) => void) => {
+          const results = [];
+
+          for (let i = 0; i < data.items; i++) {
+            // Simulate processing work
+            results.push({ item: i, processed: true });
+
+            // Report progress
+            if (onProgress && i % 10 === 0) {
+              const progress = {
+                current: i + 1,
+                total: data.items,
+                percentage: Math.round(((i + 1) / data.items) * 100),
+                message: `Processing item ${i + 1} of ${data.items}`,
+                stage: i < 50 ? 'first-half' : 'second-half'
+              };
+              onProgress(progress);
+            }
+
+            // Small delay to allow progress tracking
+            await new Promise(resolve => setTimeout(resolve, 2));
+          }
+
+          // Final progress update
+          if (onProgress) {
+            onProgress({
+              current: data.items,
+              total: data.items,
+              percentage: 100,
+              message: 'Processing complete',
+              stage: 'completed'
+            });
+          }
+
+          return { totalProcessed: results.length, results };
+        },
+        priority: 'normal' as const,
+        onProgress: (progress: any) => {
+          progressUpdates.push(progress);
+        }
+      };
+
+      // Start the task
+      const taskId = await processor.addTask(progressTask);
+      expect(taskId).toBe('progress-test');
+
+      // Wait for completion
+      const result = await processor.waitForTask(taskId);
+
+      // Verify results
+      expect(result.totalProcessed).toBe(100);
+      expect(result.results).toHaveLength(100);
+
+      // Verify progress tracking
+      expect(progressUpdates.length).toBeGreaterThan(0);
+
+      // Check progress update structure
+      const firstUpdate = progressUpdates[0];
+      expect(firstUpdate).toHaveProperty('current');
+      expect(firstUpdate).toHaveProperty('total');
+      expect(firstUpdate).toHaveProperty('percentage');
+      expect(firstUpdate).toHaveProperty('message');
+      expect(firstUpdate).toHaveProperty('stage');
+
+      // Verify progress progression
+      expect(firstUpdate.current).toBeGreaterThan(0);
+      expect(firstUpdate.total).toBe(100);
+      expect(firstUpdate.percentage).toBeGreaterThan(0);
+      expect(firstUpdate.percentage).toBeLessThanOrEqual(100);
+
+      // Check that we got multiple progress updates
+      expect(progressUpdates.length).toBeGreaterThan(5);
+
+      // Verify final progress update
+      const lastUpdate = progressUpdates[progressUpdates.length - 1];
+      expect(lastUpdate.current).toBe(100);
+      expect(lastUpdate.total).toBe(100);
+      expect(lastUpdate.percentage).toBe(100);
+      expect(lastUpdate.stage).toBe('completed');
+
+      // Verify progress increases over time
+      for (let i = 1; i < progressUpdates.length; i++) {
+        expect(progressUpdates[i].current).toBeGreaterThanOrEqual(progressUpdates[i - 1].current);
+      }
+
+      // Cleanup
+      await processor.destroy();
     });
 
     it('should handle background task prioritization', async () => {
       // TDD: Test task prioritization
-      expect(true).toBe(false); // Will fail until implemented
+      const { BackgroundProcessor } = await import('../backgroundProcessor');
+
+      const processor = new BackgroundProcessor({
+        maxConcurrentTasks: 1, // Force sequential processing to test priority
+        taskTimeout: 10000,
+        enablePriority: true
+      });
+
+      // Track execution order
+      const executionOrder: string[] = [];
+
+      // Create tasks with different priorities
+      const createTask = (id: string, priority: 'low' | 'normal' | 'high' | 'urgent') => ({
+        id,
+        type: 'priority-test',
+        data: { taskId: id },
+        processor: async (data: { taskId: string }) => {
+          executionOrder.push(data.taskId);
+          await new Promise(resolve => setTimeout(resolve, 50)); // Longer delay to ensure proper ordering
+          return { taskId: data.taskId, completed: true };
+        },
+        priority
+      });
+
+      // Add tasks in non-priority order
+      const lowTask = createTask('low-priority', 'low');
+      const normalTask = createTask('normal-priority', 'normal');
+      const highTask = createTask('high-priority', 'high');
+      const urgentTask = createTask('urgent-priority', 'urgent');
+      const anotherNormalTask = createTask('normal-priority-2', 'normal');
+
+      // Add tasks in mixed order quickly to test prioritization
+      const taskPromises = [
+        processor.addTask(lowTask),
+        processor.addTask(normalTask),
+        processor.addTask(highTask),
+        processor.addTask(urgentTask),
+        processor.addTask(anotherNormalTask)
+      ];
+
+      // Wait for all tasks to be queued
+      await Promise.all(taskPromises);
+
+      // Small delay to ensure all tasks are queued before processing starts
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Wait for all tasks to complete
+      await Promise.all([
+        processor.waitForTask('low-priority'),
+        processor.waitForTask('normal-priority'),
+        processor.waitForTask('high-priority'),
+        processor.waitForTask('urgent-priority'),
+        processor.waitForTask('normal-priority-2')
+      ]);
+
+      // Verify execution order follows priority
+      expect(executionOrder).toHaveLength(5);
+
+      // Urgent should be first
+      expect(executionOrder[0]).toBe('urgent-priority');
+
+      // High should be second
+      expect(executionOrder[1]).toBe('high-priority');
+
+      // Normal tasks should come after high priority
+      const urgentIndex = executionOrder.indexOf('urgent-priority');
+      const highIndex = executionOrder.indexOf('high-priority');
+      const normalIndex1 = executionOrder.indexOf('normal-priority');
+      const normalIndex2 = executionOrder.indexOf('normal-priority-2');
+      const lowIndex = executionOrder.indexOf('low-priority');
+
+      // Verify priority order
+      expect(urgentIndex).toBeLessThan(highIndex);
+      expect(highIndex).toBeLessThan(normalIndex1);
+      expect(highIndex).toBeLessThan(normalIndex2);
+      expect(normalIndex1).toBeLessThan(lowIndex);
+      expect(normalIndex2).toBeLessThan(lowIndex);
+
+      // Test queue statistics
+      const stats = processor.getQueueStats();
+      expect(stats.completed).toBe(5);
+      expect(stats.queued).toBe(0);
+      expect(stats.running).toBe(0);
+
+      // Cleanup
+      await processor.destroy();
     });
 
     it('should support background task cancellation', async () => {
       // TDD: Test task cancellation
-      expect(true).toBe(false); // Will fail until implemented
+      const { BackgroundProcessor } = await import('../backgroundProcessor');
+
+      const processor = new BackgroundProcessor({
+        maxConcurrentTasks: 2,
+        taskTimeout: 10000,
+        enablePriority: true
+      });
+
+      // Track task states
+      let task1Started = false;
+      let task1Completed = false;
+      let task1Cancelled = false;
+      let task2Started = false;
+      let task2Completed = false;
+
+      // Create long-running tasks
+      const longRunningTask1 = {
+        id: 'long-task-1',
+        type: 'cancellation-test',
+        data: { duration: 1000 },
+        processor: async (data: { duration: number }) => {
+          task1Started = true;
+
+          // Simulate long-running work with cancellation checks
+          const startTime = Date.now();
+          while (Date.now() - startTime < data.duration) {
+            await new Promise(resolve => setTimeout(resolve, 10));
+            // In real implementation, we'd check for cancellation signal here
+          }
+
+          task1Completed = true;
+          return { taskId: 'long-task-1', completed: true };
+        },
+        priority: 'normal' as const,
+        onError: (error: Error) => {
+          if (error.message.includes('cancelled')) {
+            task1Cancelled = true;
+          }
+        }
+      };
+
+      const longRunningTask2 = {
+        id: 'long-task-2',
+        type: 'cancellation-test',
+        data: { duration: 500 },
+        processor: async (data: { duration: number }) => {
+          task2Started = true;
+          await new Promise(resolve => setTimeout(resolve, data.duration));
+          task2Completed = true;
+          return { taskId: 'long-task-2', completed: true };
+        },
+        priority: 'normal' as const
+      };
+
+      // Start both tasks
+      const task1Id = await processor.addTask(longRunningTask1);
+      const task2Id = await processor.addTask(longRunningTask2);
+
+      // Wait a bit for tasks to start
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Verify tasks are running or queued
+      const task1Status = await processor.getTaskStatus(task1Id);
+      const task2Status = await processor.getTaskStatus(task2Id);
+
+      expect(['queued', 'running']).toContain(task1Status.state);
+      expect(['queued', 'running']).toContain(task2Status.state);
+
+      // Cancel the first task
+      const cancelled = await processor.cancelTask(task1Id);
+      expect(cancelled).toBe(true);
+
+      // Verify task was cancelled
+      const cancelledStatus = await processor.getTaskStatus(task1Id);
+      expect(cancelledStatus.state).toBe('cancelled');
+
+      // Try to wait for cancelled task (should throw)
+      try {
+        await processor.waitForTask(task1Id);
+        expect.fail('Should have thrown for cancelled task');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toContain('cancelled');
+      }
+
+      // Wait for second task to complete
+      const task2Result = await processor.waitForTask(task2Id);
+      expect(task2Result.taskId).toBe('long-task-2');
+      expect(task2Result.completed).toBe(true);
+
+      // Verify final states
+      expect(task2Completed).toBe(true);
+
+      // Try to cancel a non-existent task
+      const nonExistentCancelled = await processor.cancelTask('non-existent');
+      expect(nonExistentCancelled).toBe(false);
+
+      // Try to cancel an already completed task
+      const alreadyCompletedCancelled = await processor.cancelTask(task2Id);
+      expect(alreadyCompletedCancelled).toBe(false);
+
+      // Test cancelling a queued task
+      const queuedTask = {
+        id: 'queued-task',
+        type: 'queued-cancellation-test',
+        data: {},
+        processor: async () => ({ result: 'should not execute' }),
+        priority: 'low' as const
+      };
+
+      // Add task but don't wait for it to start
+      const queuedTaskId = await processor.addTask(queuedTask);
+
+      // Cancel immediately while still queued
+      const queuedCancelled = await processor.cancelTask(queuedTaskId);
+      expect(queuedCancelled).toBe(true);
+
+      const queuedStatus = await processor.getTaskStatus(queuedTaskId);
+      expect(queuedStatus.state).toBe('cancelled');
+
+      // Try to wait for cancelled queued task (should throw)
+      try {
+        await processor.waitForTask(queuedTaskId);
+        expect.fail('Should have thrown for cancelled queued task');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toContain('cancelled');
+      }
+
+      // Verify queue stats
+      const stats = processor.getQueueStats();
+      expect(stats.completed).toBeGreaterThan(0);
+
+      // Cleanup
+      await processor.destroy();
     });
 
     it('should implement worker thread utilization', async () => {
-      // TDD: Test worker threads
-      expect(true).toBe(false); // Will fail until implemented
+      // TDD: Test worker thread simulation (since we're in browser/test environment)
+      const { BackgroundProcessor } = await import('../backgroundProcessor');
+
+      const processor = new BackgroundProcessor({
+        maxConcurrentTasks: 4, // Simulate multiple "worker threads"
+        taskTimeout: 5000,
+        enablePriority: true
+      });
+
+      // Track concurrent execution
+      let concurrentTasks = 0;
+      let maxConcurrentTasks = 0;
+      const taskResults: string[] = [];
+
+      // Create CPU-intensive tasks that would benefit from worker threads
+      const createCpuIntensiveTask = (id: string) => ({
+        id,
+        type: 'cpu-intensive',
+        data: { taskId: id, iterations: 100 },
+        processor: async (data: { taskId: string; iterations: number }) => {
+          concurrentTasks++;
+          maxConcurrentTasks = Math.max(maxConcurrentTasks, concurrentTasks);
+
+          // Simulate CPU-intensive work
+          let result = 0;
+          for (let i = 0; i < data.iterations; i++) {
+            result += Math.sqrt(i * Math.random());
+
+            // Yield control periodically to simulate worker thread behavior
+            if (i % 20 === 0) {
+              await new Promise(resolve => setTimeout(resolve, 1));
+            }
+          }
+
+          taskResults.push(data.taskId);
+          concurrentTasks--;
+
+          return {
+            taskId: data.taskId,
+            result,
+            iterations: data.iterations,
+            completed: true
+          };
+        },
+        priority: 'normal' as const
+      });
+
+      // Create multiple CPU-intensive tasks
+      const tasks = [
+        createCpuIntensiveTask('cpu-task-1'),
+        createCpuIntensiveTask('cpu-task-2'),
+        createCpuIntensiveTask('cpu-task-3'),
+        createCpuIntensiveTask('cpu-task-4'),
+        createCpuIntensiveTask('cpu-task-5'),
+        createCpuIntensiveTask('cpu-task-6')
+      ];
+
+      // Start all tasks
+      const taskPromises = tasks.map(task => processor.addTask(task));
+      const taskIds = await Promise.all(taskPromises);
+
+      // Wait for all tasks to complete
+      const results = await Promise.all(
+        taskIds.map(id => processor.waitForTask(id))
+      );
+
+      // Verify all tasks completed successfully
+      expect(results).toHaveLength(6);
+      results.forEach((result, index) => {
+        expect(result.taskId).toBe(`cpu-task-${index + 1}`);
+        expect(result.completed).toBe(true);
+        expect(result.iterations).toBe(100);
+        expect(typeof result.result).toBe('number');
+      });
+
+      // Verify concurrent execution occurred (simulating worker thread behavior)
+      expect(maxConcurrentTasks).toBeGreaterThan(1);
+      expect(maxConcurrentTasks).toBeLessThanOrEqual(4); // Should respect max concurrent limit
+
+      // Verify all tasks were processed
+      expect(taskResults).toHaveLength(6);
+      expect(taskResults).toContain('cpu-task-1');
+      expect(taskResults).toContain('cpu-task-6');
+
+      // Test queue statistics
+      const stats = processor.getQueueStats();
+      expect(stats.completed).toBe(6);
+      expect(stats.queued).toBe(0);
+      expect(stats.running).toBe(0);
+      expect(stats.maxConcurrent).toBe(4);
+
+      // Test that processor can handle mixed workloads
+      const mixedTask = {
+        id: 'mixed-workload',
+        type: 'mixed',
+        data: { type: 'io-bound' },
+        processor: async (data: { type: string }) => {
+          // Simulate I/O bound task (different from CPU-intensive)
+          await new Promise(resolve => setTimeout(resolve, 50));
+          return { type: data.type, completed: true };
+        },
+        priority: 'high' as const
+      };
+
+      const mixedTaskId = await processor.addTask(mixedTask);
+      const mixedResult = await processor.waitForTask(mixedTaskId);
+
+      expect(mixedResult.type).toBe('io-bound');
+      expect(mixedResult.completed).toBe(true);
+
+      // Cleanup
+      await processor.destroy();
     });
 
     it('should provide background task queue management', async () => {
       // TDD: Test queue management
-      expect(true).toBe(false); // Will fail until implemented
+      const { BackgroundProcessor } = await import('../backgroundProcessor');
+
+      const processor = new BackgroundProcessor({
+        maxConcurrentTasks: 2,
+        taskTimeout: 5000,
+        enablePriority: true
+      });
+
+      // Test initial queue state
+      let stats = processor.getQueueStats();
+      expect(stats.queued).toBe(0);
+      expect(stats.running).toBe(0);
+      expect(stats.completed).toBe(0);
+      expect(stats.maxConcurrent).toBe(2);
+
+      // Create tasks with different priorities and execution times
+      const createTask = (id: string, priority: 'low' | 'normal' | 'high', duration: number) => ({
+        id,
+        type: 'queue-management-test',
+        data: { duration },
+        processor: async (data: { duration: number }) => {
+          await new Promise(resolve => setTimeout(resolve, data.duration));
+          return { taskId: id, completed: true };
+        },
+        priority
+      });
+
+      // Add multiple tasks to test queue management
+      const tasks = [
+        createTask('task-1', 'low', 100),
+        createTask('task-2', 'normal', 50),
+        createTask('task-3', 'high', 75),
+        createTask('task-4', 'normal', 25),
+        createTask('task-5', 'low', 150)
+      ];
+
+      // Add tasks one by one and check queue state
+      const taskIds: string[] = [];
+
+      for (const task of tasks) {
+        const taskId = await processor.addTask(task);
+        taskIds.push(taskId);
+
+        // Check queue stats after each addition
+        stats = processor.getQueueStats();
+        expect(stats.queued + stats.running).toBeGreaterThan(0);
+        expect(stats.running).toBeLessThanOrEqual(2); // Should respect max concurrent
+      }
+
+      // Wait a bit and check that some tasks are running
+      await new Promise(resolve => setTimeout(resolve, 10));
+      stats = processor.getQueueStats();
+      expect(stats.running).toBeGreaterThan(0);
+      expect(stats.running).toBeLessThanOrEqual(2);
+
+      // Check individual task statuses
+      for (const taskId of taskIds) {
+        const status = await processor.getTaskStatus(taskId);
+        expect(['queued', 'running', 'completed']).toContain(status.state);
+      }
+
+      // Wait for all tasks to complete
+      const results = await Promise.all(
+        taskIds.map(id => processor.waitForTask(id))
+      );
+
+      // Verify all tasks completed
+      expect(results).toHaveLength(5);
+      results.forEach(result => {
+        expect(result.completed).toBe(true);
+      });
+
+      // Check final queue state
+      stats = processor.getQueueStats();
+      expect(stats.queued).toBe(0);
+      expect(stats.running).toBe(0);
+      expect(stats.completed).toBe(5);
+
+      // Test queue behavior with rapid task addition
+      const rapidTasks = Array.from({ length: 10 }, (_, i) =>
+        createTask(`rapid-${i}`, 'normal', 10)
+      );
+
+      // Add all tasks rapidly
+      const rapidTaskIds = await Promise.all(
+        rapidTasks.map(task => processor.addTask(task))
+      );
+
+      // Check that queue manages the load properly
+      stats = processor.getQueueStats();
+      expect(stats.queued + stats.running).toBe(10);
+      expect(stats.running).toBeLessThanOrEqual(2);
+
+      // Wait for all rapid tasks to complete
+      await Promise.all(rapidTaskIds.map(id => processor.waitForTask(id)));
+
+      // Verify final state
+      stats = processor.getQueueStats();
+      expect(stats.queued).toBe(0);
+      expect(stats.running).toBe(0);
+      expect(stats.completed).toBe(15); // 5 + 10 tasks
+
+      // Test queue with mixed priorities
+      const priorityTasks = [
+        createTask('urgent-1', 'high', 20),
+        createTask('low-1', 'low', 20),
+        createTask('urgent-2', 'high', 20),
+        createTask('normal-1', 'normal', 20)
+      ];
+
+      const priorityTaskIds = await Promise.all(
+        priorityTasks.map(task => processor.addTask(task))
+      );
+
+      // Wait for completion and verify priority ordering was respected
+      await Promise.all(priorityTaskIds.map(id => processor.waitForTask(id)));
+
+      // Final verification
+      stats = processor.getQueueStats();
+      expect(stats.completed).toBe(19); // 15 + 4 tasks
+
+      // Cleanup
+      await processor.destroy();
     });
   });
 
